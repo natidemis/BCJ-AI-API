@@ -1,4 +1,4 @@
-from flask import Flash
+from flask import Flask
 from flask_restful import Resource, Api, reqparse
 import pandas as pandas
 import ast
@@ -10,10 +10,13 @@ class Bug(Resource):
 
     pass
 
-Class BugBatch(Resource):
+class BugBatch(Resource):
 
     pass
 
 
 api.add_resource(Bug,'/bug')
-api.add_resource(BugBatch)
+api.add_resource(BugBatch, '/bug-batch')
+
+if __name__ =='__main__':
+    app.run()
