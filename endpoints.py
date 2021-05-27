@@ -7,9 +7,17 @@ app = Flask(__name__)
 api = Api(app)
 
 class Bug(Resource):
-
-    pass
-
+    def get(self):
+    
+    results = #Kalla á gervigreindina og sækja k-villur í json formatti
+    
+    if results:
+        return results,200
+    else:
+        return {Lýsing á villu},404
+    
+    def post(self):
+        
 class BugBatch(Resource):
 
     pass
