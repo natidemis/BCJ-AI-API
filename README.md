@@ -1,4 +1,4 @@
-# Bug Consolidator for Jira artificial intelligence API
+# Artificial intelligence API for BCJ
 Artificial Intelligence API for usability problems. 
 
 ## Web service
