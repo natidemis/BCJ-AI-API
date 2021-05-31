@@ -12,3 +12,9 @@ Artificial Intelligence API for usability problems.
   * `DELETE` delete k bugs 
   
 ### Json data request/response example 
+
+`{
+   "summary": "summary",
+   "description": "description,
+   "structured_info": {id, creationDate}
+ }`
