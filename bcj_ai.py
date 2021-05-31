@@ -9,7 +9,7 @@ API module for Bug Consolidation for Jira (BCJ) AI model
 import random
 from enum import Enum,IntEnum
 
-class BCJStatus(IntEnum):
+class BCJStatus(Enum):
     OK = 200
     NOT_FOUND = 404
     ERROR = 500
