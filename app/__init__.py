@@ -25,9 +25,14 @@ ai = ai()
 class Bug(Resource):
     def get(self):
         req = request.json #Retrieve JSON from GET request
-        bugs = ai.get_similar_bugs_k(req['summary'], req['description'], req['k'])
-        if bugs[0].value == 200:
-            return bugs[1],bugs[0].value
+        try:
+            summary = req['summary']
+            description = req['description']
+            k = req['k']
+        except:
+            raise Exception('The JSON must contain the following keys: summary, description, and k')
+        if summary == "" and description == "": return 'Summary and description cannot both be empty'
+        bugs = ai.get_similar_bugs_k(summary, description, k=k)
         return bugs[1],bugs[0].value
     
     def post(self):
