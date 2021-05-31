@@ -7,9 +7,9 @@ API module for Bug Consolidation for Jira (BCJ) AI model
 """
 
 import random
-from enum import Enum
+from enum import Enum,IntEnum
 
-class BCJStatus(Enum):
+class BCJStatus(IntEnum):
     OK = 200
     ERROR = 500
 
@@ -70,7 +70,7 @@ class BCJAIapi:
         -------
         TODO
         """
-        if bool(summary) or bool(description) or bool(structured_info):
+        if not (bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.ERROR
         return BCJStatus.OK
 
