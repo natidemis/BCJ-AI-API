@@ -12,7 +12,7 @@ Artificial Intelligence API for usability problems.
   * `DELETE` delete k bugs 
   
 ### Json data request/response example 
-
+#### Json format for insertion
 `{
    "summary": "summary",
    "description": "description,
