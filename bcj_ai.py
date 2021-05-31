@@ -11,6 +11,7 @@ from enum import Enum
 
 class BCJStatus(Enum):
     OK = 200
+    NOT_FOUND = 404
     ERROR = 500
 
 class BCJAIapi:
@@ -43,8 +44,8 @@ class BCJAIapi:
             A list of `min(k,N)` most similar bugs where N is the total number of bugs
         """
         bugs = [random.randint(1,1000) for _ in range(k)]
-        if bool(summary) or bool(description) or bool(structured_info):
-            return BCJStatus.ERROR, bugs
+        if not(bool(summary) or bool(description) or bool(structured_info)):
+            return BCJStatus.NOT_FOUND, 'At least one of the parameters summary, description, or structured_info must be filled'
         return BCJStatus.OK, bugs
 
     def get_similar_bugs_threshold(self, summary=None, description=None, structured_info=None, threshold=0.5):
