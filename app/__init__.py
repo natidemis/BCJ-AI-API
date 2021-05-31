@@ -8,6 +8,7 @@ app = Flask(__name__, instance_relative_config=True)
 api = Api(app)
 app.config.from_object('config')
 
+ai = ai()
 class Bug(Resource):
     def get(self):
         print(Status.OK.value)
@@ -21,6 +22,9 @@ class Bug(Resource):
     #    return {Lýsing á villu},404
     
     def post(self):
+        data = request.json
+        print(data)
+        if ai.add
         pass
     
     def patch(self):
