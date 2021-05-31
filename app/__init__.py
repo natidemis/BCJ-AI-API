@@ -23,8 +23,17 @@ class Bug(Resource):
     
     def post(self):
         data = request.json
-        print(data)
-        if ai.add
+        error = "Input data was in incorrect format"
+        try:
+            if data['summary'] and data['description'] and data['structured_info']:
+                info = data['structured_info']
+                if info['id'] and info['creationDate']:
+                    if ai.add_bug(data,summary=data['summary'], description =data['description'], structured_info=data['structured_info']) == 200:
+                        return {"message": "Succeeded"},200
+                    else:
+                        return {"message": error}, 400
+        except:
+            return {"message": error}, 401
         pass
     
     def patch(self):
