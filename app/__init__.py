@@ -15,7 +15,9 @@ from flask import Flask, request
 from flask_restful import Resource, Api, reqparse
 import pandas as pandas
 import ast
+import datetime
 from bcj_ai import BCJAIapi as ai
+from helper import Validator
 
 app = Flask(__name__, instance_relative_config=True)
 api = Api(app)
@@ -36,7 +38,26 @@ class Bug(Resource):
         return bugs[1],bugs[0].value
     
     def post(self):
-        pass
+        req = request.json
+        try:
+            if 'id' in req['structured_info'] and 'creationDate' in req['structured_info']:
+                try:
+                    if req['structured_info']['id'].isnumeric():
+                        date = req['structured_info']['creationDate']
+                        date = date[0:date.find('T')]
+                        Validator.validate_datestring(date)
+                        print(date)
+                        structured_info = {
+                            'id': req['structured_info']['id'],
+                            'creationDate': date
+                        }
+                        return {'message': ''}, ai.add_bug(summary=req['summary'],description=req['description'],structured_info=structured_info)
+                except:
+                    return {'message': 'id or creationDate not in correct format'},400
+            else:
+                return {'message': 'structured info requires both id and creation date'},400
+        except:
+            return {'message': 'Data not in proper format'}, 400
     
     def patch(self):
         req = request.json
