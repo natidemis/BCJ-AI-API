@@ -39,7 +39,8 @@ class Bug(Resource):
         pass
     
     def patch(self):
-        pass
+        req = request.json
+        
     
     def delete(self):
         pass
