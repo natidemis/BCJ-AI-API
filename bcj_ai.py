@@ -85,6 +85,6 @@ class BCJAIapi:
     def update_bug(self, idx, summary=None, description=None, structured_info=None):
         """
         """
-        if bool(summary) or bool(description) or bool(structured_info):
+        if not(bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.ERROR
         return BCJStatus.OK
