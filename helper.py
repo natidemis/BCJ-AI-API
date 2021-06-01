@@ -7,10 +7,8 @@ from enum import Enum
 
 class Message(Enum):
     SUCCESS="Valid input, check status for result"
-    FAILURE: 'Data not in proper format, requires summary, description and structured_info with id and date(YYY-MM-DD). Summary or description may be empty strings'
+    FAILURE: 'Data not in proper format, read the requirements here: -----'
     UNFILLED_REQ: 'Either summary or description must have length > 0'
-        
-#class BatchMessage(Enum):
     
 class Helper:
 
