@@ -92,7 +92,7 @@ class Bug(Resource):
         try:
             schema.validate(req)
         except:
-            return {'message': 'JSON can only contain the key id which contains an int value'}
+            return {'message': 'JSON can only contain id'}
         result = ai.remove_bug(req['id'])
         if result == BCJStatus.OK:
             return {'message': 'Successfully removed'}, result.value
@@ -121,7 +121,19 @@ class Batch(Resource):
     
     def delete(self):
         #Authenticate request..
-        pass
+        req = request.json
+        schema = Schema({
+            "batch_id": int
+        })
+        try:
+            schema.validate(req)
+        except(SchemaError, TypeError):
+            return {'message': "JSON must only contain batch_id"}, 400
+        result = ai.remove_batch(req['batch_id'])
+        if result == BCJStatus.OK:
+            return {'message': 'Successfully removed'}, result.value
+        return {'message': 'Invalid id'}, result.value
+        
 
 
 api.add_resource(Bug,'/bug')
