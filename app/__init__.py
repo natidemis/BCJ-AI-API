@@ -18,7 +18,7 @@ import ast
 import datetime
 from bcj_ai import BCJAIapi as ai
 from helper import Validator
-from schema import Schema
+from schema import Schema, And, Use, Optional, SchemaError
 
 app = Flask(__name__, instance_relative_config=True)
 api = Api(app)
@@ -28,20 +28,19 @@ ai = ai()
 class Bug(Resource):
     def get(self):
         req = request.json #Retrieve JSON from GET request
-        """try:
-            summary = req['summary']
-            description = req['description']
-            k = req['k']
-        except:
-            raise Exception('The JSON must contain the following keys: summary, description, and k')
-        if summary == "" and description == "": return 'Summary and description cannot both be empty'"""
         schema = Schema({
             'summary': str,
             'description': str,
-            'k': int})
-        schema.validate(req)
+            'k': And(int, lambda n: n>0)})
+        try:
+            schema.validate(req)
+        except(SchemaError):
+            raise SchemaError('JSON must contain the keys summary, description, and k with values str, str, and int greater than 0, respectively')
+        except(TypeError):
+            return 'bl'
         summary = req['summary']
         description = req['description']
+        if summary == "" and description == "": raise Exception('Summary and description cannot both be empty')
         k = req['k']
         bugs = ai.get_similar_bugs_k(summary, description, k=k)
         return bugs[1],bugs[0].value
