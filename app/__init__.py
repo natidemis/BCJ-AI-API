@@ -17,13 +17,15 @@ import pandas as pandas
 import ast
 import datetime
 from bcj_ai import BCJAIapi as ai
+from bcj_ai import BCJStatus 
 from helper import Validator
 from schema import Schema, And, Use, Optional, SchemaError
+import dateutil.parser
 
 app = Flask(__name__, instance_relative_config=True)
 api = Api(app)
 app.config.from_object('config')
-
+validator = Validator()
 ai = ai()
 class Bug(Resource):
     def get(self):
@@ -48,24 +50,15 @@ class Bug(Resource):
     def post(self):
         req = request.json
         try:
-            if 'id' in req['structured_info'] and 'creationDate' in req['structured_info']:
-                try:
-                    if req['structured_info']['id'].isnumeric():
-                        date = req['structured_info']['creationDate']
-                        date = date[0:date.find('T')]
-                        Validator.validate_datestring(date)
-                        print(date)
-                        structured_info = {
-                            'id': req['structured_info']['id'],
-                            'creationDate': date
-                        }
-                        return {'message': ''}, ai.add_bug(summary=req['summary'],description=req['description'],structured_info=structured_info)
-                except:
-                    return {'message': 'id or creationDate not in correct format'},400
+            if req['structured_info']['id'].isnumeric() and validator.validate_datestring(req['structured_info']['creationDate'][0:10]):
+                result = ai.add_bug(summary=req['summary'],description=req['description'],structured_info=req['structured_info']['creationDate'])
+                if result == BCJStatus.ERROR:
+                    return {'message': 'Insertion failed'},result
+                return {'message': 'insertion successful'}, result 
             else:
-                return {'message': 'structured info requires both id and creation date'},400
+                return {'message': 'id(int) or date(datetime) missing or not in proper format'},400
         except:
-            return {'message': 'Data not in proper format'}, 400
+            return {'message': 'Data not in proper format, requires summary, descripion and structured_info with id and creationDate(YYY-MM-DD). Summary or description may be empty strings'},400
     
     def patch(self):
         req = request.json
