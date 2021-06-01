@@ -16,8 +16,7 @@ from flask_restful import Resource, Api, reqparse
 import pandas as pandas
 import ast
 import datetime
-from bcj_ai import BCJAIapi as ai
-from bcj_ai import BCJStatus 
+from bcj_ai import BCJAIapi as ai, BCJStatus 
 from helper import Validator
 from schema import Schema, And, Use, Optional, SchemaError
 import dateutil.parser
@@ -29,6 +28,7 @@ validator = Validator()
 ai = ai()
 class Bug(Resource):
     def get(self):
+        #Authenticate request..
         req = request.json #Retrieve JSON from GET request
         schema = Schema({ #The schematic the JSON request must follow
             'summary': str,
@@ -41,7 +41,7 @@ class Bug(Resource):
             return {"message": 'JSON must at least contain the keys summary and description, both with values of type str'}, 400 
         summary = req['summary']
         description = req['description']
-        if summary == "" and description == "": raise Exception('Summary and description cannot both be empty')
+        if summary == "" and description == "": return {'message': 'Summary and description cannot both be empty'}, 400
         try:
             k = req['k']
         except:
@@ -71,29 +71,44 @@ class Bug(Resource):
         
     
     def delete(self):
-        req = request.json
         #Authenticate request..
+        req = request.json
+        schema = Schema({
+            'id': int
+        })
         try:
-            result = ai.remove_bug(idx=req['id']) if req['id'].isnumeric() else BCJStatus.ERROR
-            if result == BCJStatus.OK:
-                return 'successfully removed', result
-            else:
-                return "id invalid", result
+            schema.validate(req)
         except:
-            return 'id missing', 400
+            return {'message': 'JSON can only contain the key id which contains an int value'}
+        result = ai.remove_bug(req['id'])
+        if result == BCJStatus.OK:
+            return {'message': 'Successfully removed'}, result.value
+        return {'message': 'Invalid id'}, result.value
 
         
 
-class BugBatch(Resource):
+class Batch(Resource):
     def get(self): #Ef maður vill sækja batch sem maður senti inn?
-        pass
+        #Authenticate request..
+        req = request.json
+        schema = Schema({
+            "batch_id": str
+        })
+        try:
+            schema.validate(req)
+        except(SchemaError, TypeError):
+            return {'message': "JSON must only contain batch_id"}, 400
+        batch = ai.get_batch_by_id()
     
     def post(self):
-        pass
+        #Authenticate request..
+        batch_id = 0
+        return batch_id
     
     def delete(self):
+        #Authenticate request..
         pass
 
 
 api.add_resource(Bug,'/bug')
-api.add_resource(BugBatch, '/bug-batch')
+api.add_resource(Batch, '/batch')
