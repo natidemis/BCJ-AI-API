@@ -15,12 +15,11 @@ from flask import Flask, request
 from flask_restful import Resource, Api, reqparse
 import pandas as pandas
 import ast
-import datetime
 from bcj_ai import BCJAIapi as ai, BCJStatus 
 from schema import Schema, And, Use, Optional, SchemaError,Or
 import dateutil.parser
 from helper import Helper,Message
-
+import json
 app = Flask(__name__, instance_relative_config=True)
 api = Api(app)
 app.config.from_object('config')
@@ -116,8 +115,18 @@ class Batch(Resource):
     
     def post(self):
         #Authenticate request..
-        batch_id = 0
-        return batch_id
+        #data = request.json
+        #for req in data:
+        #    try:
+        #        helper.validate_data(req)
+        #        if len(req['summary']) > 0 or len(req['description'])>0:
+        #            return {'message': Message.SUCCESS.value}, 
+        #        else:
+        #            return {'message': Message.UNFILLED_REQ.value},400
+        #    except:
+        #        return {'message': Message.FAILURE.value},400
+        #
+
     
     def delete(self):
         #Authenticate request..

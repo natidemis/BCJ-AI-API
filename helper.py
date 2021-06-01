@@ -33,7 +33,6 @@ class Helper:
             "bucket": str,
             "date": str,
             Optional("reporter"): str,
-            Optional("batchId"): str
         })
         try:
             schema.validate(data)
