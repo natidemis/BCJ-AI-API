@@ -54,19 +54,29 @@ class Bug(Resource):
                 result = ai.add_bug(summary=req['summary'],description=req['description'],structured_info=req['structured_info']['creationDate'])
                 if result == BCJStatus.ERROR:
                     return {'message': 'Insertion failed'},result
-                return {'message': 'insertion successful'}, result 
+                return  'insertion successful', result 
             else:
-                return {'message': 'id(int) or date(datetime) missing or not in proper format'},400
+                return 'id(int) or date(datetime) missing or not in proper format',400
         except:
-            return {'message': 'Data not in proper format, requires summary, descripion and structured_info with id and creationDate(YYY-MM-DD). Summary or description may be empty strings'},400
+            return 'Data not in proper format, requires summary, descripion and structured_info with id and creationDate(YYY-MM-DD). Summary or description may be empty strings',400
     
     def patch(self):
         req = request.json
         
     
     def delete(self):
-        pass
+        req = request.json
+        #Authenticate request..
+        try:
+            result = ai.remove_bug(idx=req['id']) if req['id'].isnumeric() else BCJStatus.ERROR
+            if result == BCJStatus.OK:
+                return 'successfully removed', result
+            else:
+                return "id invalid", result
+        except:
+            return 'id missing', 400
 
+        
 
 class BugBatch(Resource):
     def get(self): #Ef maður vill sækja batch sem maður senti inn?
