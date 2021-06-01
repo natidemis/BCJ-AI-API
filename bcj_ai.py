@@ -8,8 +8,8 @@ API module for Bug Consolidation for Jira (BCJ) AI model
 
 import random
 from enum import IntEnum
-from UPverkefni.word2vec import Word2Vec
-from UPverkefni.testing import KDTreeUP as KDTree
+#from UPverkefni.word2vec import Word2Vec
+#from UPverkefni.testing import KDTreeUP as KDTree
 
 class BCJStatus(IntEnum):
     OK = 200
