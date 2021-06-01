@@ -34,11 +34,11 @@ class Bug(Resource):
             'summary': str,
             'description': str,
             Optional('k'): And(int, lambda n: n>0),
-            Optional('structured_info'): dict})
+            'structured_info': dict})
         try:
             schema.validate(req)
         except(SchemaError, TypeError):
-            return {"message": 'JSON must at least contain the keys summary and description, both with values of type str'}, 400 
+            return {"message": 'JSON must at least contain the keys summary, description, and both with values of type str'}, 400 
         summary = req['summary']
         description = req['description']
         if summary == "" and description == "": return {'message': 'Summary and description cannot both be empty'}, 400
@@ -105,13 +105,14 @@ class Batch(Resource):
         #Authenticate request..
         req = request.json
         schema = Schema({
-            "batch_id": str
+            "batch_id": int
         })
         try:
             schema.validate(req)
         except(SchemaError, TypeError):
             return {'message': "JSON must only contain batch_id"}, 400
-        batch = ai.get_batch_by_id()
+        batch = ai.get_batch_by_id(req['batch_id'])
+        return {'data': batch[1]}, batch[0].value
     
     def post(self):
         #Authenticate request..
