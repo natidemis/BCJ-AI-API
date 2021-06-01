@@ -17,14 +17,14 @@ import pandas as pandas
 import ast
 import datetime
 from bcj_ai import BCJAIapi as ai, BCJStatus 
-from helper import Validator
-from schema import Schema, And, Use, Optional, SchemaError
+from schema import Schema, And, Use, Optional, SchemaError,Or
 import dateutil.parser
+from helper import Helper,Message
 
 app = Flask(__name__, instance_relative_config=True)
 api = Api(app)
 app.config.from_object('config')
-validator = Validator()
+helper = Helper()
 ai = ai()
 class Bug(Resource):
     def get(self):
@@ -56,19 +56,32 @@ class Bug(Resource):
     def post(self):
         req = request.json
         try:
-            if req['structured_info']['id'].isnumeric() and validator.validate_datestring(req['structured_info']['creationDate'][0:10]):
-                result = ai.add_bug(summary=req['summary'],description=req['description'],structured_info=req['structured_info']['creationDate'])
-                if result == BCJStatus.ERROR:
-                    return {'message': 'Insertion failed'},result
-                return  'insertion successful', result 
+            helper.validate_data(req)
+            if len(req['summary']) > 0 or len(req['description'])>0:
+                return {'message': Message.SUCCESS.value}, ai.add_bug(
+                   summary=req['summary'],
+                   description=req['description'],
+                   structured_info=req['structured_info']
+               ).value
             else:
-                return 'id(int) or date(datetime) missing or not in proper format',400
+                return {'message': Message.UNFILLED_REQ.value},400
         except:
-            return 'Data not in proper format, requires summary, descripion and structured_info with id and creationDate(YYY-MM-DD). Summary or description may be empty strings',400
+            return {'message': Message.FAILURE.value},400
     
     def patch(self):
         req = request.json
+        try:
+            helper.validate_data(req)
+            return {'message': Message.SUCCESS.value}, ai.update_bug(
+                idx=req['structured_info']['id'],
+                summary=req['summary'],
+                description = req['description'],
+                structured_info = req['structured_info']
+                ).value
+        except:
+            return {'message': Message.FAILURE.value}, 400
         
+
     
     def delete(self):
         #Authenticate request..
