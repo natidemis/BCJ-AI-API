@@ -30,22 +30,28 @@ ai = ai()
 class Bug(Resource):
     def get(self):
         req = request.json #Retrieve JSON from GET request
-        schema = Schema({
+        schema = Schema({ #The schematic the JSON request must follow
             'summary': str,
             'description': str,
-            'k': And(int, lambda n: n>0)})
+            Optional('k'): And(int, lambda n: n>0),
+            Optional('structured_info'): dict})
         try:
             schema.validate(req)
-        except(SchemaError):
-            raise SchemaError('JSON must contain the keys summary, description, and k with values str, str, and int greater than 0, respectively')
-        except(TypeError):
-            return 'bl'
+        except(SchemaError, TypeError):
+            return {"message": 'JSON must at least contain the keys summary and description, both with values of type str'}, 400 
         summary = req['summary']
         description = req['description']
         if summary == "" and description == "": raise Exception('Summary and description cannot both be empty')
-        k = req['k']
-        bugs = ai.get_similar_bugs_k(summary, description, k=k)
-        return bugs[1],bugs[0].value
+        try:
+            k = req['k']
+        except:
+            k = 5
+        try:
+            structured_info = req['structured_info']
+        except:
+            structured_info = None
+        bugs = ai.get_similar_bugs_k(summary, description, k=k, structured_info=structured_info)
+        return {"data": bugs[1]}, bugs[0].value
     
     def post(self):
         req = request.json
