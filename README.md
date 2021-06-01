@@ -5,7 +5,7 @@ Artificial Intelligence API for usability problems.
 * `/bug`
   * `GET` query the **k** most similar bugs
   * `POST` insert a bug 
-    * data format: `{
+    * summary, description must be string values, id must be a number or a number in string format, creationDate must be a string in the following format: YYY-MM-DD: `{
    "summary": "summary",
    "description": "description,
    "structured_info": {id, creationDate}
