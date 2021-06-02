@@ -91,3 +91,6 @@ class BCJAIapi:
     
     def get_batch_by_id(self, idx):
         return BCJStatus.OK, idx
+    
+    def remove_batch(self, idx):
+        return BCJStatus.OK
