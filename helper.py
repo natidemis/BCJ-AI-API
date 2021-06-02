@@ -6,9 +6,9 @@ from schema import Schema, And, Use, Optional, SchemaError,Or
 from enum import Enum
 
 class Message(Enum):
-    SUCCESS="Valid input, check status for result"
+    VALID_INPUT="Valid input, check status for result"
     FAILURE: 'Data not in proper format, read the requirements here: -----'
-    UNFILLED_REQ: 'Either summary or description must have length > 0'
+    UNFULFILLED_REQ: 'Either summary or description must have length > 0'
     
 class Helper:
 
