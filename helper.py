@@ -4,7 +4,7 @@ Helper classes for the app
 from datetime import datetime
 from schema import Schema, And, Use, Optional, SchemaError,Or
 from enum import Enum
-
+from config import SECRET_TOKEN
 class Message(Enum):
     VALID_INPUT="Valid input, check status for result"
     FAILURE: 'Data not in proper format, read the requirements here: -----'
@@ -40,3 +40,5 @@ class Helper:
             self.validate_datestring(data['structured_info']['date'])
         except:
             raise ValueError
+    def auth_token(self,token):
+        return token == SECRET_TOKEN

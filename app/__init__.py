@@ -21,15 +21,25 @@ import dateutil.parser
 from helper import Helper,Message
 import json
 
+
 app = Flask(__name__, instance_relative_config=True)
 api = Api(app)
 app.config.from_object('config')
 helper = Helper()
 ai = ai()
+
+
+
 class Bug(Resource):
     def get(self):
-        #Authenticate request..
+        
         req = request.json #Retrieve JSON from GET request
+        try:
+            if not helper.auth_token(req['token']):
+                return make_response(jsonify({'message': 'Unauthorized, wrong token'}),401)
+        except:
+            return make_response(jsonify({'message': 'token missing.'}),400)
+                
         schema = Schema({ #The schematic the JSON request must follow
             'summary': str,
             'description': str,
