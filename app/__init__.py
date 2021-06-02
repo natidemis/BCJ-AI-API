@@ -58,28 +58,28 @@ class Bug(Resource):
         try:
             helper.validate_data(req)
             if len(req['summary']) > 0 or len(req['description'])>0:
-                return {'message': Message.SUCCESS.value}, ai.add_bug(
+                return make_response(jsonify(data={'message': Message.VALID_INPUT.value}), ai.add_bug(
                    summary=req['summary'],
                    description=req['description'],
                    structured_info=req['structured_info']
-               ).value
+               ).value)
             else:
-                return {'message': Message.UNFILLED_REQ.value},400
+                return make_response(jsonify(data={'message': Message.UNFULFILLED_REQ.value}),400)
         except:
-            return {'message': Message.FAILURE.value},400
+            return make_response(jsonify(data={'message': Message.FAILURE.value}),400)
     
     def patch(self):
         req = request.json
         try:
             helper.validate_data(req)
-            return {'message': Message.SUCCESS.value}, ai.update_bug(
+            return {'message': Message.VALID_INPUT.value}, ai.update_bug(
                 idx=req['structured_info']['id'],
                 summary=req['summary'],
                 description = req['description'],
                 structured_info = req['structured_info']
                 ).value
         except:
-            return {'message': Message.FAILURE.value}, 400
+            return make_response(jsonify(data={'message': Message.FAILURE.value}), 400)
         
 
     
