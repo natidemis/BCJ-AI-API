@@ -15,77 +15,135 @@ from flask import Flask, request, jsonify, make_response
 from flask_restful import Resource, Api, reqparse
 import pandas as pandas
 import ast
-import datetime
-from bcj_ai import BCJAIapi as ai
-from helper import Validator
-from schema import Schema, And, Use, Optional, SchemaError
-
+from bcj_ai import BCJAIapi as ai, BCJStatus 
+from schema import Schema, And, Use, Optional, SchemaError,Or
+import dateutil.parser
+from helper import Helper,Message
+import json
 app = Flask(__name__, instance_relative_config=True)
 api = Api(app)
 app.config.from_object('config')
-
+helper = Helper()
 ai = ai()
 class Bug(Resource):
     def get(self):
+        #Authenticate request..
         req = request.json #Retrieve JSON from GET request
-        schema = Schema({
+        schema = Schema({ #The schematic the JSON request must follow
             'summary': str,
             'description': str,
-            'k': And(int, lambda n: n>0)})
+            Optional('k'): And(int, lambda n: n>0),
+            'structured_info': dict})
         try:
             schema.validate(req)
-        except(SchemaError):
-            raise SchemaError('JSON must contain the keys summary, description, and k with values str, str, and int greater than 0, respectively')
-        except(TypeError):
-            return 'bl'
+        except(SchemaError, TypeError):
+            return {"message": 'JSON must at least contain the keys summary, description, and structured info of types str, str, and dict respectfully'}, 400 
         summary = req['summary']
         description = req['description']
-        if summary == "" and description == "": raise Exception('Summary and description cannot both be empty')
-        k = req['k']
-        bugs = ai.get_similar_bugs_k(summary, description, k=k)
-        print(type(bugs[1]))
+        if summary == "" and description == "": return {'message': 'Summary and description cannot both be empty'}, 400
+        try:
+            k = req['k']
+        except:
+            k = 5
+        try:
+            structured_info = req['structured_info']
+        except:
+            structured_info = None
+        bugs = ai.get_similar_bugs_k(summary, description, k=k, structured_info=structured_info)
         return make_response(jsonify(data=bugs[1]),bugs[0].value)
     
     def post(self):
         req = request.json
         try:
-            if 'id' in req['structured_info'] and 'creationDate' in req['structured_info']:
-                try:
-                    if req['structured_info']['id'].isnumeric():
-                        date = req['structured_info']['creationDate']
-                        date = date[0:date.find('T')]
-                        Validator.validate_datestring(date)
-                        print(date)
-                        structured_info = {
-                            'id': req['structured_info']['id'],
-                            'creationDate': date
-                        }
-                        return {'message': ''}, ai.add_bug(summary=req['summary'],description=req['description'],structured_info=structured_info)
-                except:
-                    return {'message': 'id or creationDate not in correct format'},400
+            helper.validate_data(req)
+            if len(req['summary']) > 0 or len(req['description'])>0:
+                return {'message': Message.SUCCESS.value}, ai.add_bug(
+                   summary=req['summary'],
+                   description=req['description'],
+                   structured_info=req['structured_info']
+               ).value
             else:
-                return {'message': 'structured info requires both id and creation date'},400
+                return {'message': Message.UNFILLED_REQ.value},400
         except:
-            return {'message': 'Data not in proper format'}, 400
+            return {'message': Message.FAILURE.value},400
     
     def patch(self):
         req = request.json
+        try:
+            helper.validate_data(req)
+            return {'message': Message.SUCCESS.value}, ai.update_bug(
+                idx=req['structured_info']['id'],
+                summary=req['summary'],
+                description = req['description'],
+                structured_info = req['structured_info']
+                ).value
+        except:
+            return {'message': Message.FAILURE.value}, 400
         
+
     
     def delete(self):
-        pass
+        #Authenticate request..
+        req = request.json
+        schema = Schema({
+            'id': int
+        })
+        try:
+            schema.validate(req)
+        except:
+            return {'message': 'JSON can only contain id'}
+        result = ai.remove_bug(req['id'])
+        if result == BCJStatus.OK:
+            return {'message': 'Successfully removed'}, result.value
+        return {'message': 'Invalid id'}, result.value
 
+        
 
-class BugBatch(Resource):
+class Batch(Resource):
     def get(self): #Ef maður vill sækja batch sem maður senti inn?
-        pass
+        #Authenticate request..
+        req = request.json
+        schema = Schema({
+            "batch_id": int
+        })
+        try:
+            schema.validate(req)
+        except(SchemaError, TypeError):
+            return {'message': "JSON must only contain batch_id"}, 400
+        batch = ai.get_batch_by_id(req['batch_id'])
+        return make_response(jsonify(data=batch[1]), batch[0].value)
     
     def post(self):
+        #Authenticate request..
+        #data = request.json
+        #for req in data:
+        #    try:
+        #        helper.validate_data(req)
+        #        if len(req['summary']) > 0 or len(req['description'])>0:
+        #            return {'message': Message.SUCCESS.value}, 
+        #        else:
+        #            return {'message': Message.UNFILLED_REQ.value},400
+        #    except:
+        #        return {'message': Message.FAILURE.value},400
+        #
         pass
-    
+
     def delete(self):
-        pass
+        #Authenticate request..
+        req = request.json
+        schema = Schema({
+            "batch_id": int
+        })
+        try:
+            schema.validate(req)
+        except(SchemaError, TypeError):
+            return {'message': "JSON must only contain batch_id"}, 400
+        result = ai.remove_batch(req['batch_id'])
+        if result == BCJStatus.OK:
+            return {'message': 'Successfully removed'}, result.value
+        return {'message': 'Invalid id'}, result.value
+        
 
 
 api.add_resource(Bug,'/bug')
-api.add_resource(BugBatch, '/bug-batch')
+api.add_resource(Batch, '/batch')

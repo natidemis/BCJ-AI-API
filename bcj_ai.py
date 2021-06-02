@@ -88,3 +88,6 @@ class BCJAIapi:
         if not(bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.ERROR
         return BCJStatus.OK
+    
+    def get_batch_by_id(self, idx):
+        return BCJStatus.OK, idx

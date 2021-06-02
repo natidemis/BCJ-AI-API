@@ -1,15 +1,42 @@
 """
 Helper classes for the app
 """
-import datetime
-class Validator:
+from datetime import datetime
+from schema import Schema, And, Use, Optional, SchemaError,Or
+from enum import Enum
+
+class Message(Enum):
+    SUCCESS="Valid input, check status for result"
+    FAILURE: 'Data not in proper format, read the requirements here: -----'
+    UNFILLED_REQ: 'Either summary or description must have length > 0'
+    
+class Helper:
 
     def __init__(self):
         """
         A class containing validation functions for the app
         """
-        def validate_datestring(self, stringdate):
-            try:
-                datetime.datetime.strptime(stringdate, '%Y-%m-%d')
-            except ValueError:
-                raise ValueError("Incorrect date")
+    def validate_datestring(self, stringdate):
+        try:
+            datetime.strptime(stringdate, '%Y-%m-%d')
+        except:
+            raise ValueError
+    def validate_data(self,data):
+        schema = Schema({
+                "summary": str,
+                "description": str,
+                "structured_info": dict
+            })
+        info_schema = Schema({
+            "id": int,
+            "issue type": Or('Bug','Epic'),
+            "bucket": str,
+            "date": str,
+            Optional("reporter"): str,
+        })
+        try:
+            schema.validate(data)
+            info_schema.validate(data['structured_info'])
+            self.validate_datestring(data['structured_info']['date'])
+        except:
+            raise ValueError
