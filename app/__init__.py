@@ -20,6 +20,7 @@ from schema import Schema, And, Use, Optional, SchemaError,Or
 import dateutil.parser
 from helper import Helper,Message
 import json
+import bleach
 
 app = Flask(__name__, instance_relative_config=True)
 api = Api(app)
@@ -39,8 +40,8 @@ class Bug(Resource):
             schema.validate(req)
         except(SchemaError, TypeError):
             return {"message": 'JSON must at least contain the keys summary, description, and structured info of types str, str, and dict respectfully'}, 400 
-        summary = req['summary']
-        description = req['description']
+        summary = bleach.clean(req['summary'])
+        description = bleach.clean(req['description'])
         if summary == "" and description == "": return {'message': 'Summary and description cannot both be empty'}, 400
         try:
             k = req['k']
@@ -50,8 +51,11 @@ class Bug(Resource):
             structured_info = req['structured_info']
         except:
             structured_info = None
-        bugs = ai.get_similar_bugs_k(summary, description, k=k, structured_info=structured_info)
-        return make_response(jsonify(data=bugs[1]),bugs[0].value)
+        bugs = ai.get_similar_bugs_k(summary,
+                                     description,
+                                     k=k,
+                                     structured_info=structured_info)
+        return make_response(jsonify(data=description),bugs[0].value)
     
     def post(self):
         req = request.json
