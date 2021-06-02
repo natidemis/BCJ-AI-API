@@ -1,1 +1,0 @@
-DEBUG=True #Bara meðan við erum að smíða verkefnið
