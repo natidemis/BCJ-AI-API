@@ -33,24 +33,16 @@ ai = ai()
 
 class Bug(Resource):
     def get(self):
-        
         req = request.json #Retrieve JSON from GET request
         try:
+            helper.validate_data(req)
+        except(SchemaError, ValueError):
+            return {"message": 'JSON must at least contain the keys summary, description, and structured info of types str, str, and dict respectfully'}, 400 
+        try:
             if not helper.auth_token(req['token']):
-                return make_response(jsonify({'message': 'Unauthorized, wrong token'}),401)
+                return make_response(jsonify({'message': Message.UNAUTHORIZED.value}),401)
         except:
             return make_response(jsonify({'message': 'token missing.'}),400)
-                
-        schema = Schema({ #The schematic the JSON request must follow
-            'token': str,
-            'summary': str,
-            'description': str,
-            Optional('k'): And(int, lambda n: n>0),
-            'structured_info': dict})
-        try:
-            schema.validate(req)
-        except(SchemaError, TypeError):
-            return {"message": 'JSON must at least contain the keys summary, description, and structured info of types str, str, and dict respectfully'}, 400 
         summary = bleach.clean(req['summary'])
         description = bleach.clean(req['description'])
         if summary == "" and description == "": return {'message': 'Summary and description cannot both be empty'}, 400
