@@ -21,14 +21,26 @@ helper = Helper()
 ai = ai()    
 
 class Bug(Resource):
+    """
+    Web service class for working with one bug
+    """
+    
     def get(self):
+        """
+        GET class that fetches the k bugs that are most similar to the one bug.
+        
+        Returns
+        -------
+        ID's of the k most similar bugs if everything went well, else an error message
+        Status code
+        """
         req = request.json #Retrieve JSON
         try:
-            helper.validate_data(req)
+            helper.validate_data(req) #Validate the JSON
         except(SchemaError, ValueError):
-            return make_response(jsonify({"message": Message.FAILURE.value}), 400) 
+            return make_response(jsonify({"message": Message.FAILURE.value}), 400) #Failure message if JSON is invalid
         if not helper.auth_token(req['token']):
-            return make_response(jsonify({'message': Message.UNAUTHORIZED.value}),401)
+            return make_response(jsonify({'message': Message.UNAUTHORIZED.value}),401) #Message if wrong token
         summary = bleach.clean(req['summary'])
         description = bleach.clean(req['description'])
         if summary == "" and description == "":
@@ -37,8 +49,8 @@ class Bug(Resource):
         structured_info = req['structured_info']
         bugs = ai.get_similar_bugs_k(summary,
                                      description,
-                                     k=k,
-                                     structured_info=structured_info)
+                                     k,
+                                     structured_info)
         return make_response(jsonify(data=bugs[1]),bugs[0].value)
     
     def post(self):
@@ -84,6 +96,10 @@ class Bug(Resource):
         return make_response(jsonify({'message': Message.INVALID.value}), result.value)
 
 class Batch(Resource):
+    """
+    Web service class for working with a batch of bugs
+    """
+    
     def get(self):
         req = request.json
         try:
