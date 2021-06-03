@@ -1,10 +1,21 @@
 """
+@author natidemis
+June 2021
+
 Helper classes for the app
+"""
+
+"""
+TODO
+
+Bæta við hlekk í FAILURE skilaboðin
 """
 from datetime import datetime
 from schema import Schema, And, Use, Optional, SchemaError,Or
 from enum import Enum
 from config import SECRET_TOKEN
+from flask import jsonify, make_response
+
 class Message(Enum):
     VALID_INPUT="Valid input, check status for result"
     FAILURE: 'Data not in proper format, read the requirements here: -----'
@@ -17,11 +28,13 @@ class Helper:
         """
         A class containing validation functions for the app
         """
+        
     def validate_datestring(self, stringdate):
         try:
             datetime.strptime(stringdate, '%Y-%m-%d')
         except:
             raise ValueError
+            
     def validate_data(self,data):
         schema = Schema({
                 "token": str,
@@ -40,7 +53,8 @@ class Helper:
             schema.validate(data)
             info_schema.validate(data['structured_info'])
             self.validate_datestring(data['structured_info']['date'])
-        except:
+        except(ValueError):
             raise ValueError
+            
     def auth_token(self,token):
         return token == SECRET_TOKEN
