@@ -27,7 +27,7 @@ class Bug(Resource):
         req = request.json #Retrieve JSON
         try:
             helper.validate_data(req)
-        except(SchemaError, ValueError):
+        except(ValueError):
             return {"message": Message.FAILURE.value}, 400 
         if not helper.auth_token(req['token']):
             return make_response(jsonify({'message': Message.UNAUTHORIZED.value}),401)
@@ -47,7 +47,7 @@ class Bug(Resource):
         req = request.json
         try:
             helper.validate_data(req)
-        except:
+        except(ValueError):
             return make_response(jsonify(data={'message': Message.FAILURE.value}),400)
         if not helper.auth_token(req['token']):
             return make_response(jsonify({'message': Message.UNAUTHORIZED.value}),401)
@@ -62,62 +62,53 @@ class Bug(Resource):
         req = request.json
         try:
             helper.validate_data(req)
-        except:
+        except(ValueError):
             return make_response(jsonify(data={'message': Message.FAILURE.value}), 400)
         if not helper.auth_token(req['token']):
             return make_response(jsonify({'message': Message.UNAUTHORIZED.value}),401)
-        return {'message': Message.VALID_INPUT.value}, ai.update_bug(
+        return make_response(jsonify({'message': Message.VALID_INPUT.value}), ai.update_bug(
             idx=req['structured_info']['id'],
             summary=bleach.clean(req['summary']),
             description = bleach.clean(req['description']),
-            structured_info = req['structured_info']).value        
+            structured_info = req['structured_info']).value)      
         
     def delete(self):
         req = request.json
-        schema = Schema({
-            'id': int
-        })
         try:
-            schema.validate(req)
-        except:
-            return {'message': 'JSON must only contain id'}
+            helper.validate_id(req)
+        except(ValueError):
+            return make_response(jsonify({'message': message.Failure.value}), 400)
         if not helper.auth_token(req['token']):
             return make_response(jsonify({'message': Message.UNAUTHORIZED.value}),401)
         result = ai.remove_bug(req['id'])
         if result == BCJStatus.OK:
-            return {'message': 'Successfully removed'}, result.value
-        return {'message': 'Invalid id'}, result.value
+            return make_response(jsonify({'message': 'Successfully removed'}), result.value)
+        return make_response(jsonify({'message': 'Invalid id'}), result.value)
 
 class Batch(Resource):
     def get(self):
         req = request.json
-        schema = Schema({
-            "batch_id": int
-        })
         try:
-            schema.validate(req)
-        except(SchemaError, TypeError):
-            return {'message': Message.FAILURE.value}, 400
+            helper.validate_id(req)
+        except(ValueError):
+            return make_response(jsonify(data={'message': Message.FAILURE.value}),400)
         if not helper.auth_token(req['token']):
             return make_response(jsonify({'message': Message.UNAUTHORIZED.value}),401)
-        batch = ai.get_batch_by_id(req['batch_id'])
+        batch = ai.get_batch_by_id(req['id'])
         return make_response(jsonify(data=batch[1]), batch[0].value)
 
     def delete(self):
         req = request.json
-        schema = Schema({
-            "batch_id": int
-        })
         try:
-            schema.validate(req)
-        except(SchemaError, TypeError):
-            return {'message': Message.FAILURE.value}, 400
+            helper.validate_id(req)
+        except(ValueError):
+            return make_response(jsonify(data={'message': Message.FAILURE.value}),400)
         if not helper.auth_token(req['token']):
             return make_response(jsonify({'message': Message.UNAUTHORIZED.value}),401)
-        result = ai.remove_batch(req['batch_id'])
+        result = ai.remove_batch(req['id'])
         if result == BCJStatus.OK:
-            return {'message': 'Successfully removed'}, result.value
-        return {'message': 'Invalid id'}, result.value
+            return make_response(jsonify({'message': 'Successfully removed'}), result.value)
+        return make_response(jsonify({'message': 'Invalid id'}), result.value)
         
 api.add_resource(Bug,'/bug')
 api.add_resource(Batch, '/batch')
