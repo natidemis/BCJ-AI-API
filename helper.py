@@ -17,10 +17,10 @@ from config import SECRET_TOKEN
 from flask import jsonify, make_response
 
 class Message(Enum):
-    VALID_INPUT="Valid input, check status for result"
-    FAILURE: 'Data not in proper format, read the requirements here: -----'
-    UNFULFILLED_REQ: 'Either summary or description must have length > 0'
-    UNAUTHORIZED: 'Unauthorized, wrong token'
+    VALID_INPUT = 'Valid input, check status for result'
+    FAILURE = 'Data not in proper format, read the requirements here: -----'
+    UNFULFILLED_REQ = 'Either summary or description must have length > 0'
+    UNAUTHORIZED = 'Unauthorized, wrong token'
     
 class Helper:
 
@@ -44,7 +44,7 @@ class Helper:
                 Optional("k"): And(int, lambda n: n>0)
             })
         info_schema = Schema({
-            "id": int,
+            "id": Or(str, int),
             "bucket": str,
             "date": str,
             Optional("reporter"): str
@@ -59,7 +59,7 @@ class Helper:
     def validate_id(self, data):
         schema = Schema({
             "token": str,
-            "id": Or(str, int) #Bug id's are strings while batch id's are integers
+            "id": int #Bug id's are strings while batch id's are integers
         })
         try:
             schema.validate(data)

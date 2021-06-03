@@ -12,7 +12,7 @@ import ast
 from bcj_ai import BCJAIapi as ai, BCJStatus 
 from schema import Schema, And, Use, Optional, SchemaError,Or
 import dateutil.parser
-from helper import Helper,Message
+from helper import Helper, Message
 import json
 import bleach
 
@@ -27,14 +27,14 @@ class Bug(Resource):
         req = request.json #Retrieve JSON
         try:
             helper.validate_data(req)
-        except(ValueError):
-            return {"message": Message.FAILURE.value}, 400 
+        except(SchemaError, AttributeError, ValueError):
+            return make_response(jsonify({"message": Message.FAILURE.value}), 400) 
         if not helper.auth_token(req['token']):
             return make_response(jsonify({'message': Message.UNAUTHORIZED.value}),401)
         summary = bleach.clean(req['summary'])
         description = bleach.clean(req['description'])
         if summary == "" and description == "":
-            return {'message': 'Summary and description cannot both be empty'}, 400
+            return make_response(jsonify({'message': 'Summary and description cannot both be empty'}), 400)
         k= req['k'] if 'k' in req else 5
         structured_info = req['structured_info']
         bugs = ai.get_similar_bugs_k(summary,
@@ -48,7 +48,7 @@ class Bug(Resource):
         try:
             helper.validate_data(req)
         except(ValueError):
-            return make_response(jsonify(data={'message': Message.FAILURE.value}),400)
+            return make_response(jsonify({'message': Message.FAILURE.value}),400)
         if not helper.auth_token(req['token']):
             return make_response(jsonify({'message': Message.UNAUTHORIZED.value}),401)
         if len(req['summary']) > 0 or len(req['description'])>0:
@@ -91,7 +91,7 @@ class Batch(Resource):
         try:
             helper.validate_id(req)
         except(ValueError):
-            return make_response(jsonify(data={'message': Message.FAILURE.value}),400)
+            return make_response(jsonify({'message': Message.FAILURE.value}),400)
         if not helper.auth_token(req['token']):
             return make_response(jsonify({'message': Message.UNAUTHORIZED.value}),401)
         batch = ai.get_batch_by_id(req['id'])
@@ -102,7 +102,7 @@ class Batch(Resource):
         try:
             helper.validate_id(req)
         except(ValueError):
-            return make_response(jsonify(data={'message': Message.FAILURE.value}),400)
+            return {'message': Message.FAILURE.value},400
         if not helper.auth_token(req['token']):
             return make_response(jsonify({'message': Message.UNAUTHORIZED.value}),401)
         result = ai.remove_batch(req['id'])
