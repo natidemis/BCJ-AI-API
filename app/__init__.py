@@ -1,5 +1,5 @@
 """
-@authors: Marcelo Audibert, Natanel Demissew
+@authors: Gitcelo, natidemis
 May 2021
 
 API for AI web service
@@ -42,6 +42,7 @@ class Bug(Resource):
             return make_response(jsonify({'message': 'token missing.'}),400)
                 
         schema = Schema({ #The schematic the JSON request must follow
+            'token': str,
             'summary': str,
             'description': str,
             Optional('k'): And(int, lambda n: n>0),
@@ -65,7 +66,7 @@ class Bug(Resource):
                                      description,
                                      k=k,
                                      structured_info=structured_info)
-        return make_response(jsonify(data=description),bugs[0].value)
+        return make_response(jsonify(data=bugs[1]),bugs[0].value)
     
     def post(self):
         req = request.json
@@ -73,8 +74,8 @@ class Bug(Resource):
             helper.validate_data(req)
             if len(req['summary']) > 0 or len(req['description'])>0:
                 return make_response(jsonify(data={'message': Message.VALID_INPUT.value}), ai.add_bug(
-                   summary=req['summary'],
-                   description=req['description'],
+                   summary=bleach.clean(req['summary']),
+                   description=bleach.clean(req['description']),
                    structured_info=req['structured_info']
                ).value)
             else:
@@ -88,8 +89,8 @@ class Bug(Resource):
             helper.validate_data(req)
             return {'message': Message.VALID_INPUT.value}, ai.update_bug(
                 idx=req['structured_info']['id'],
-                summary=req['summary'],
-                description = req['description'],
+                summary=bleach.clean(req['summary']),
+                description = bleach.clean(req['description']),
                 structured_info = req['structured_info']
                 ).value
         except:
@@ -106,7 +107,7 @@ class Bug(Resource):
         try:
             schema.validate(req)
         except:
-            return {'message': 'JSON can only contain id'}
+            return {'message': 'JSON must only contain id'}
         result = ai.remove_bug(req['id'])
         if result == BCJStatus.OK:
             return {'message': 'Successfully removed'}, result.value
