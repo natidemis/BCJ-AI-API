@@ -9,6 +9,7 @@ class Message(Enum):
     VALID_INPUT="Valid input, check status for result"
     FAILURE: 'Data not in proper format, read the requirements here: -----'
     UNFULFILLED_REQ: 'Either summary or description must have length > 0'
+    UNAUTHORIZED: 'Unauthorized, wrong token'
     
 class Helper:
 
@@ -23,16 +24,17 @@ class Helper:
             raise ValueError
     def validate_data(self,data):
         schema = Schema({
+                "token": str,
                 "summary": str,
                 "description": str,
-                "structured_info": dict
+                "structured_info": dict,
+                Optional("k"): And(int, lambda n: n>0)
             })
         info_schema = Schema({
             "id": int,
-            "issue type": Or('Bug','Epic'),
             "bucket": str,
             "date": str,
-            Optional("reporter"): str,
+            Optional("reporter"): str
         })
         try:
             schema.validate(data)
