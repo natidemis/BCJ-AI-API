@@ -55,6 +55,16 @@ class Helper:
             self.validate_datestring(data['structured_info']['date'])
         except(ValueError):
             raise ValueError
-            
+         
+    def validate_id(self, data):
+        schema = Schema({
+            "token": str,
+            "id": Or(str, int) #Bug id's are strings while batch id's are integers
+        })
+        try:
+            schema.validate(data)
+        except:
+            raise ValueError
+    
     def auth_token(self,token):
         return token == SECRET_TOKEN
