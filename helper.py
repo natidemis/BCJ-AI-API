@@ -21,6 +21,8 @@ class Message(Enum):
     FAILURE = 'Data not in proper format, read the requirements here: -----'
     UNFULFILLED_REQ = 'Either summary or description must have length > 0'
     UNAUTHORIZED = 'Unauthorized, wrong token'
+    REMOVED = 'Successfully removed'
+    INVALID = 'Invalid ID'
     
 class Helper:
 
