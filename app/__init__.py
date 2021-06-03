@@ -7,10 +7,8 @@ API for AI web service
 
 from flask import Flask, request, jsonify, make_response
 from flask_restful import Resource, Api, reqparse
-import pandas as pandas
-import ast
 from bcj_ai import BCJAIapi as ai, BCJStatus 
-from schema import Schema, And, Use, Optional, SchemaError,Or
+from schema import Schema, And, Or, Use, Optional, SchemaError
 import dateutil.parser
 from helper import Helper, Message
 import json
