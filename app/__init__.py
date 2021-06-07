@@ -22,16 +22,16 @@ ai = ai()
 
 class Bug(Resource):
     """
-    Web service class for working with one bug
+    Web service class for working with a usability problem(UP)
     """
     
     def get(self):
         """
-        GET class that fetches the k bugs that are most similar to the one bug.
+        GET method that fetches the k UPs that are most similar to the UP
         
         Returns
         -------
-        ID's of the k most similar bugs if everything went well, else an error message
+        ID's of the k most similar UPs if everything went well, else an error message
         Status code
         """
         req = request.json #Retrieve JSON
@@ -54,6 +54,14 @@ class Bug(Resource):
         return make_response(jsonify(data=bugs[1]),bugs[0].value)
     
     def post(self):
+        """
+        Method for handling POST request on '/bug' used for inserting a UP to the AI and its database.
+        
+        Returns
+        -------
+        A message with a brief description explaining the result for the request and status code.
+        """
+
         req = request.json
         try:
             helper.validate_data(req)
@@ -69,6 +77,14 @@ class Bug(Resource):
         return make_response(jsonify(data={'message': Message.UNFULFILLED_REQ.value}),400)
     
     def patch(self):
+        """
+        PATCH method for http request on '/bug' for updating an existing UP in the AI.
+
+        Returns
+        -------
+        A message with a brief description explaining the result for the request and status code.
+        """
+
         req = request.json
         try:
             helper.validate_data(req)
@@ -83,6 +99,13 @@ class Bug(Resource):
             structured_info = req['structured_info']).value)      
         
     def delete(self):
+        """
+        Method for handling a delete request on /bug for removing an existing UP in the AI.
+
+        Returns
+        -------
+        A message with a brief description of the result for the request and status code.
+        """
         req = request.json
         try:
             helper.validate_id(req)
@@ -101,6 +124,13 @@ class Batch(Resource):
     """
     
     def get(self):
+        """
+        Method for handling a get http request on /batch for fetching a batch of UPs.
+
+        Returns
+        -------
+        Batch of Ups if the batch exists in the database, otherwise a message and status code
+        """
         req = request.json
         try:
             helper.validate_id(req)
@@ -112,6 +142,13 @@ class Batch(Resource):
         return make_response(jsonify(data=batch[1]), batch[0].value)
 
     def delete(self):
+        """
+        Method for handling delete request on /batch, used for deleting a batch of UPs
+
+        Returns
+        -------
+        Message with a brief explanation and status code
+        """
         req = request.json
         try:
             helper.validate_id(req)
