@@ -117,7 +117,7 @@ class Bug(Resource):
         try:
             validator.validate_id(req)
         except(SchemaError, ValueError):
-            return make_response(jsonify({'message': Message.Failure.value}), 400)
+            return make_response(jsonify({'message': Message.FAILURE.value}), 400)
         
         result = ai.remove_bug(req['id'])
         if result == BCJStatus.OK:
