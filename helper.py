@@ -32,13 +32,20 @@ class Helper:
         A class containing validation functions for the app
         """
         
-    def validate_datestring(self, stringdate):
+    def validate_datestring(self, stringdate) -> None:
         try:
             datetime.strptime(stringdate, '%Y-%m-%d')
         except:
             raise ValueError
             
-    def validate_data(self,data):
+    def validate_data(self,data: dict):
+        """
+        Validate that data is in the enforced format.
+
+        Returns
+        -------
+        None, raises ValueError if data invalid
+        """
         schema = Schema({
                 "summary": str,
                 "description": str,
@@ -58,9 +65,15 @@ class Helper:
         except(ValueError):
             raise ValueError
          
-    def validate_id(self, data):
+    def validate_id(self, data: dict) -> None:
+        """
+        Validate that data is in the enforced format.
+
+        Returns
+        -------
+        None, raises ValueError if data invalid
+        """
         schema = Schema({
-            "token": str,
             "id": int #Bug id's are strings while batch id's are integers
         })
         try:
