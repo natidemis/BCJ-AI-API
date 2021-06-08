@@ -12,14 +12,14 @@ from bcj_ai import BCJAIapi as ai, BCJStatus
 from schema import Schema, And, Or, Use, Optional, SchemaError
 from config import SECRET_TOKEN
 import dateutil.parser
-from helper import Helper, Message
+from helper import Validator, Message
 import json
 import bleach
 
 app = Flask(__name__, instance_relative_config=True)
 api = Api(app)
 app.config.from_object('config')
-helper = Helper()
+validator = Validator()
 ai = ai()
 auth = HTTPTokenAuth(scheme="Bearer")
 
@@ -44,7 +44,7 @@ class Bug(Resource):
         """
         req = request.json #Retrieve JSON
         try:
-            helper.validate_data(req) #Validate the JSON
+            validator.validate_data(req) #Validate the JSON
         except(SchemaError, ValueError):
             return make_response(jsonify({"message": Message.FAILURE.value}), 400) #Failure message if JSON is invalid
         
@@ -72,7 +72,7 @@ class Bug(Resource):
 
         req = request.json
         try:
-            helper.validate_data(req)
+            validator.validate_data(req)
         except(SchemaError, ValueError):
             return make_response(jsonify({'message': Message.FAILURE.value}),400)
  
@@ -95,7 +95,7 @@ class Bug(Resource):
 
         req = request.json
         try:
-            helper.validate_data(req)
+            validator.validate_data(req)
         except(SchemaError, ValueError):
             return make_response(jsonify(data={'message': Message.FAILURE.value}), 400)
        
@@ -115,7 +115,7 @@ class Bug(Resource):
         """
         req = request.json
         try:
-            helper.validate_id(req)
+            validator.validate_id(req)
         except(SchemaError, ValueError):
             return make_response(jsonify({'message': Message.Failure.value}), 400)
         
@@ -139,7 +139,7 @@ class Batch(Resource):
         """
         req = request.json
         try:
-            helper.validate_id(req)
+            validator.validate_id(req)
         except(SchemaError, ValueError):
             return make_response(jsonify({'message': Message.FAILURE.value}),400)
         
@@ -156,7 +156,7 @@ class Batch(Resource):
         """
         req = request.json
         try:
-            helper.validate_id(req)
+            validator.validate_id(req)
         except(SchemaError, ValueError):
             return {'message': Message.FAILURE.value},400
        
