@@ -23,16 +23,16 @@ helper = Helper()
 ai = ai()
 auth = HTTPTokenAuth(scheme="Bearer")
 
-#@auth.verify_token
-#def verify_token(token):
-#    if token==SECRET_TOKEN:
-#        return token
+@auth.verify_token
+def verify_token(token):
+    if token==SECRET_TOKEN:
+        return token
     
 class Bug(Resource):
     """
     Web service class for working with a usability problem(UP)
     """
-    #@auth.login_required
+    @auth.login_required
     def get(self):
         """
         GET method that fetches the k UPs that are most similar to the UP
@@ -47,8 +47,7 @@ class Bug(Resource):
             helper.validate_data(req) #Validate the JSON
         except(SchemaError, ValueError):
             return make_response(jsonify({"message": Message.FAILURE.value}), 400) #Failure message if JSON is invalid
-        if not helper.auth_token(req['token']):
-            return make_response(jsonify({'message': Message.UNAUTHORIZED.value}),401) #Message if wrong token
+        
         summary = bleach.clean(req['summary'])
         description = bleach.clean(req['description'])
         if summary == "" and description == "":
@@ -61,6 +60,7 @@ class Bug(Resource):
                                      k)
         return make_response(jsonify(data=bugs[1]),bugs[0].value)
     
+    @auth.login_required
     def post(self):
         """
         Method for handling POST request on '/bug' used for inserting a UP to the AI and its database.
@@ -75,8 +75,7 @@ class Bug(Resource):
             helper.validate_data(req)
         except(SchemaError, ValueError):
             return make_response(jsonify({'message': Message.FAILURE.value}),400)
-        if not helper.auth_token(req['token']):
-            return make_response(jsonify({'message': Message.UNAUTHORIZED.value}),401)
+ 
         if len(req['summary']) > 0 or len(req['description'])>0:
             return make_response(jsonify(data={'message': Message.VALID_INPUT.value}), ai.add_bug(
                 summary=bleach.clean(req['summary']),
@@ -84,6 +83,7 @@ class Bug(Resource):
                 structured_info=req['structured_info']).value)
         return make_response(jsonify(data={'message': Message.UNFULFILLED_REQ.value}),400)
     
+    @auth.login_required
     def patch(self):
         """
         PATCH method for http request on '/bug' for updating an existing UP in the AI.
@@ -98,14 +98,13 @@ class Bug(Resource):
             helper.validate_data(req)
         except(SchemaError, ValueError):
             return make_response(jsonify(data={'message': Message.FAILURE.value}), 400)
-        if not helper.auth_token(req['token']):
-            return make_response(jsonify({'message': Message.UNAUTHORIZED.value}),401)
+       
         return make_response(jsonify({'message': Message.VALID_INPUT.value}), ai.update_bug(
             idx=req['structured_info']['id'],
             summary=bleach.clean(req['summary']),
             description = bleach.clean(req['description']),
             structured_info = req['structured_info']).value)      
-        
+    @auth.login_required
     def delete(self):
         """
         Method for handling a delete request on /bug for removing an existing UP in the AI.
@@ -119,8 +118,7 @@ class Bug(Resource):
             helper.validate_id(req)
         except(SchemaError, ValueError):
             return make_response(jsonify({'message': Message.Failure.value}), 400)
-        if not helper.auth_token(req['token']):
-            return make_response(jsonify({'message': Message.UNAUTHORIZED.value}),401)
+        
         result = ai.remove_bug(req['id'])
         if result == BCJStatus.OK:
             return make_response(jsonify({'message': Message.REMOVED.value}), result.value)
@@ -144,8 +142,7 @@ class Batch(Resource):
             helper.validate_id(req)
         except(SchemaError, ValueError):
             return make_response(jsonify({'message': Message.FAILURE.value}),400)
-        if not helper.auth_token(req['token']):
-            return make_response(jsonify({'message': Message.UNAUTHORIZED.value}),401)
+        
         batch = ai.get_batch_by_id(req['id'])
         return make_response(jsonify(data=batch[1]), batch[0].value)
 
@@ -162,8 +159,7 @@ class Batch(Resource):
             helper.validate_id(req)
         except(SchemaError, ValueError):
             return {'message': Message.FAILURE.value},400
-        if not helper.auth_token(req['token']):
-            return make_response(jsonify({'message': Message.UNAUTHORIZED.value}),401)
+       
         result = ai.remove_batch(req['id'])
         if result == BCJStatus.OK:
             return make_response(jsonify({'message': Message.REMOVED.value}), result.value)
