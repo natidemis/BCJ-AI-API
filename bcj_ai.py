@@ -8,6 +8,7 @@ API module for Bug Consolidation for Jira (BCJ) AI model
 
 import random
 from enum import IntEnum
+#import loss_functions as lf, tensorflow.keras as keras
 #from UPverkefni.word2vec import Word2Vec
 #from UPverkefni.testing import KDTreeUP as KDTree
 
@@ -31,7 +32,7 @@ class BCJAIapi:
         ai : BCJAIapi
             An instance of the api for querying the AI
         """
-
+        #vantar loss_functions module. m = keras.models.load_model('Models', custom_objects={'triplet_accuracy': lf.triplet_accuracy, 'dis_neg': lf.dis_neg, 'dis_pos': lf.dis_pos, 'triplet_moindrot_loss': lf.TripletMoindrotLoss})
     def get_similar_bugs_k(self, summary=None, description=None, structured_info=None, k=5):
         """
         Return the ID of the `k` most similar bugs based on given summary, desription, and
