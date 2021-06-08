@@ -7,8 +7,10 @@ API for AI web service
 
 from flask import Flask, request, jsonify, make_response
 from flask_restful import Resource, Api, reqparse
+from flask_httpauth import HTTPTokenAuth
 from bcj_ai import BCJAIapi as ai, BCJStatus 
 from schema import Schema, And, Or, Use, Optional, SchemaError
+from config import SECRET_TOKEN
 import dateutil.parser
 from helper import Helper, Message
 import json
@@ -18,13 +20,19 @@ app = Flask(__name__, instance_relative_config=True)
 api = Api(app)
 app.config.from_object('config')
 helper = Helper()
-ai = ai()    
+ai = ai()
+auth = HTTPTokenAuth(scheme="Bearer")
 
+#@auth.verify_token
+#def verify_token(token):
+#    if token==SECRET_TOKEN:
+#        return token
+    
 class Bug(Resource):
     """
     Web service class for working with a usability problem(UP)
     """
-    
+    #@auth.login_required
     def get(self):
         """
         GET method that fetches the k UPs that are most similar to the UP
