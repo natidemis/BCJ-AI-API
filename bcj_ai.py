@@ -8,7 +8,7 @@ API module for Bug Consolidation for Jira (BCJ) AI model
 
 import random
 from enum import IntEnum
-import loss_functions as lf, tensorflow.keras as keras
+#import loss_functions as lf, tensorflow.keras as keras
 #from UPverkefni.word2vec import Word2Vec
 #from UPverkefni.testing import KDTreeUP as KDTree
 
