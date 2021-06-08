@@ -49,8 +49,8 @@ class Bug(Resource):
         structured_info = req['structured_info']
         bugs = ai.get_similar_bugs_k(summary,
                                      description,
-                                     k,
-                                     structured_info)
+                                     structured_info,
+                                     k)
         return make_response(jsonify(data=bugs[1]),bugs[0].value)
     
     def post(self):
