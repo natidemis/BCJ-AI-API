@@ -40,7 +40,6 @@ class Helper:
             
     def validate_data(self,data):
         schema = Schema({
-                "token": str,
                 "summary": str,
                 "description": str,
                 "structured_info": dict,
@@ -69,6 +68,5 @@ class Helper:
         except:
             raise ValueError
     
-    def auth_token(self,token):
-        return token == SECRET_TOKEN
+
 
