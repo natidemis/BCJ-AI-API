@@ -33,7 +33,7 @@ class BCJAIapi:
             An instance of the api for querying the AI
         """
         #vantar loss_functions module. m = keras.models.load_model('Models', custom_objects={'triplet_accuracy': lf.triplet_accuracy, 'dis_neg': lf.dis_neg, 'dis_pos': lf.dis_pos, 'triplet_moindrot_loss': lf.TripletMoindrotLoss})
-    def get_similar_bugs_k(self, summary=None, description=None, structured_info=None, k=5):
+    def get_similar_bugs_k(self, summary: str=None, description: str=None, structured_info: str=None, k: int=5):
         """
         Return the ID of the `k` most similar bugs based on given summary, desription, and
         structured information.
@@ -51,7 +51,7 @@ class BCJAIapi:
             return BCJStatus.NOT_FOUND, 'At least one of the parameters summary, description, or structured_info must be filled'
         return BCJStatus.OK, bugs
 
-    def get_similar_bugs_threshold(self, summary=None, description=None, structured_info=None, threshold=0.5):
+    def get_similar_bugs_threshold(self, summary: str=None, description: str=None, structured_info: dict=None, threshold: str=0.5) -> BCJStatus or list:
         """
         Return the ID of bugs at least `threshold` similar; based on given summary, desription, and
         structured information.
@@ -66,7 +66,7 @@ class BCJAIapi:
         """
         return [random.randint(1,1000) for _ in range(k)]
 
-    def add_bug(self, summary=None, description=None, structured_info=None):
+    def add_bug(self, summary: str=None, description: str=None, structured_info: dict=None) -> BCJStatus: 
         """
         Add a bug with given summary, description and structured information.
 
@@ -78,12 +78,12 @@ class BCJAIapi:
             return BCJStatus.ERROR
         return BCJStatus.OK
 
-    def remove_bug(self, idx):
+    def remove_bug(self, idx: int) -> BCJStatus:
         """
         """
         return BCJStatus.OK
 
-    def update_bug(self, idx, summary=None, description=None, structured_info=None):
+    def update_bug(self, idx: int, summary: str=None, description: str=None, structured_info: str=None) -> BCJStatus:
         """
         """
         if not(bool(summary) or bool(description) or bool(structured_info)):
