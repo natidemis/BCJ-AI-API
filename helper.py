@@ -25,22 +25,29 @@ class Message(Enum):
     REMOVED = 'Successfully removed'
     INVALID = 'Invalid ID'
     
-class Helper:
+class Validator:
 
     def __init__(self):
         """
         A class containing validation functions for the app
         """
         
-    def validate_datestring(self, stringdate) -> None:
+    def validate_datestring(self, date: str) -> None:
+        """
+        Verify that `date` is in YYYY-MM-DD format
+
+        Returns
+        -------
+        None, raises value error if 'date' is invalid
+        """
         try:
-            datetime.strptime(stringdate, '%Y-%m-%d')
+            datetime.strptime(date, '%Y-%m-%d')
         except:
             raise ValueError
             
     def validate_data(self,data: dict):
         """
-        Validate that data is in the enforced format.
+        Validate whether `data` is in the enforced format.
 
         Returns
         -------
@@ -67,11 +74,11 @@ class Helper:
          
     def validate_id(self, data: dict) -> None:
         """
-        Validate that data is in the enforced format.
+        Validate whether `data` is in the enforced format.
 
         Returns
         -------
-        None, raises ValueError if data invalid
+        None, raises ValueError if `data` invalid
         """
         schema = Schema({
             "id": int #Bug id's are strings while batch id's are integers
