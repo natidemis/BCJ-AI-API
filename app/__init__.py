@@ -11,7 +11,6 @@ from flask_httpauth import HTTPTokenAuth
 from bcj_ai import BCJAIapi as ai, BCJStatus 
 from schema import Schema, And, Or, Use, Optional, SchemaError
 from config import SECRET_TOKEN
-import dateutil.parser
 from helper import Validator, Message
 import json
 import bleach
