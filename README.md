@@ -3,8 +3,9 @@ Artificial Intelligence API for usability problems.
 
 ***
 
-##Authors
+## Authors
 
+- Kristófer Ásgeirsson - ``kra33``
 - Marcelo Felix Audibert - `Gitcelo`
 - Natanel Demissew Ketema - `natidemis`
 
