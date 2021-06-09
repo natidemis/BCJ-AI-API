@@ -1,5 +1,59 @@
 # Artificial intelligence API for BCJ
-Artificial Intelligence API for usability problems. 
+Artificial Intelligence API for usability problems.
+
+***
+
+##Authors
+
+- Marcelo Felix Audibert - `Gitcelo`
+- Natanel Demissew Ketema - `natidemis`
+
+***
+
+## Dependencies
+
+*All dependencies can be found in the file `requirements.txt`.*
+
+***
+
+## Setup
+
+- Install dependencies by writing ``pip install -r requirements.txt`` into terminal
+    * Note that the versions in the file may be outdated
+    
+- Run ``gentoken.py`` to generate a secret token
+    * The token appears in a new file called ``config.py``
+    * The token has to be in header as bearer token when making HTTP requests to the server
+
+***
+
+## Run
+
+Run the file run.py to start the server (e.g. by writing ``python run.py`` in terminal).
+
+***
+
+## Example of HTTP request to server made in Python
+
+```python
+import requests
+
+url = "<your-url>/bug"
+token = "my bearer token"
+json = {
+    "summary": "summ",
+    "description": "desc",
+    "structured_info": {
+        "id": 1,
+        "bucket": "somrh",
+        "date": "2015-02-28"
+    }
+}
+
+response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)},json = json)
+```
+
+***
 
 ## Web service
 * `/bug`
@@ -13,8 +67,9 @@ Artificial Intelligence API for usability problems.
   * `DELETE` delete a bug 
      * valid id in the format: `{ "id": "id" }`
   * `PATCH` update a bug 
-* `/bug-batch`
+* `/batch`
   * `POST` insert k bugs 
   * `DELETE` delete k bugs 
   
+***
 
