@@ -90,8 +90,8 @@ class BCJAIapi:
             return BCJStatus.ERROR
         return BCJStatus.OK
     
-    def get_batch_by_id(self, idx):
+    def get_batch_by_id(self, idx: int) -> [BCJStatus,int]:
         return BCJStatus.OK, idx
     
-    def remove_batch(self, idx):
+    def remove_batch(self, idx: int) -> BCJStatus:
         return BCJStatus.OK
