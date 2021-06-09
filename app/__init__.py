@@ -127,7 +127,7 @@ class Batch(Resource):
     """
     Web service class for working with a batch of bugs
     """
-    
+    @auth.login_required
     def get(self):
         """
         Method for handling a get http request on /batch for fetching a batch of UPs.
@@ -144,7 +144,8 @@ class Batch(Resource):
         
         batch = ai.get_batch_by_id(req['id'])
         return make_response(jsonify(data=batch[1]), batch[0].value)
-
+    
+    @auth.login_required
     def delete(self):
         """
         Method for handling delete request on /batch, used for deleting a batch of UPs
