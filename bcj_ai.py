@@ -8,7 +8,7 @@ API module for Bug Consolidation for Jira (BCJ) AI model
 
 import random
 from enum import IntEnum
-
+import tensorflow as tf
 
 class BCJStatus(IntEnum):
     OK = 200
@@ -30,7 +30,7 @@ class BCJAIapi:
         ai : BCJAIapi
             An instance of the api for querying the AI
         """
-        m = keras.models.load_model('Models', compile=False)
+        m = tf.keras.models.load_model('Models', compile=False)
     
     def get_similar_bugs_k(self, summary: str=None, description: str=None, structured_info: str=None, k: int=5):
         """
