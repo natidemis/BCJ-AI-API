@@ -10,14 +10,18 @@ from flask_restful import Resource, Api, reqparse
 from flask_httpauth import HTTPTokenAuth
 from bcj_ai import BCJAIapi as ai, BCJStatus 
 from schema import Schema, And, Or, Use, Optional, SchemaError
-from config import SECRET_TOKEN
 from helper import Validator, Message
 import json
 import bleach
+import os
+import dotenv
+from dotenv import load_dotenv
 
+load_dotenv()
+SECRET_TOKEN = os.getenv('SECRET_TOKEN')
 app = Flask(__name__, instance_relative_config=True)
 api = Api(app)
-app.config.from_object('config')
+#app.config.from_object('config')
 validator = Validator()
 ai = ai()
 auth = HTTPTokenAuth(scheme="Bearer")
