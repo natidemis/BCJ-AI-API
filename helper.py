@@ -13,9 +13,13 @@ Bæta við hlekk í FAILURE skilaboðin
 from datetime import datetime
 from schema import Schema, And, Use, Optional, SchemaError,Or
 from enum import Enum
-from config import SECRET_TOKEN
 from flask import jsonify, make_response
+import os
+import dotenv
+from dotenv import load_dotenv
 
+load_dotenv()
+SECRET_TOKEN = os.getenv('SECRET_TOKEN')
 
 class Message(Enum):
     VALID_INPUT = 'Valid input, check status for result'
