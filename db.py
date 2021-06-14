@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-import asyncpg
+import psycopg2
 import os
 import dotenv
 
@@ -12,7 +12,7 @@ class Database:
     NAME = os.getenv('DB_NAME')
     USER = os.getenv('DB_USER')
     PASSWORD = os.getenv('DB_PASSWORD')
-    
+    Vector = list[float]
     def __init__(self):
         """
         Class to setup the database table when required.
@@ -29,10 +29,10 @@ class Database:
         schema = sql_file.read()
         sql_file.close()
         try:
-            conn = await asyncpg.connect(dbname=self.NAME,user=self.USER, password=self.PASSWORD, host=self.HOST)
-            cur = await conn.cursor()
+            await conn = psycopg2.connect(dbname=self.NAME,user=self.USER, password=self.PASSWORD, host=self.HOST)
+            cur = conn.cursor()
             await cur.execute(schema,[size], async_ = True)
-            await conn.commit()
+            conn.commit()
             await cur.close()
             await conn.close()
             self.CREATED = True
@@ -40,28 +40,17 @@ class Database:
         except:
             return False
 
-    async def insert(self,id: int,vec: list, bucket: str) -> bool:
+    def insert(self,id: int,vec: Vector, bucket: str) -> bool:
         sql_file = open('sql/insert.sql','r')
         query = sql_file.read()
         sql_file.close()
         try:
-            conn = await asyncpg.connect(dbname=self.NAME,user=self.USER, password=self.PASSWORD, host=self.HOST)
-            cur = await conn.cursor()
-            await cur.execute(query,(id,vec,bucket))
-            await conn.commit()
-            await cur.close()
-            await conn.close()
+            conn = psycopg2.connect(dbname=self.NAME,user=self.USER, password=self.PASSWORD, host=self.HOST)
+            cur = conn.cursor()
+            cur.execute(query,(id,vec,bucket))
+            conn.commit()
+            cur.close()
+            conn.close()
             return True
         except:
             return False
-    
-    async def fetchAll(self):
-        try:
-            conn = await asyncpg.connect(dbname=self.NAME,user=self.USER, password=self.PASSWORD, host=self.HOST)
-            values = await conn.fetch(
-                'SELECT * FROM Vectors'
-            )
-            await conn.close()
-            return values
-        except:
-            return None
