@@ -9,6 +9,8 @@ API module for Bug Consolidation for Jira (BCJ) AI model
 import random
 from enum import IntEnum
 import tensorflow as tf
+from up_utils.word2vec import Word2Vec
+from up_utils.kdtree import KDTreeUP as KDTree
 
 class BCJStatus(IntEnum):
     OK = 200
