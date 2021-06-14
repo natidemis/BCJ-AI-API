@@ -29,12 +29,12 @@ class Database:
         schema = sql_file.read()
         sql_file.close()
         try:
-            await conn = psycopg2.connect(dbname=self.NAME,user=self.USER, password=self.PASSWORD, host=self.HOST)
+            conn = psycopg2.connect(dbname=self.NAME,user=self.USER, password=self.PASSWORD, host=self.HOST)
             cur = conn.cursor()
-            await cur.execute(schema,[size], async_ = True)
+            cur.execute(schema,[size])
             conn.commit()
-            await cur.close()
-            await conn.close()
+            cur.close()
+            conn.close()
             self.CREATED = True
             return True
         except:
