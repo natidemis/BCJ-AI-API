@@ -32,10 +32,10 @@ class BCJAIapi:
         ai : BCJAIapi
             An instance of the api for querying the AI
         """
-        db = Database()
-        model = tf.keras.models.load_model('Models', compile=False)
-        kdtree = None
-        w2v = Word2Vec()
+        self.db = Database()
+        self.model = tf.keras.models.load_model('Models', compile=False)
+        self.kdtree = None #upphalfsstillum kdtree í gegnum add fallinu
+        self.w2v = Word2Vec()
     
     def get_similar_bugs_k(self, summary: str=None, description: str=None, structured_info: str=None, k: int=5):
         """
@@ -50,6 +50,9 @@ class BCJAIapi:
         idx : list
             A list of `min(k,N)` most similar bugs where N is the total number of bugs
         """
+        if self.kdtree is None:
+            return BCJStatus.NOT_FOUND, 'No examples available'
+
         bugs = [random.randint(1,1000) for _ in range(k)]
         if not(bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.NOT_FOUND, 'At least one of the parameters summary, description, or structured_info must be filled'
@@ -68,6 +71,9 @@ class BCJAIapi:
         idx : list
             A list of `min(k,N)` most similar bugs where N is the total number of bugs
         """
+        if self.kdtree is None:
+            return BCJStatus.NOT_FOUND, 'No examples available'
+
         return [random.randint(1,1000) for _ in range(k)]
 
     def add_bug(self, summary: str=None, description: str=None, structured_info: dict=None) -> BCJStatus: 
