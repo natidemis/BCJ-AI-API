@@ -19,7 +19,7 @@ class Database:
         Class to setup the database table when required.
         """
     
-    async def __make_table(size: int) -> bool:
+    async def __make_table(self) -> bool:
         """
         Asyncronous function to create the table 
 
@@ -30,16 +30,17 @@ class Database:
         sql_file = open('sql/schema.sql','r')
         query = sql_file.read()
         sql_file.close()
+
         try:
-            conn = await asyncpg.connect('postgres://{USER}:{PASSWORD}@{HOST}/{NAME}')
-            await conn.execute(query,[size])
+            conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
+            await conn.execute(query)
             await conn.close()
-            self.CREATED = TRUE
             return True
         except:
             return False
 
-    async def __insert(id: int, vec: list, bucket: str) -> bool:
+
+    async def __insert(self, id: int, vec: list, bucket: str) -> bool:
         """
         Async method for inserting into the database
 
@@ -51,14 +52,14 @@ class Database:
         query = sql_file.read()
         sql_file.close()
         try:
-            conn = await asyncpg.connect('postgres://{USER}:{PASSWORD}@{HOST}/{NAME}')
-            await conn.execute(query,(id,vec,bucket))
+            conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
+            await conn.execute(query,id,vec,bucket)
             await conn.close()
             return True
         except:
             return False
     
-    async def __fetch_all() -> list:
+    async def __fetch_all(self) -> list:
         """
         Async method for fetching all rows in the database
 
@@ -70,14 +71,14 @@ class Database:
         query = sql_file.read()
         sql_file.close()
         try:
-            conn = await asyncpg.connect('postgres://{USER}:{PASSWORD}@{HOST}/{NAME}')
+            conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
             rows = await conn.fetch(query)
             await conn.close()
             return [{'id': row['id'],'vector': row['vector'],'bucket': row['bucket']} for row in rows]
         except:
             return None
 
-    def make_table(self, size: int) -> bool:
+    def make_table(self) -> bool:
         """
         One time use to set up the Vectors table, 
         required to determine vector length.
@@ -86,9 +87,8 @@ class Database:
         -------
         True if table creation is successful, false otherwise
         """
-        if self.CREATED:
-            return False
-        return asyncio.get_event_loop().run_until_complete(__make_table(size))
+
+        return asyncio.run(self.__make_table())
 
     def insert(self,id: int,vec: list, bucket: str) -> bool:
         """
@@ -98,7 +98,7 @@ class Database:
         -------
         True if insertion successful, false otherwise
         """
-        return asyncio.get_event_loop().run_until_complete(__insert(id=id,vec=vec,bucket=bucket))
+        return asyncio.run(self.__insert(id=id,vec=vec,bucket=bucket))
     
     def fetch_all(self) -> list:
         """
@@ -108,4 +108,4 @@ class Database:
         -------
         All rows, None if a problem occurs
         """
-        return asyncio.get_event_loop().run_until_complete(__fetch_all())
+        return asyncio.run(self.__fetch_all())
