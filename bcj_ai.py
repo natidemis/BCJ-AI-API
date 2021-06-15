@@ -11,7 +11,7 @@ from enum import IntEnum
 import tensorflow as tf
 from up_utils.word2vec import Word2Vec
 from up_utils.kdtree import KDTreeUP as KDTree
-
+from db import Database
 class BCJStatus(IntEnum):
     OK = 200
     NOT_FOUND = 404
@@ -32,6 +32,7 @@ class BCJAIapi:
         ai : BCJAIapi
             An instance of the api for querying the AI
         """
+        db = Database()
         model = tf.keras.models.load_model('Models', compile=False)
         kdtree = None
         w2v = Word2Vec()
