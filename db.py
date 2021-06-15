@@ -57,6 +57,25 @@ class Database:
             return True
         except:
             return False
+    
+    async __fetch_all() -> list, None:
+        """
+        Async method for fetching all rows in the database
+
+        Returns
+        -------
+        a list of dict
+        """
+        sql_file = open('sql/fetch.sql','r')
+        query = sql_file.read()
+        sql_file.close()
+        try:
+            conn = await asyncpg.connect('postgres://{USER}:{PASSWORD}@{HOST}/{NAME}')
+            rows = await conn.fetch(query)
+            await conn.close()
+            return [{'id': row['id'],'vector': row['vector'],'bucket': row['bucket']} for row in rows]
+        except:
+            return None
 
     def make_table(self, size: int) -> bool:
         """
@@ -80,3 +99,13 @@ class Database:
         True if insertion successful, false otherwise
         """
         return asyncio.get_event_loop().run_until_complete(__insert(id=id,vec=vec,bucket=bucket))
+    
+    def fetch_all(self) -> list, None:
+        """
+        Fetches all rows in the table
+
+        Returns
+        -------
+        All rows, None if a problem occurs
+        """
+        return asyncio.get_event_loop().run_until_complete(__fetch_all())
