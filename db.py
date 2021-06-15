@@ -39,7 +39,7 @@ class Database:
         except:
             return False
 
-    async __insert(id: int, vec: list, bucket: str) -> bool:
+    async def __insert(id: int, vec: list, bucket: str) -> bool:
         """
         Async method for inserting into the database
 
@@ -52,13 +52,13 @@ class Database:
         sql_file.close()
         try:
             conn = await asyncpg.connect('postgres://{USER}:{PASSWORD}@{HOST}/{NAME}')
-            await conn.execute(query,(id,vec,bucket)])
+            await conn.execute(query,(id,vec,bucket))
             await conn.close()
             return True
         except:
             return False
     
-    async __fetch_all() -> list, None:
+    async def __fetch_all() -> list:
         """
         Async method for fetching all rows in the database
 
@@ -100,7 +100,7 @@ class Database:
         """
         return asyncio.get_event_loop().run_until_complete(__insert(id=id,vec=vec,bucket=bucket))
     
-    def fetch_all(self) -> list, None:
+    def fetch_all(self) -> list:
         """
         Fetches all rows in the table
 
