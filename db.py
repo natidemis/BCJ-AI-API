@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
-import psycopg2
+import asyncpg
+import asyncio
 import os
 import dotenv
 
@@ -12,45 +13,70 @@ class Database:
     NAME = os.getenv('DB_NAME')
     USER = os.getenv('DB_USER')
     PASSWORD = os.getenv('DB_PASSWORD')
-    Vector = list[float]
+ 
     def __init__(self):
         """
         Class to setup the database table when required.
         """
     
-    async def make_table(self, size: int) -> bool:
+    async def __make_table(size: int) -> bool:
         """
-        One time use to set up the Vectors table, 
-        required to determine vector length.
+        Asyncronous function to create the table 
+
+        Returns
+        -------
+        True if table creation successful, false otherwise
         """
-        if self.CREATED:
-            return False
         sql_file = open('sql/schema.sql','r')
-        schema = sql_file.read()
+        query = sql_file.read()
         sql_file.close()
         try:
-            conn = psycopg2.connect(dbname=self.NAME,user=self.USER, password=self.PASSWORD, host=self.HOST)
-            cur = conn.cursor()
-            cur.execute(schema,[size])
-            conn.commit()
-            cur.close()
-            conn.close()
-            self.CREATED = True
+            conn = await asyncpg.connect('postgres://{USER}:{PASSWORD}@{HOST}/{NAME}')
+            await conn.execute(query,[size])
+            await conn.close()
+            self.CREATED = TRUE
             return True
         except:
             return False
 
-    def insert(self,id: int,vec: Vector, bucket: str) -> bool:
+    async __insert(id: int, vec: list, bucket: str) -> bool:
+        """
+        Async method for inserting into the database
+
+        Returns
+        -------
+        True if insertion is successful, false otherwise
+        """
         sql_file = open('sql/insert.sql','r')
         query = sql_file.read()
         sql_file.close()
         try:
-            conn = psycopg2.connect(dbname=self.NAME,user=self.USER, password=self.PASSWORD, host=self.HOST)
-            cur = conn.cursor()
-            cur.execute(query,(id,vec,bucket))
-            conn.commit()
-            cur.close()
-            conn.close()
+            conn = await asyncpg.connect('postgres://{USER}:{PASSWORD}@{HOST}/{NAME}')
+            await conn.execute(query,(id,vec,bucket)])
+            await conn.close()
             return True
         except:
             return False
+
+    def make_table(self, size: int) -> bool:
+        """
+        One time use to set up the Vectors table, 
+        required to determine vector length.
+
+        Returns
+        -------
+        True if table creation is successful, false otherwise
+        """
+        if self.CREATED:
+            return False
+        return asyncio.get_event_loop().run_until_complete(__make_table(size))
+
+    def insert(self,id: int,vec: list, bucket: str) -> bool:
+        """
+        Method for inserting into the database
+
+        Returns
+        -------
+        True if insertion successful, false otherwise
+        """
+        return asyncio.get_event_loop().run_until_complete(__insert(id=id,vec=vec,bucket=bucket))
