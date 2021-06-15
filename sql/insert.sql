@@ -1,1 +1,1 @@
-INSERT INTO Vectors (id,vector,bucket) VALUES(%s,%s,%s);
+INSERT INTO Vectors (id,vector,bucket) VALUES(%1,%2,%3);
