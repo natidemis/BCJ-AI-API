@@ -3,6 +3,12 @@ Artificial Intelligence API for usability problems.
 
 ***
 
+# Todo
+
+- Útskýra að við notum google_news og endurnefndum skjalið í google_news.bin
+
+***
+
 ## Authors
 
 - Kristófer Ásgeirsson - ``kra33``
