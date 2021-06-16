@@ -11,6 +11,7 @@ from enum import IntEnum
 import tensorflow as tf
 from up_utils.word2vec import Word2Vec
 from up_utils.kdtree import KDTreeUP as KDTree
+import numpy as np
 
 class BCJStatus(IntEnum):
     OK = 200
@@ -32,9 +33,9 @@ class BCJAIapi:
         ai : BCJAIapi
             An instance of the api for querying the AI
         """
-        model = tf.keras.models.load_model('Models', compile=False)
-        kdtree = None
-        w2v = Word2Vec()
+        self.model = tf.keras.models.load_model('Models', compile=False)
+        kdt = None
+        self.w2v = Word2Vec(wv_path='wordvectors.wv', dataset='googlenews', googlenews_path='./google_news.bin')
     
     def get_similar_bugs_k(self, summary: str=None, description: str=None, structured_info: str=None, k: int=5):
         """
@@ -52,6 +53,12 @@ class BCJAIapi:
         bugs = [random.randint(1,1000) for _ in range(k)]
         if not(bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.NOT_FOUND, 'At least one of the parameters summary, description, or structured_info must be filled'
+        summ = self.w2v.get_sentence_matrix(summary)
+        arr = np.array([summ])
+        assert arr.shape == (1,100,300), 'Ekki eins'
+        summ = self.model.predict(arr)
+        print(summ)
+        #desc = w2v.get_sentence_matrix(description)
         return BCJStatus.OK, bugs
 
     def get_similar_bugs_threshold(self, summary: str=None, description: str=None, structured_info: dict=None, threshold: str=0.5) -> BCJStatus or list:

@@ -32,6 +32,12 @@ Artificial Intelligence API for usability problems.
 
 Run the file run.py to start the server (e.g. by writing ``python run.py`` in terminal).
 
+The pacakge NLTK should install itself with stopwords if it isn't already installed. If it doesn't install itself, write the following into a python console:
+
+```
+>>> import nltk
+>>> nltk.download('stopwords')
+```
 ***
 
 ## Example of HTTP request to server made in Python
