@@ -12,6 +12,7 @@ import tensorflow as tf
 from up_utils.word2vec import Word2Vec
 from up_utils.kdtree import KDTreeUP as KDTree
 import numpy as np
+from db import Database
 
 class BCJStatus(IntEnum):
     OK = 200
@@ -33,8 +34,9 @@ class BCJAIapi:
         ai : BCJAIapi
             An instance of the api for querying the AI
         """
+        self.db = Database()
         self.model = tf.keras.models.load_model('Models', compile=False)
-        kdt = None
+        self.kdtree = None #upphalfsstillum kdtree í gegnum add fallinu
         self.w2v = Word2Vec(wv_path='wordvectors.wv', dataset='googlenews', googlenews_path='./google_news.bin')
     
     def get_similar_bugs_k(self, summary: str=None, description: str=None, structured_info: str=None, k: int=5):
@@ -50,6 +52,9 @@ class BCJAIapi:
         idx : list
             A list of `min(k,N)` most similar bugs where N is the total number of bugs
         """
+        if self.kdtree is None:
+            return BCJStatus.NOT_FOUND, 'No examples available'
+
         bugs = [random.randint(1,1000) for _ in range(k)]
         if not(bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.NOT_FOUND, 'At least one of the parameters summary, description, or structured_info must be filled'
@@ -74,6 +79,9 @@ class BCJAIapi:
         idx : list
             A list of `min(k,N)` most similar bugs where N is the total number of bugs
         """
+        if self.kdtree is None:
+            return BCJStatus.NOT_FOUND, 'No examples available'
+
         return [random.randint(1,1000) for _ in range(k)]
 
     def add_bug(self, summary: str=None, description: str=None, structured_info: dict=None) -> BCJStatus: 
