@@ -4,3 +4,6 @@ config.py
 cert.pem
 key.pem
 .env
+wordvectors.wv
+wordwectors.wv.vectors.npy
+google_news.bin
