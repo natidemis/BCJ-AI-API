@@ -1,9 +1,7 @@
 .ipynb_checkpoints
 __pycache__
 config.py
-cert.pem
-key.pem
 .env
 wordvectors.wv
 wordvectors.wv.vectors.npy
-google_news.bin
+*.bin
