@@ -1,1 +1,0 @@
-INSERT INTO Vectors(id,vector,bucket) VALUES($1,$2,$3);
