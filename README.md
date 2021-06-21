@@ -4,8 +4,14 @@ Artificial Intelligence API for usability problems.
 ***
 
 # Todo
-
-- Útskýra að við notum google_news og endurnefndum skjalið í google_news.bin
+The project requires a corpus, we will be using the **Google News** corpus which can be downloaded [here](https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?resourcekey=0-wjGZdNAUop6WykTtMip30g). Once you've downloaded the file, follow the instructions below:
+- Use an archiving tool(we recommend winrar) to extract the file into `BCJ-AI-API`
+- rename the file to `google_news.bin`
+- open python in command line and run the following commands: 
+   - `import nltk`
+   - `nltk.download('stopwords')`
+   - `exit()`
+- then finally run the program: `python run.py` to create the word vectors
 
 ***
 
@@ -29,7 +35,7 @@ Artificial Intelligence API for usability problems.
     * Note that the versions in the file may be outdated
     
 - Run ``gentoken.py`` to generate a secret token
-    * The token appears in a new file called ``config.py``
+    * The token appears in a new file called ``.env``
     * The token has to be in header as bearer token when making HTTP requests to the server
 
 ***
