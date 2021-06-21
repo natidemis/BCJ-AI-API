@@ -60,7 +60,7 @@ class Validator:
             })
         info_schema = Schema({
             "id": Or(str, int),
-            "bucket": str,
+            Optional("bucket"): str,
             "date": str,
             Optional("reporter"): str
         })
