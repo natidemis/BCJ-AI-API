@@ -17,7 +17,7 @@ The project requires a corpus, we will be using the **Google News** corpus which
 
 ## Authors
 
-- Kristófer Ásgeirsson - ``kra33``
+- Kristófer Ásgeirsson - `kra33`
 - Marcelo Felix Audibert - `Gitcelo`
 - Natanel Demissew Ketema - `natidemis`
 
@@ -96,19 +96,24 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
 
 Since we used JIRA as the database the front end talks to, we decided to have JIRA be able to talk to the Consolidation Server in the form of HTTP methods. We used a Script Listener for this. Script Listeners can be made to trigger when certain events happen like e.g. issues being created, updated, or deleted. Script Listener scripts are written in `Groovy`. Documentation for Script Listeners can be found here: https://docs.adaptavist.com/sr4jc/current/features/script-listeners.
 
-Below can be seen the code we made for our Script Listener
+The expression we evaluated was 
+```groovy
+issue.issueType.name == 'Bug'
+```
+
+Below can be seen the Script Listener code itself
 
 ```groovy
 
-def summary = issue.fields.summary
+def summary = issue.fields.summary 
 def description = issue.fields.description
 def issueKey = issue.key
 def id = issue.id
 def created = issue.fields.created
-baseUrl = "<your-url>" //This is the URL the Listener will do its queries on. 
+baseUrl = "<your-url>" //This is the URL the listener will do its queries on
 
 if(issue_event_type_name == "issue_created") {
-    def response = post("/bug") // Ends up posting on <your-url>/bug
+    def response = post("/bug") //Ends up posting on <your-url>/bug
         .header("Content-Type", "application/json")
         .header("Authorization", "Bearer " + "<your-token>")
         .body(
