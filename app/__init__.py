@@ -100,11 +100,12 @@ class Bug(Resource):
             validator.validate_update_data(req)
         except(SchemaError, ValueError):
             return make_response(jsonify(data={'message': Message.FAILURE.value}), 400)
-       
+        
+        summary = bleach.clean(req['summary']) if 'summary' in req else None
+        description = bleach.clean(req['description']) if 'description' in req else None
         return make_response(jsonify({'message': Message.VALID_INPUT.value}), ai.update_bug(
-            idx=req['structured_info']['id'],
-            summary=bleach.clean(req['summary']),
-            description = bleach.clean(req['description']),
+            summary=summary,
+            description = description,
             structured_info = req['structured_info']).value)  
 
     @auth.login_required
