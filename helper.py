@@ -43,14 +43,40 @@ class Validator:
             datetime.strptime(date, '%Y-%m-%d')
         except:
             raise ValueError
+    
+    def validate_update_data(self, data: dict) -> None:
+        """
+        Validate whether the required variables are there to update
+
+        Returns
+        -------
+        None, raises ValueError if data is not in proper format
+        """
+        schema = Schmea({
+            Optional("summary"): str,
+            Optional("description"): str,
+            'structured_info': dict
+        })
+        info_schema = Schema({
+            'id': Or(str, int),
+            'date': str,
+            Optional("bucket"): str
+        })
+
+        try:
+            schema.validate(data)
+            info_schema.validate(data['structured_info'])
+            self.validate_datestring(data['structured_info']['date'])
+        except(ValueError):
+            raise ValueError
             
-    def validate_data(self,data: dict):
+    def validate_data(self,data: dict) -> None:
         """
         Validate whether `data` is in the enforced format.
 
         Returns
         -------
-        None, raises ValueError if data invalid
+        None, raises ValueError if data is not in proper format
         """
         schema = Schema({
                 "summary": str,
@@ -61,8 +87,7 @@ class Validator:
         info_schema = Schema({
             "id": Or(str, int),
             Optional("bucket"): str,
-            "date": str,
-            Optional("reporter"): str
+            "date": str
         })
         try:
             schema.validate(data)

@@ -97,7 +97,7 @@ class Bug(Resource):
 
         req = request.json
         try:
-            validator.validate_data(req)
+            validator.validate_update_data(req)
         except(SchemaError, ValueError):
             return make_response(jsonify(data={'message': Message.FAILURE.value}), 400)
        
@@ -105,7 +105,8 @@ class Bug(Resource):
             idx=req['structured_info']['id'],
             summary=bleach.clean(req['summary']),
             description = bleach.clean(req['description']),
-            structured_info = req['structured_info']).value)      
+            structured_info = req['structured_info']).value)  
+
     @auth.login_required
     def delete(self):
         """
