@@ -1,6 +1,8 @@
 from app import app
 from db import Database
 import logging
+
+logging.getLogger().setLevel(logging.INFO)
 if __name__ == '__main__':
     db = Database()
     success = db.make_table()
