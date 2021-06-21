@@ -1,5 +1,7 @@
 CREATE TABLE IF NOT EXISTS Vectors(
     id integer primary key,
-    vector double precision[] not null,
-    bucket varchar(128)
+    summary double precision[],
+    descr double precision[],
+    bucket varchar(128),
+    dateUP date
 );
