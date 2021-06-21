@@ -98,7 +98,7 @@ class Database:
         except:
             logging.error("Fetching failed")
             return None
-    async def __update(self, id: str, date: str, summary: str = None, descr: str=None, bucket: str=None) -> None:
+    async def __update(self, id: int, date: str, summary: str = None, descr: str=None, bucket: str=None) -> None:
         try: 
             conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
             if bool(summary) and bool(descr) and bool(bucket):
@@ -153,7 +153,22 @@ class Database:
                 logging.error("Updating failed")
                 return None
 
+    async def __delete(self, id) -> None:
+        """
+        Removes a row from the database by ID
 
+        Returns
+        -------
+        None
+        """
+        try:
+            conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
+            conn.execute(QueryString.DELETE,id)
+            conn.close()
+            logging.info("successfully deleted row")
+        except:
+            logging.info('Deletion error occured')
+            pass
 
 
     def make_table(self) -> bool:
@@ -187,5 +202,8 @@ class Database:
         All rows, None if a problem occurs
         """
         return asyncio.run(self.__fetch_all())
-    def update(self, id: str, date: str, summary: str = None, descr: str=None, bucket: str=None) -> None:
+    def update(self, id: int, date: str, summary: str = None, descr: str=None, bucket: str=None) -> None:
         return asyncio.run(self.__update(id=id,date=date,summary=summary,descr=descr,bucket=bucket))
+    
+    def delete(self, id: int) -> None:
+        return asyncio.run(self.__delete(id=id))
