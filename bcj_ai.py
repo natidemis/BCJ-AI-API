@@ -37,7 +37,7 @@ class BCJAIapi:
         self.db = Database()
         self.model = tf.keras.models.load_model('Models', compile=False)
         self.kdtree = None #upphafsstillum kdtree í gegnum add fallið
-        self.w2v = Word2Vec(wv_path='wordvectors.wv', dataset='googlenews', googlenews_path='./google_news.bin')
+        self.w2v = Word2Vec(wv_path='wordvectors.wv', dataset='googlenews', googlenews_path='./GoogleNews-vectors-negative300.bin')
     
     def get_similar_bugs_k(self, summary: str=None, description: str=None, structured_info: str=None, k: int=5):
         """
@@ -56,13 +56,18 @@ class BCJAIapi:
             return BCJStatus.NOT_FOUND, 'No examples available'
         if not(bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.NOT_FOUND, 'At least one of the parameters summary, description, or structured_info must be filled'
+        result = None
         if description is not None: #Gerum þetta á meðan módelið getur ekki tekið inn fleiri en einn texta
             desc = self.w2v.get_sentence_matrix(description)
             desc = self.model.predict(np.array([desc]))
+            result = self.kdtree,query(desc, k=k)
         else:
             summ = self.w2v.get_sentence_matrix(summary)
             summ = self.model.predict(np.array([summ]))
-        return BCJStatus.OK
+            result = self.kdtree.query(summ, k=k)
+        if result is not None:
+            return BCJStatus.OK, result
+        return BCJStatus.ERROR
 
     def get_similar_bugs_threshold(self, summary: str=None, description: str=None, structured_info: dict=None, threshold: str=0.5) -> BCJStatus or list:
         """
@@ -92,6 +97,7 @@ class BCJAIapi:
         """
         if not (bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.ERROR
+        
         return BCJStatus.OK
 
     def remove_bug(self, idx: int) -> BCJStatus:

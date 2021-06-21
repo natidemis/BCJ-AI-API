@@ -2,19 +2,6 @@
 Artificial Intelligence API for usability problems.
 
 ***
-
-# Todo
-The project requires a corpus, we will be using the **Google News** corpus which can be downloaded [here](https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?resourcekey=0-wjGZdNAUop6WykTtMip30g). Once you've downloaded the file, follow the instructions below:
-- Use an archiving tool(we recommend winrar) to extract the file into `BCJ-AI-API`
-- rename the file to `google_news.bin`
-- open python in command line and run the following commands: 
-   - `import nltk`
-   - `nltk.download('stopwords')`
-   - `exit()`
-- then finally run the program: `python run.py` to create the word vectors
-
-***
-
 ## Authors
 
 - Kristófer Ásgeirsson - `kra33`
@@ -40,6 +27,13 @@ The project requires a corpus, we will be using the **Google News** corpus which
 
 ***
 
+
+## Corpus
+The project requires a corpus. We will be using the **Google News** corpus which can be downloaded [here](https://github.com/mmihaltz/word2vec-GoogleNews-vectors). Once you've downloaded the file, follow the instructions below:
+- Use an archiving tool (we recommend winrar) to extract the file into `BCJ-AI-API`
+
+***
+
 ## Run
 
 Run the file run.py to start the server (e.g. by writing ``python run.py`` in terminal).
@@ -49,6 +43,7 @@ The pacakge NLTK should install itself with stopwords if it isn't already instal
 ```
 >>> import nltk
 >>> nltk.download('stopwords')
+>>> exit()
 ```
 ***
 
