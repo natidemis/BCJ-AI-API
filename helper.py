@@ -21,6 +21,7 @@ class QueryString(Enum):
     VALUES($1,$2,$3,$4,$5);
     """
     FETCH = "SELECT * FROM Vectors;"
+    DELETE = "DELTE FROM Vectors WHERE id = $1"
     UPDATE_DESCR_NO_BUCKET = """
     UPDATE Vectors 
     SET descr = $1,
