@@ -97,7 +97,12 @@ class BCJAIapi:
         """
         if not (bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.ERROR
-        
+        if description is not None: #Gerum þetta á meðan módelið getur ekki tekið inn fleiri en einn texta
+            desc = self.w2v.get_sentence_matrix(description)
+            desc = self.model.predict(np.array([desc]))
+        else:
+            summ = self.w2v.get_sentence_matrix(summary)
+            summ = self.model.predict(np.array([summ]))
         return BCJStatus.OK
 
     def remove_bug(self, idx: int) -> BCJStatus:
