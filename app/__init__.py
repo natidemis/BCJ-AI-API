@@ -22,7 +22,7 @@ SECRET_TOKEN = os.getenv('SECRET_TOKEN')
 app = Flask(__name__, instance_relative_config=True)
 api = Api(app)
 validator = Validator()
-ai = ai()
+#ai = ai()
 auth = HTTPTokenAuth(scheme="Bearer")
 
 @auth.verify_token
