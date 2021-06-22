@@ -3,5 +3,5 @@ CREATE TABLE IF NOT EXISTS Vectors(
     summary double precision[],
     descr double precision[],
     bucket varchar(128),
-    dateUP date
+    dateUP varchar(128)
 );

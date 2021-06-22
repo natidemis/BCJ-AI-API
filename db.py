@@ -11,6 +11,7 @@ import logging
 load_dotenv()
 
 logging.getLogger().setLevel(logging.INFO)
+asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 class Database:
   
@@ -22,7 +23,6 @@ class Database:
         self.NAME = os.getenv('DB_NAME')
         self.USER = os.getenv('DB_USER')
         self.PASSWORD = os.getenv('DB_PASSWORD')
-        self.NULL = "NULL"
 
     async def __make_table(self) -> bool:
         """
@@ -55,25 +55,33 @@ class Database:
         -------
         True if insertion is successful, false otherwise
         """
- 
+
         try:
             conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
             if bool(summary) and bool(descr) and bool(bucket):
-                await conn.execute(QueryString.INSERT,id,summary,descr,bucket,datetime.fromisoformat(date))
+                query = "INSERT INTO Vectors(id,summary,descr,bucket,dateup) VALUES($1,$2,$3,$4,$5);"
+                await conn.execute(query,id,summary,descr,bucket,date)
             elif bool(summary) and bool(descr) and not bool(bucket):
-                await conn.execute(QueryString.INSERT,id,summary,descr,self.NULL,datetime.fromisoformat(date))
+                query = "INSERT INTO Vectors(id,summary,descr,dateup) VALUES($1,$2,$3,$4);"
+                await conn.execute(query,id,summary,descr,date)
             elif bool(summary) and not bool(descr) and bool(bucket):
-                await conn.execute(QueryString.INSERT,id,summary,self.NULL,bucket,datetime.fromisoformat(date))
+                query = "INSERT INTO Vectors(id,summary,bucket,dateup) VALUES($1,$2,$3,$4);"
+                await conn.execute(query,id,summary,bucket,date)
             elif bool(summary) and not bool(descr) and not bool(bucket):
-                await conn.execute(QueryString.INSERT,id,summary,self.NULL,self.NULL,datetime.fromisoformat(date))
+                query = "INSERT INTO Vectors(id,summary,dateup) VALUES($1,$2,$3);"
+                result = await conn.execute(query,id,summary,date)
             elif not bool(summary) and bool(descr) and bool(bucket):
-                await conn.execute(QueryString.INSERT,id,self.NULL,descr,bucket,datetime.fromisoformat(date))
+                query = "INSERT INTO Vectors(id,descr,bucket,dateup) VALUES($1,$2,$3,$4);"
+                await conn.execute(query,id,None,descr,bucket,date)
             elif not bool(summary) and bool(descr) and not bool(bucket):
-                await conn.execute(QueryString.INSERT,id,self.NULL,descr,self.NULL,datetime.fromisoformat(date))
+                query = "INSERT INTO Vectors(id,descr,dateup) VALUES($1,$2,$3);"
+                await conn.execute(query,id,None,descr,None,date)
             elif not bool(summary) and not bool(descr) and bool(bucket):
-                await conn.execute(QueryString.INSERT,id,self.NULL,self.NULL,bucket,datetime.fromisoformat(date))
+                query = "INSERT INTO Vectors(id,bucket,dateup) VALUES($1,$2,$3,$4,5);"
+                await conn.execute(query,id,None,None,bucket,date)
             elif not bool(summary) and not bool(descr) and not bool(bucket):
-                await conn.execute(QueryString.INSERT,id,self.NULL,self.NULL,self.NULL,datetime.fromisoformat(date))
+                query = "INSERT INTO Vectors(id,dateup) VALUES($1,$2);"
+                await conn.execute(QueryString.INSERT,id,None,None,None,date)
             await conn.close()
             logging.info("Insertion succcessful")
             return True
@@ -95,7 +103,7 @@ class Database:
             rows = await conn.fetch(QueryString.FETCH)
             await conn.close()
             logging.info("Fetching succeeded")
-            return [{'id': row['id'],'vector': row['vector'],'bucket': row['bucket']} for row in rows]
+            return [{'id': row['id'],'summary': row['summary'],'description': row['descr'],'bucket': row['bucket'],'date': row['date']} for row in rows]
         except:
             logging.error("Fetching failed")
             return None
@@ -104,52 +112,53 @@ class Database:
             conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
             if bool(summary) and bool(descr) and bool(bucket):
                 await conn.execute(
-                    QueryString.UPDATE_SUMM_AND_DESCR_W_BUCKET,
+                    QueryString.UPDATE_SUMM_AND_DESCR_W_BUCKET.value,
                     summary,
                     descr,
                     bucket,
-                    datetime.fromisoformat(date),
+                    date,
                     id)
             elif bool(summary) and bool(descr) and not bool(bucket):
                 await conn.execute(
-                    QueryString.UPDATE_SUMM_AND_DESCR_NO_BUCKET,
+                    QueryString.UPDATE_SUMM_AND_DESCR_NO_BUCKET.value,
                     summary,
                     descr,
-                    datetime.fromisoformat(date),
+                    date,
                     id)
             elif bool(summary) and not bool(descr) and bool(bucket):
                 await conn.execute(
-                    QueryString.UPDATE_SUMM_W_BUCKET,
+                    QueryString.UPDATE_SUMM_W_BUCKET.value,
                     summary,
                     bucket,
-                    datetime.fromisoformat(date),
+                    date,
                     id)
             elif bool(summary) and not bool(descr) and not bool(bucket):
+                print(QueryString.UPDATE_SUMM_NO_BUCKET)
                 await conn.execute(
-                    QueryString.UPDATE_SUMM_NO_BUCKET,
+                    QueryString.UPDATE_SUMM_NO_BUCKET.value,
                     summary,
-                    datetime.fromisoformat(date),
+                    date,
                     id)
             elif not bool(summary) and bool(descr) and bool(bucket):
                 await conn.execute(
-                    QueryString.UPDATE_DESCR_W_BUCKET,
+                    QueryString.UPDATE_DESCR_W_BUCKET.value,
                     descr,
                     bucket,
-                    datetime.fromisoformat(date),
+                    date,
                     id)
             elif not bool(summary) and bool(descr) and not bool(bucket):
                 await conn.execute(
-                    QueryString.UPDATE_SUMM_W_BUCKET,
+                    QueryString.UPDATE_SUMM_W_BUCKET.value,
                     descr,
-                    datetime.fromisoformat(date),
+                    date,
                     id)
             elif bool(bucket) and not bool(descr) and not bool(summary):
                 await conn.execute(
-                    QueryString.UPDATE_BUCKET_ONLY,
+                    QueryString.UPDATE_BUCKET_ONLY.value,
                     bucket,
-                    datetime.fromisoformat(date),
+                    date,
                     id)
-            conn.close()
+            await conn.close()
             logging.info("Update successful")
         except:
             logging.error("Updating failed")
@@ -165,12 +174,11 @@ class Database:
         """
         try:
             conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
-            conn.execute(QueryString.DELETE,id)
-            conn.close()
+            await conn.execute(QueryString.DELETE,id)
+            await conn.close()
             logging.info("successfully deleted row")
         except:
             logging.info('Deletion error occured')
-            pass
 
 
     def make_table(self) -> bool:
@@ -185,7 +193,7 @@ class Database:
 
         return asyncio.run(self.__make_table())
 
-    def insert(self, id: int,bucket: str, date: str, summary: list = None, descr: list=None) -> bool:
+    def insert(self, id: int, date: str,bucket: str=None, summary: list = None, descr: list=None) -> bool:
         """
         Method for inserting into the database
 
