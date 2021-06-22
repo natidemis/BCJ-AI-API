@@ -10,9 +10,9 @@ Artificial Intelligence API for usability problems.
 
 ***
 
-## Dependencies
+## ToDo
 
-*All dependencies can be found in the file `requirements.txt`.*
+* Losna við key.pem, cert.pem, og Models úr git history
 
 ***
 
