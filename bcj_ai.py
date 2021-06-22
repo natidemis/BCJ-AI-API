@@ -12,7 +12,7 @@ import tensorflow as tf
 from up_utils.word2vec import Word2Vec
 from up_utils.kdtree import KDTreeUP as KDTree
 import numpy as np
-from db import Database
+from db import Database as db
 
 class BCJStatus(IntEnum):
     OK = 200
@@ -97,7 +97,11 @@ class BCJAIapi:
         """
         if not (bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.ERROR
-        
+        res = db.insert(structured_info['id'],
+                        structured_info['date'],
+                        summary, 
+                        description,
+                        structured_info['bucket'])
         return BCJStatus.OK
 
     def remove_bug(self, idx: int) -> BCJStatus:
