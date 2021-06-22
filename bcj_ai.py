@@ -60,14 +60,14 @@ class BCJAIapi:
         if description is not None: #Gerum þetta á meðan módelið getur ekki tekið inn fleiri en einn texta
             desc = self.w2v.get_sentence_matrix(description)
             desc = self.model.predict(np.array([desc]))
-            result = self.kdtree,query(desc, k=k)
+            result = self.kdtree.query(desc, k=k)
         else:
             summ = self.w2v.get_sentence_matrix(summary)
             summ = self.model.predict(np.array([summ]))
             result = self.kdtree.query(summ, k=k)
         if result is not None:
             return BCJStatus.OK, result
-        return BCJStatus.ERROR
+        return BCJStatus.ERROR, result
 
     def get_similar_bugs_threshold(self, summary: str=None, description: str=None, structured_info: dict=None, threshold: str=0.5) -> BCJStatus or list:
         """
