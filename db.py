@@ -65,13 +65,13 @@ class Database:
                 await conn.execute(QueryString.INSERT,id,summary,self.NULL,bucket,datetime.fromisoformat(date))
             elif bool(summary) and not bool(descr) and not bool(bucket):
                 await conn.execute(QueryString.INSERT,id,summary,self.NULL,self.NULL,datetime.fromisoformat(date))
-            elif bool(summary) and bool(descr) and bool(bucket):
+            elif not bool(summary) and bool(descr) and bool(bucket):
                 await conn.execute(QueryString.INSERT,id,self.NULL,descr,bucket,datetime.fromisoformat(date))
-            elif bool(summary) and bool(descr) and not bool(bucket):
+            elif not bool(summary) and bool(descr) and not bool(bucket):
                 await conn.execute(QueryString.INSERT,id,self.NULL,descr,self.NULL,datetime.fromisoformat(date))
-            elif bool(summary) and not bool(descr) and bool(bucket)
+            elif not bool(summary) and not bool(descr) and bool(bucket)
                 await conn.execute(QueryString.INSERT,id,self.NULL,self.NULL,bucket,datetime.fromisoformat(date))
-            elif bool(summary) and not bool(descr) and not bool(bucket):
+            elif not bool(summary) and not bool(descr) and not bool(bucket):
                 await conn.execute(QueryString.INSERT,id,self.NULL,self.NULL,self.NULL,datetime.fromisoformat(date))
             await conn.close()
             logging.info("Insertion succcessful")
