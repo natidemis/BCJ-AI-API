@@ -10,9 +10,9 @@ Artificial Intelligence API for usability problems.
 
 ***
 
-## Dependencies
+## ToDo
 
-*All dependencies can be found in the file `requirements.txt`.*
+* Losna við key.pem, cert.pem, og Models úr git history
 
 ***
 
@@ -29,8 +29,7 @@ Artificial Intelligence API for usability problems.
 
 
 ## Corpus
-The project requires a corpus. We will be using the **Google News** corpus which can be downloaded [here](https://github.com/mmihaltz/word2vec-GoogleNews-vectors). Once you've downloaded the file, follow the instructions below:
-- Use an archiving tool (we recommend winrar) to extract the file into `BCJ-AI-API`
+The project requires a corpus. We used the **Google News** corpus which can be downloaded [here](https://github.com/mmihaltz/word2vec-GoogleNews-vectors). Once you've downloaded the file, use an archiving tool (we recommend winrar) to extract the file into the `BCJ-AI-API` folder.
 
 ***
 
