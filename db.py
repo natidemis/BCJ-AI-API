@@ -150,6 +150,7 @@ class Database:
                     datetime.fromisoformat(date),
                     id)
             conn.close()
+            logging.info("Update successful")
         except:
             logging.error("Updating failed")
             return None
