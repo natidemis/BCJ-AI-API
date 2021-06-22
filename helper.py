@@ -18,8 +18,7 @@ from flask import jsonify, make_response
 class QueryString(Enum):
     INSERT = """
     INSERT INTO Vectors(id,summary,descr,bucket,dateUP)
-    VALUES($1,$2,$3,$4,$5);
-    """
+    VALUES($1,$2,$3,$4,$5); """
     FETCH = "SELECT * FROM Vectors;"
     DELETE = "DELTE FROM Vectors WHERE id = $1"
     UPDATE_DESCR_NO_BUCKET = """
@@ -27,55 +26,43 @@ class QueryString(Enum):
     SET descr = $1,
     dateUP = $2
     WHERE id = $3;"""
-    UPDATE_DESCR_W_BUCKET = 
-    """
+    UPDATE_DESCR_W_BUCKET = """
     UPDATE Vectors
     SET descr = $1,
     bucket = $2,
     dateUP = $3,
-    WHERE id = $4;
-    """
+    WHERE id = $4;"""
 
-    UPDATE_SUMM_NO_BUCKET = 
-    """
+    UPDATE_SUMM_NO_BUCKET = """
     UPDATE Vectors
     SET summary = $1,
     dateUP = $2
-    WHERE id = $3; 
-    """
+    WHERE id = $3; """
 
-    UPDATE_SUMM_W_BUCKET =
-    """
+    UPDATE_SUMM_W_BUCKET ="""
     UPDATE Vectors
     SET summary = $1,
     bucket = $2,
     dateUP = $3
-    WHERE id = $4;
-    """
-    UPDATE_SUMM_AND_DESCR_NO_BUCKET = 
-    """
+    WHERE id = $4; """
+    UPDATE_SUMM_AND_DESCR_NO_BUCKET = """
     UPDATE Vectors
     SET summary = $1,
     descr = $2,
     dateUP = $3
-    WHERE id = $4;
-    """"
+    WHERE id = $4; """
     
-    UPDATE_SUMM_AND_DESCR_W_BUCKET = 
-    """
+    UPDATE_SUMM_AND_DESCR_W_BUCKET = """
     UPDATE Vectors
     SET summary = $1,
     descr = $2,
     bucket = $3,
     dateUP = $4
-    WHERE id = $5;
-    """"
-    UPDATE_BUCKET_ONLY = 
-    """
+    WHERE id = $5; """
+    UPDATE_BUCKET_ONLY = """
     UPDATE Vectors
     SET bucket = $1
-    WHERE id = $2;
-    """
+    WHERE id = $2; """
 
 class Message(Enum):
     VALID_INPUT = 'Valid input, check status for result'
