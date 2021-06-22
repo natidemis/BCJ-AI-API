@@ -9,10 +9,10 @@ API module for Bug Consolidation for Jira (BCJ) AI model
 import random
 from enum import IntEnum
 import tensorflow as tf
-#from up_utils.word2vec import Word2Vec
-#from up_utils.kdtree import KDTreeUP as KDTree
-#import numpy as np
-#from db import Database
+from up_utils.word2vec import Word2Vec
+from up_utils.kdtree import KDTreeUP as KDTree
+import numpy as np
+from db import Database
 
 class BCJStatus(IntEnum):
     OK = 200
@@ -34,10 +34,10 @@ class BCJAIapi:
         ai : BCJAIapi
             An instance of the api for querying the AI
         """
-        #self.db = Database()
-        #self.model = tf.keras.models.load_model('Models', compile=False)
-        #self.kdtree = None #upphafsstillum kdtree í gegnum add fallið
-        #self.w2v = Word2Vec(wv_path='wordvectors.wv', dataset='googlenews', googlenews_path='./GoogleNews-vectors-negative300.bin')
+        self.db = Database()
+        self.model = tf.keras.models.load_model('Models', compile=False)
+        self.kdtree = None #upphafsstillum kdtree í gegnum add fallið
+        self.w2v = Word2Vec(wv_path='wordvectors.wv', dataset='googlenews', googlenews_path='./GoogleNews-vectors-negative300.bin')
     
     def get_similar_bugs_k(self, summary: str=None, description: str=None, structured_info: str=None, k: int=5):
         """

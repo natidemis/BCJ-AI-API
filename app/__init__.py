@@ -8,7 +8,7 @@ API for AI web service
 from flask import Flask, request, jsonify, make_response
 from flask_restful import Resource, Api, reqparse
 from flask_httpauth import HTTPTokenAuth
-#from bcj_ai import BCJAIapi as ai, BCJStatus 
+from bcj_ai import BCJAIapi as ai, BCJStatus 
 from schema import Schema, And, Or, Use, Optional, SchemaError
 from helper import Validator, Message
 import json
@@ -22,7 +22,7 @@ SECRET_TOKEN = os.getenv('SECRET_TOKEN')
 app = Flask(__name__, instance_relative_config=True)
 api = Api(app)
 validator = Validator()
-#ai = ai()
+ai = ai()
 auth = HTTPTokenAuth(scheme="Bearer")
 
 @auth.verify_token
