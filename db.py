@@ -3,7 +3,7 @@ import asyncpg
 import asyncio
 import os
 import dotenv
-import Enum
+from enum import Enum
 from helper import QueryString 
 from datetime import datetime
 import logging
@@ -14,7 +14,7 @@ logging.getLogger().setLevel(logging.INFO)
 
 class Database:
   
-     def __init__(self):
+    def __init__(self):
         """
         Class to setup the database table when required.
         """
@@ -23,6 +23,7 @@ class Database:
         self.USER = os.getenv('DB_USER')
         self.PASSWORD = os.getenv('DB_PASSWORD')
         self.NULL = "NULL"
+
     async def __make_table(self) -> bool:
         """
         Asyncronous function to create the table 
@@ -61,7 +62,7 @@ class Database:
                 await conn.execute(QueryString.INSERT,id,summary,descr,bucket,datetime.fromisoformat(date))
             elif bool(summary) and bool(descr) and not bool(bucket):
                 await conn.execute(QueryString.INSERT,id,summary,descr,self.NULL,datetime.fromisoformat(date))
-            elif bool(summary) and not bool(descr) and bool(bucket)
+            elif bool(summary) and not bool(descr) and bool(bucket):
                 await conn.execute(QueryString.INSERT,id,summary,self.NULL,bucket,datetime.fromisoformat(date))
             elif bool(summary) and not bool(descr) and not bool(bucket):
                 await conn.execute(QueryString.INSERT,id,summary,self.NULL,self.NULL,datetime.fromisoformat(date))
@@ -69,7 +70,7 @@ class Database:
                 await conn.execute(QueryString.INSERT,id,self.NULL,descr,bucket,datetime.fromisoformat(date))
             elif not bool(summary) and bool(descr) and not bool(bucket):
                 await conn.execute(QueryString.INSERT,id,self.NULL,descr,self.NULL,datetime.fromisoformat(date))
-            elif not bool(summary) and not bool(descr) and bool(bucket)
+            elif not bool(summary) and not bool(descr) and bool(bucket):
                 await conn.execute(QueryString.INSERT,id,self.NULL,self.NULL,bucket,datetime.fromisoformat(date))
             elif not bool(summary) and not bool(descr) and not bool(bucket):
                 await conn.execute(QueryString.INSERT,id,self.NULL,self.NULL,self.NULL,datetime.fromisoformat(date))
@@ -149,9 +150,9 @@ class Database:
                     datetime.fromisoformat(date),
                     id)
             conn.close()
-            except:
-                logging.error("Updating failed")
-                return None
+        except:
+            logging.error("Updating failed")
+            return None
 
     async def __delete(self, id) -> None:
         """
