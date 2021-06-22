@@ -183,7 +183,7 @@ class Database:
 
         return asyncio.run(self.__make_table())
 
-    def insert(self,id: int,vec: list, bucket: str) -> bool:
+    def insert(self, id: int, vec: list, bucket: str) -> bool:
         """
         Method for inserting into the database
 
