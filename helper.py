@@ -17,10 +17,10 @@ from flask import jsonify, make_response
 
 class QueryString(Enum):
     INSERT = """
-    INSERT INTO Vectors(id,summary,descr,bucket,dateUP)
-    VALUES($1,$2,$3,$4,$5); """
+    INSERT INTO Vectors(id,summary,descr,bucket,dateup)
+    VALUES($1,$2,$3,$4,$5);"""
     FETCH = "SELECT * FROM Vectors;"
-    DELETE = "DELTE FROM Vectors WHERE id = $1"
+    DELETE = "DELETE FROM Vectors WHERE id = $1"
     UPDATE_DESCR_NO_BUCKET = """
     UPDATE Vectors 
     SET descr = $1,
@@ -100,7 +100,7 @@ class Validator:
         -------
         None, raises ValueError if data is not in proper format
         """
-        schema = Schmea({
+        schema = Schema({
             Optional("summary"): str,
             Optional("description"): str,
             'structured_info': dict

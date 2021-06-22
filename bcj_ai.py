@@ -56,17 +56,17 @@ class BCJAIapi:
             return BCJStatus.NOT_FOUND, 'No examples available'
         if not(bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.NOT_FOUND, 'At least one of the parameters summary, description, or structured_info must be filled'
-        result = None
-        if description is not None: #Gerum þetta á meðan módelið getur ekki tekið inn fleiri en einn texta
-            desc = self.w2v.get_sentence_matrix(description)
-            desc = self.model.predict(np.array([desc]))
-            result = self.kdtree.query(desc, k=k)
-        else:
-            summ = self.w2v.get_sentence_matrix(summary)
-            summ = self.model.predict(np.array([summ]))
-            result = self.kdtree.query(summ, k=k)
-        if result is not None:
-            return BCJStatus.OK, result
+        #result = None
+        #if description is not None: #Gerum þetta á meðan módelið getur ekki tekið inn fleiri en einn texta
+        #    desc = self.w2v.get_sentence_matrix(description)
+        #    desc = self.model.predict(np.array([desc]))
+        #    result = self.kdtree.query(desc, k=k)
+        #else:
+        #    summ = self.w2v.get_sentence_matrix(summary)
+        #    summ = self.model.predict(np.array([summ]))
+        #    result = self.kdtree.query(summ, k=k)
+        #if result is not None:
+        #    return BCJStatus.OK, result
         return BCJStatus.ERROR
 
     def get_similar_bugs_threshold(self, summary: str=None, description: str=None, structured_info: dict=None, threshold: str=0.5) -> BCJStatus or list:
@@ -97,17 +97,17 @@ class BCJAIapi:
         """
         if not (bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.ERROR
-        res = db.insert(structured_info['id'],
-                        structured_info['date'],
-                        summary, 
-                        description,
-                        structured_info['bucket'])
-        if description is not None: #Gerum þetta á meðan módelið getur ekki tekið inn fleiri en einn texta
-            desc = self.w2v.get_sentence_matrix(description)
-            desc = self.model.predict(np.array([desc]))
-        else:
-            summ = self.w2v.get_sentence_matrix(summary)
-            summ = self.model.predict(np.array([summ]))
+        #res = db.insert(structured_info['id'],
+        #                structured_info['date'],
+        #                summary, 
+        #                description,
+        #                structured_info['bucket'])
+        #if description is not None: #Gerum þetta á meðan módelið getur ekki tekið inn fleiri en einn texta
+        #    desc = self.w2v.get_sentence_matrix(description)
+        #    desc = self.model.predict(np.array([desc]))
+        #else:
+        #    summ = self.w2v.get_sentence_matrix(summary)
+        #    summ = self.model.predict(np.array([summ]))
         return BCJStatus.OK
 
     def remove_bug(self, idx: int) -> BCJStatus:
@@ -115,7 +115,7 @@ class BCJAIapi:
         """
         return BCJStatus.OK
 
-    def update_bug(self, idx: int, summary: str=None, description: str=None, structured_info: str=None) -> BCJStatus:
+    def update_bug(self, summary: str=None, description: str=None, structured_info: str=None) -> BCJStatus:
         """
         """
         if not(bool(summary) or bool(description) or bool(structured_info)):
