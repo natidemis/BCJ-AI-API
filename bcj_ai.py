@@ -34,7 +34,7 @@ class BCJAIapi:
         ai : BCJAIapi
             An instance of the api for querying the AI
         """
-        self.db = Database()
+        self.db = db()
         self.model = tf.keras.models.load_model('Models', compile=False)
         self.kdtree = None #upphafsstillum kdtree í gegnum add fallið
         self.w2v = Word2Vec(wv_path='wordvectors.wv', dataset='googlenews', googlenews_path='./GoogleNews-vectors-negative300.bin')
