@@ -32,7 +32,7 @@ def verify_token(token):
     
 class Bug(Resource):
     """
-    Web service class for working with a usability problem(UP)
+    Web service class for working with a usability problem (UP)
     """
     @auth.login_required
     def get(self):
