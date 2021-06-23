@@ -53,12 +53,9 @@ class BCJAIapi:
             return BCJStatus.NOT_FOUND, 'No examples available'
         if not(bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.NOT_FOUND, 'At least one of the parameters summary, description, or structured_info must be filled'
-        if description is not None: #Gerum þetta á meðan módelið getur ekki tekið inn fleiri en einn texta
-            vec = self.w2v.get_sentence_matrix(description)
-            vec = self.model.predict(np.array([vec]))
-        else:
-            vec = self.w2v.get_sentence_matrix(summary)
-            vec = self.model.predict(np.array([vec]))
+        data = description if description is not None else summary #sækjum annað hvort description eða summary
+
+        vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) #sækjum vigur á annar hvor þeirra
         result = self.kdtree.query(vec, k=k)
         return BCJStatus.OK, result
 
