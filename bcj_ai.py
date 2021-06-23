@@ -93,21 +93,25 @@ class BCJAIapi:
         """
         if not (bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.ERROR
-        res = db.insert(structured_info['id'],
-                        structured_info['date'],
-                        summary, 
-                        description,
-                        structured_info['bucket'])
-        if description is not None: #Gerum þetta á meðan módelið getur ekki tekið inn fleiri en einn texta
-            vec = self.w2v.get_sentence_matrix(description)
-            vec = self.model.predict(np.array([vec]))
+        #-------------------
+        #summary og description eiga að vera vigrar í gagnagrunninum, ekki texti!!!
+        # Geymum öllum vigrum undir 'summary' á meðan við getum bara sett inn eina vigur.
+        #-----------------------------------------------------------------------
+
+        
+        data = description if description is not None else summary #sækjum annað hvort description eða summary
+        bucket = structured_info['bucket'] if 'bucket' in structured_info else None #Bucket er optional
+        vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) #sækjum vigur á annar hvor þeirra
+        self.kdtree = KDTree(data=self.embeddings + vec, indices=self.indices+structured_info['id']) 
+        res = self.db.insert(id=structured_info['id'],
+                        date=structured_info['date'],
+                        summary=vec, 
+                        bucket=bucket)
+        if res:
+            return BCJStatus.OK
         else:
-            vec = self.w2v.get_sentence_matrix(summary)
-            vec = self.model.predict(np.array([vec]))
-        self.kdtree = KDTree(data=self.embeddings + vec, indices=self.indices+structured_info['id'] # Ekki viss um að við getum
-                                                                                                    # lagt vigur beint við hina
-                                                                                                    # vigrana
-        return BCJStatus.OK
+            return BCJStatus.ERROR
+
 
     def remove_bug(self, idx: int) -> BCJStatus:
         """
