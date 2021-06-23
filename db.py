@@ -84,6 +84,7 @@ class Database:
         except(ValueError):
             logging.error("Fetching all failed")
             return None
+        
     async def __update(self, id: int, date: str, summary: str = None, descr: str=None, bucket: str=None) -> None:
         try: 
             conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
@@ -190,6 +191,7 @@ class Database:
         All rows, None if a problem occurs
         """
         return asyncio.run(self.__fetch_all())
+    
     def update(self, id: int, date: str, summary: str = None, descr: str=None, bucket: str=None) -> None:
         """
         Update values of a row by id

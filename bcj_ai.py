@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-@author: kra33
+@authors: kra33, Gitcelo, natidemis
 May 2021
 
-API module for Bug Consolidation for Jira (BCJ) AI model
+API module for Bug Consolidation for Jira (BCJ) AI model. 
+Used to store bugs and classify them.
 """
 
 import random
@@ -28,48 +29,40 @@ class BCJAIapi:
         """
         Initialize the AI model from disk; read embedding vectors from disk;
         get ready for classifying bugs and returning similar bug ids.
-
-        Returns
-        -------
-        ai : BCJAIapi
-            An instance of the api for querying the AI
         """
         self.db = Database()
         self.model = tf.keras.models.load_model('Models', compile=False)
         self.kdtree = None #upphafsstillum kdtree í gegnum add fallið
         self.w2v = Word2Vec(wv_path='wordvectors.wv', dataset='googlenews', googlenews_path='./GoogleNews-vectors-negative300.bin')
+        self.embeddings = None # #None í bili
+        self.indices = None #None í bili
     
     def get_similar_bugs_k(self, summary: str=None, description: str=None, structured_info: str=None, k: int=5):
         """
-        Return the ID of the `k` most similar bugs based on given summary, desription, and
+        Return the ID of the k most similar bugs based on given summary, desription, and
         structured information.
 
         Returns
         -------
         status : BCJStatus
             OK if the requested number of bugs were found.
-            ERROR if less than k bugs were found.
         idx : list
-            A list of `min(k,N)` most similar bugs where N is the total number of bugs
+            A list of min(k,N) most similar bugs where N is the total number of bugs
         """
         if self.kdtree is None:
             return BCJStatus.NOT_FOUND, 'No examples available'
         if not(bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.NOT_FOUND, 'At least one of the parameters summary, description, or structured_info must be filled'
-        #result = None
-        #if description is not None: #Gerum þetta á meðan módelið getur ekki tekið inn fleiri en einn texta
-        #    desc = self.w2v.get_sentence_matrix(description)
-        #    desc = self.model.predict(np.array([desc]))
-        #    result = self.kdtree.query(desc, k=k)
-        #else:
-        #    summ = self.w2v.get_sentence_matrix(summary)
-        #    summ = self.model.predict(np.array([summ]))
-        #    result = self.kdtree.query(summ, k=k)
-        #if result is not None:
-        #    return BCJStatus.OK, result
-        return BCJStatus.ERROR
+        if description is not None: #Gerum þetta á meðan módelið getur ekki tekið inn fleiri en einn texta
+            vec = self.w2v.get_sentence_matrix(description)
+            vec = self.model.predict(np.array([vec]))
+        else:
+            vec = self.w2v.get_sentence_matrix(summary)
+            vec = self.model.predict(np.array([vec]))
+        result = self.kdtree.query(vec, k=k)
+        return BCJStatus.OK, result
 
-    def get_similar_bugs_threshold(self, summary: str=None, description: str=None, structured_info: dict=None, threshold: str=0.5) -> BCJStatus or list:
+    def get_similar_bugs_threshold(self, summary: str=None, description: str=None, structured_info: dict=None, threshold: str=0.5) -> BCJStatus and (list or str):
         """
         Return the ID of bugs at least `threshold` similar; based on given summary, desription, and
         structured information.
@@ -82,48 +75,74 @@ class BCJAIapi:
         idx : list
             A list of `min(k,N)` most similar bugs where N is the total number of bugs
         """
-        #if self.kdtree is None:
-        #    return BCJStatus.NOT_FOUND, 'No examples available'
-
-        return [random.randint(1,1000) for _ in range(k)]
+        if self.kdtree is None:
+            return BCJStatus.NOT_FOUND, 'No examples available'
+        return BCJStatus.OK, [random.randint(1,1000) for _ in range(k)]
 
     def add_bug(self, summary: str=None, description: str=None, structured_info: dict=None) -> BCJStatus: 
         """
-        Add a bug with given summary, description and structured information.
+        Add a bug with given summary, description and structured information. Here it is assumed that all the data
+        has already been validated and sanitized. To see how we sanitized the data, see __init__.py in the folder
+        app.
 
         Returns
         -------
-        TODO
+        status: BCJStatus
+            OK if the bug insertion is successful
+            ERROR if the bug insertion is unsuccessful
         """
         if not (bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.ERROR
-        #res = db.insert(structured_info['id'],
-        #                structured_info['date'],
-        #                summary, 
-        #                description,
-        #                structured_info['bucket'])
-        #if description is not None: #Gerum þetta á meðan módelið getur ekki tekið inn fleiri en einn texta
-        #    desc = self.w2v.get_sentence_matrix(description)
-        #    desc = self.model.predict(np.array([desc]))
-        #else:
-        #    summ = self.w2v.get_sentence_matrix(summary)
-        #    summ = self.model.predict(np.array([summ]))
+        res = db.insert(structured_info['id'],
+                        structured_info['date'],
+                        summary, 
+                        description,
+                        structured_info['bucket'])
+        if description is not None: #Gerum þetta á meðan módelið getur ekki tekið inn fleiri en einn texta
+            vec = self.w2v.get_sentence_matrix(description)
+            vec = self.model.predict(np.array([vec]))
+        else:
+            vec = self.w2v.get_sentence_matrix(summary)
+            vec = self.model.predict(np.array([vec]))
+        self.kdtree = KDTree(data=self.embeddings + vec, indices=self.indices+structured_info['id'] # Ekki viss um að við getum
+                                                                                                    # lagt vigur beint við hina
+                                                                                                    # vigrana
         return BCJStatus.OK
 
     def remove_bug(self, idx: int) -> BCJStatus:
         """
+        Remove a bug with idx as its id.
+        
+        Returns
+        -------
+        status: BCJstatus
+            OK if bug removal is successful
+            ERRROR if bug removal is unsuccessful
         """
         return BCJStatus.OK
 
     def update_bug(self, summary: str=None, description: str=None, structured_info: str=None) -> BCJStatus:
         """
+        Updates a bug with the parameters given. The id of the bug should be in structured_info.
+        
+        Returns
+        -------
+        status: BCJStatus
+            OK if bug update is successful
+            ERROR if bug update is unsuccessful
         """
         if not(bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.ERROR
         return BCJStatus.OK
     
     def get_batch_by_id(self, idx: int) -> [BCJStatus,int]:
+        """
+        Returns a specific batch of bugs. The batch's id is idx.
+        """
         return BCJStatus.OK, idx
     
     def remove_batch(self, idx: int) -> BCJStatus:
+        """
+        Removes a batch of bugs. The batch's id is idx.
+        """
         return BCJStatus.OK
