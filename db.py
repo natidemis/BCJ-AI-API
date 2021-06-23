@@ -43,7 +43,7 @@ class Database:
             logging.info("Table created.")
             return True
         except:
-            logging.error("Creating table failed, re-evaluate query string")
+            logging.error("Creating table failed, re-evaluate enviroment variables.")
             return False
 
 
@@ -58,34 +58,11 @@ class Database:
 
         try:
             conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
-            if bool(summary) and bool(descr) and bool(bucket):
-                query = "INSERT INTO Vectors(id,summary,descr,bucket,dateup) VALUES($1,$2,$3,$4,$5);"
-                await conn.execute(query,id,summary,descr,bucket,date)
-            elif bool(summary) and bool(descr) and not bool(bucket):
-                query = "INSERT INTO Vectors(id,summary,descr,dateup) VALUES($1,$2,$3,$4);"
-                await conn.execute(query,id,summary,descr,date)
-            elif bool(summary) and not bool(descr) and bool(bucket):
-                query = "INSERT INTO Vectors(id,summary,bucket,dateup) VALUES($1,$2,$3,$4);"
-                await conn.execute(query,id,summary,bucket,date)
-            elif bool(summary) and not bool(descr) and not bool(bucket):
-                query = "INSERT INTO Vectors(id,summary,dateup) VALUES($1,$2,$3);"
-                result = await conn.execute(query,id,summary,date)
-            elif not bool(summary) and bool(descr) and bool(bucket):
-                query = "INSERT INTO Vectors(id,descr,bucket,dateup) VALUES($1,$2,$3,$4);"
-                await conn.execute(query,id,None,descr,bucket,date)
-            elif not bool(summary) and bool(descr) and not bool(bucket):
-                query = "INSERT INTO Vectors(id,descr,dateup) VALUES($1,$2,$3);"
-                await conn.execute(query,id,None,descr,None,date)
-            elif not bool(summary) and not bool(descr) and bool(bucket):
-                query = "INSERT INTO Vectors(id,bucket,dateup) VALUES($1,$2,$3,$4,5);"
-                await conn.execute(query,id,None,None,bucket,date)
-            elif not bool(summary) and not bool(descr) and not bool(bucket):
-                query = "INSERT INTO Vectors(id,dateup) VALUES($1,$2);"
-                await conn.execute(QueryString.INSERT,id,None,None,None,date)
+            await conn.execute(QueryString.INSERT.value,id,summary,descr,bucket,date)
             await conn.close()
             logging.info("Insertion succcessful")
             return True
-        except:
+        except(ValueError):
             logging.error("Failed to insert")
             return False
     
@@ -102,10 +79,10 @@ class Database:
             conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
             rows = await conn.fetch(QueryString.FETCH)
             await conn.close()
-            logging.info("Fetching succeeded")
+            logging.info("Fetching all succeeded")
             return [{'id': row['id'],'summary': row['summary'],'description': row['descr'],'bucket': row['bucket'],'date': row['date']} for row in rows]
-        except:
-            logging.error("Fetching failed")
+        except(ValueError):
+            logging.error("Fetching all failed")
             return None
     async def __update(self, id: int, date: str, summary: str = None, descr: str=None, bucket: str=None) -> None:
         try: 
@@ -160,9 +137,10 @@ class Database:
                     id)
             await conn.close()
             logging.info("Update successful")
-        except:
+            return True
+        except(ValueError):
             logging.error("Updating failed")
-            return None
+            return False
 
     async def __delete(self, id) -> None:
         """
@@ -174,7 +152,7 @@ class Database:
         """
         try:
             conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
-            await conn.execute(QueryString.DELETE,id)
+            await conn.execute(QueryString.DELETE.value,id)
             await conn.close()
             logging.info("successfully deleted row")
         except:
@@ -213,7 +191,21 @@ class Database:
         """
         return asyncio.run(self.__fetch_all())
     def update(self, id: int, date: str, summary: str = None, descr: str=None, bucket: str=None) -> None:
+        """
+        Update values of a row by id
+
+        Returns
+        -------
+        Boolean, true if successfully updated, false otherwise
+        """
         return asyncio.run(self.__update(id=id,date=date,summary=summary,descr=descr,bucket=bucket))
     
     def delete(self, id: int) -> None:
+        """
+        Delete row by id
+
+        Returns
+        -------
+        Boolean, true if successful, false otherwise
+        """
         return asyncio.run(self.__delete(id=id))
