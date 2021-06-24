@@ -122,7 +122,6 @@ class Bug(Resource):
             validator.validate_id(req)
         except(SchemaError, ValueError):
             return make_response(jsonify({'message': Message.FAILURE.value}), 400)
-        
         result = ai.remove_bug(req['id'])
         if result == BCJStatus.OK:
             return make_response(jsonify({'message': Message.REMOVED.value}), result.value)
