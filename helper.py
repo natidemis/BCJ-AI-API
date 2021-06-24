@@ -78,6 +78,11 @@ class Validator:
         """
         A class containing validation functions for the app
         """
+        self.info_schema = Schema({
+            'id': str,
+            'date': str,
+            Optional("bucket"): str
+        })
         
     def validate_datestring(self, date: str) -> None:
         """
@@ -105,15 +110,10 @@ class Validator:
             Optional("description"): str,
             'structured_info': dict
         })
-        info_schema = Schema({
-            'id': Or(str, int),
-            'date': str,
-            Optional("bucket"): str
-        })
-
+        
         try:
             schema.validate(data)
-            info_schema.validate(data['structured_info'])
+            self.info_schema.validate(data['structured_info'])
             self.validate_datestring(data['structured_info']['date'])
         except(ValueError):
             raise ValueError
@@ -132,14 +132,10 @@ class Validator:
                 "structured_info": dict,
                 Optional("k"): And(int, lambda n: n>0)
             })
-        info_schema = Schema({
-            "id": Or(str, int),
-            Optional("bucket"): str,
-            "date": str
-        })
+        
         try:
             schema.validate(data)
-            info_schema.validate(data['structured_info'])
+            self.info_schema.validate(data['structured_info'])
             self.validate_datestring(data['structured_info']['date'])
         except(ValueError):
             raise ValueError
