@@ -160,6 +160,22 @@ class Database:
             logging.info('Deletion error occured')
 
 
+    async def __drop_table(self):
+        """
+        Method for dropping table for each setup of the server in development mode.
+        """
+        try:
+            q = "DROP TABLE IF EXISTS Vectors;"
+            conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
+            await conn.execute(q)
+            await conn.close()
+            logging.info("Dropped table to avoid unnecessary errors.")
+        except:
+            logging.info("Error dropping table")
+    
+    def drop_table(self):
+        return asyncio.run(self.__drop_table())
+    
     def make_table(self) -> bool:
         """
         One time use to set up the Vectors table, 
