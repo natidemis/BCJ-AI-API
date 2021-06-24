@@ -21,7 +21,7 @@ Artificial Intelligence API for usability problems.
 - Install dependencies by writing ``pip install -r requirements.txt`` into terminal
     * Note that the versions in the file may be outdated
     
-- Run ``gentoken.py`` to generate a secret token
+- Run `gentoken.py` to generate a secret token
     * The token appears in a new file called ``.env``
     * The token has to be in header as bearer token when making HTTP requests to the server
 

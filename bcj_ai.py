@@ -34,8 +34,6 @@ class BCJAIapi:
         self.model = tf.keras.models.load_model('Models', compile=False)
         self.kdtree = None #upphafsstillum kdtree í gegnum add fallið
         self.w2v = Word2Vec(wv_path='wordvectors.wv', dataset='googlenews', googlenews_path='./GoogleNews-vectors-negative300.bin')
-        self.embeddings = None # #None í bili
-        self.indices = None #None í bili
     
     def get_similar_bugs_k(self, summary: str=None, description: str=None, structured_info: str=None, k: int=5):
         """
@@ -54,7 +52,6 @@ class BCJAIapi:
         if not(bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.NOT_FOUND, 'At least one of the parameters summary, description, or structured_info must be filled'
         data = description if description is not None else summary #sækjum annað hvort description eða summary
-
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) #sækjum vigur á annar hvor þeirra
         result = self.kdtree.query(vec, k=k)
         return BCJStatus.OK, result
@@ -90,17 +87,21 @@ class BCJAIapi:
         """
         if not (bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.ERROR
-        #-------------------
-        #summary og description eiga að vera vigrar í gagnagrunninum, ekki texti!!!
-        # Geymum öllum vigrum undir 'summary' á meðan við getum bara sett inn eina vigur.
-        #-----------------------------------------------------------------------
+        #-----------------------------------------------------------------------------
+        # summary og description eiga að vera vigrar í gagnagrunninum, ekki texti!!!
+        # Geymum all vigra undir 'summary' á meðan við getum bara sett inn einn vigur.
+        #-----------------------------------------------------------------------------
 
         
-        data = description if description is not None else summary #sækjum annað hvort description eða summary
-        bucket = structured_info['bucket'] if 'bucket' in structured_info else None #Bucket er optional
-        vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) #sækjum vigur á annar hvor þeirra
-        self.kdtree = KDTree(data=self.embeddings + vec, indices=self.indices+structured_info['id']) 
-        res = self.db.insert(id=structured_info['id'],
+        data = description if description is not None else summary # Sækjum annað hvort description eða summary
+        bucket = structured_info['bucket'] if 'bucket' in structured_info else None # Bucket er optional
+        vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) # Sækjum vigur á annar hvor þeirra
+        new_id = structured_info['id']
+        if self.kdtree is None:
+            self.kdtree = KDTree(data=vec, indices=new_id)
+        else:
+            self.kdtree.update(vec, new_id)
+        res = self.db.insert(id=new_id,
                         date=structured_info['date'],
                         summary=vec, 
                         bucket=bucket)
