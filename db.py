@@ -47,7 +47,7 @@ class Database:
             return False
 
 
-    async def __insert(self, id: int,date: str, summary: list = None,descr: list = None, bucket: str= None) -> bool:
+    async def __insert(self, id: str,date: str, summary: list = None,descr: list = None, bucket: str= None) -> bool:
         """
         Async method for inserting into the database
 
@@ -85,7 +85,7 @@ class Database:
             logging.error("Fetching all failed")
             return None
         
-    async def __update(self, id: int, date: str, summary: str = None, descr: str=None, bucket: str=None) -> None:
+    async def __update(self, id: str, date: str, summary: str = None, descr: str=None, bucket: str=None) -> None:
         try: 
             conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
             if bool(summary) and bool(descr) and bool(bucket):
@@ -160,6 +160,22 @@ class Database:
             logging.info('Deletion error occured')
 
 
+    async def __drop_table(self):
+        """
+        Method for dropping table for each setup of the server in development mode.
+        """
+        try:
+            q = "DROP TABLE IF EXISTS Vectors;"
+            conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
+            await conn.execute(q)
+            await conn.close()
+            logging.info("Dropped table to avoid unnecessary errors.")
+        except:
+            logging.info("Error dropping table")
+    
+    def drop_table(self):
+        return asyncio.run(self.__drop_table())
+    
     def make_table(self) -> bool:
         """
         One time use to set up the Vectors table, 
@@ -172,7 +188,7 @@ class Database:
 
         return asyncio.run(self.__make_table())
 
-    def insert(self, id: int, date: str,bucket: str=None, summary: list = None, descr: list=None) -> bool:
+    def insert(self, id: str, date: str,bucket: str=None, summary: list = None, descr: list=None) -> bool:
         """
         Method for inserting into the database
 
@@ -192,7 +208,7 @@ class Database:
         """
         return asyncio.run(self.__fetch_all())
     
-    def update(self, id: int, date: str, summary: str = None, descr: str=None, bucket: str=None) -> None:
+    def update(self, id: str, date: str, summary: str = None, descr: str=None, bucket: str=None) -> None:
         """
         Update values of a row by id
 
@@ -202,7 +218,7 @@ class Database:
         """
         return asyncio.run(self.__update(id=id,date=date,summary=summary,descr=descr,bucket=bucket))
     
-    def delete(self, id: int) -> None:
+    def delete(self, id: str) -> None:
         """
         Delete row by id
 
