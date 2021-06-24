@@ -91,8 +91,7 @@ class BCJAIapi:
         # summary og description eiga að vera vigrar í gagnagrunninum, ekki texti!!!
         # Geymum all vigra undir 'summary' á meðan við getum bara sett inn einn vigur.
         #-----------------------------------------------------------------------------
-
-        
+       
         data = description if description is not None else summary # Sækjum annað hvort description eða summary
         bucket = structured_info['bucket'] if 'bucket' in structured_info else None # Bucket er optional
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) # Sækjum vigur á annar hvor þeirra
