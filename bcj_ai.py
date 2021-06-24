@@ -121,6 +121,8 @@ class BCJAIapi:
             OK if bug removal is successful
             ERRROR if bug removal is unsuccessful
         """
+        
+        
         return BCJStatus.OK
 
     def update_bug(self, summary: str=None, description: str=None, structured_info: str=None) -> BCJStatus:
