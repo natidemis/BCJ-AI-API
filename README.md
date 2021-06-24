@@ -13,6 +13,7 @@ Artificial Intelligence API for usability problems.
 ## ToDo
 
 * Losna við key.pem, cert.pem, og Models úr git history
+* Remove the drop table functionality.
 
 ***
 
