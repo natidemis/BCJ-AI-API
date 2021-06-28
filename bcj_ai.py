@@ -14,6 +14,7 @@ from up_utils.word2vec import Word2Vec
 from up_utils.kdtree import KDTreeUP as KDTree
 import numpy as np
 from db import Database
+from threading import Lock
 
 class BCJStatus(IntEnum):
     OK = 200
@@ -30,6 +31,7 @@ class BCJAIapi:
         Initialize the AI model from disk; read embedding vectors from disk;
         get ready for classifying bugs and returning similar bug ids.
         """
+        self.__lock = Lock()
         self.db = Database()
         self.model = tf.keras.models.load_model('Models', compile=False)
         self.w2v = Word2Vec(
@@ -107,6 +109,7 @@ class BCJAIapi:
         bucket = structured_info['bucket'] if 'bucket' in structured_info else None # Bucket er optional
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) # Sækjum vigur á annar hvor þeirra
         new_id = structured_info['id']
+        self.__lock.acquire()
         if self.kdtree is None:
             self.kdtree = KDTree(data=vec, indices=new_id)
         else:
@@ -115,6 +118,7 @@ class BCJAIapi:
                         date=structured_info['date'],
                         summary=vec, 
                         bucket=bucket)
+        self.__lock.release()
         if res:
             return BCJStatus.OK
         else:
