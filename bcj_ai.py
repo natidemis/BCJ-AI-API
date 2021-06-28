@@ -32,8 +32,12 @@ class BCJAIapi:
         """
         self.db = Database()
         self.model = tf.keras.models.load_model('Models', compile=False)
-        self.kdtree = None #upphafsstillum kdtree í gegnum add fallið
         self.w2v = Word2Vec(wv_path='wordvectors.wv', dataset='googlenews', googlenews_path='./GoogleNews-vectors-negative300.bin')
+        prev_data = self.db.fetch_all()
+        vectors = [data['summary'] for data in prev_data] #notum bara summary til að geyma vigra i bili
+        ids = [data['id'] for data in prev_data]
+        self.kdtree = KDTree(data=np.array(vectors), indices=np.array(ids)) if ids and vectors else None
+        
     
     def get_similar_bugs_k(self, summary: str=None, description: str=None, structured_info: str=None, k: int=5):
         """
