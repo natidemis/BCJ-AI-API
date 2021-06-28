@@ -163,4 +163,14 @@ class BCJAIapi:
         """
         Removes a batch of bugs. The batch's id is idx.
         """
+        self.__lock.acquire()
+        self.db.delete_bucket(idx) #vitum ekki hvort við fjarlægðum úr gagnagrunninum
+        prev_data = self.db.fetch_all()
+        if prev_data:
+            vec = np.vstack([data['summary'] for data in prev_data])
+            ids = np.array([data['id'] for data in prev_data])
+            self.kdtree = KDTree(data=vec, indices=ids)
+        else:
+            self.kdtree = None
+        self.__lock.release()
         return BCJStatus.OK
