@@ -34,9 +34,13 @@ class BCJAIapi:
         self.model = tf.keras.models.load_model('Models', compile=False)
         self.w2v = Word2Vec(wv_path='wordvectors.wv', dataset='googlenews', googlenews_path='./GoogleNews-vectors-negative300.bin')
         prev_data = self.db.fetch_all()
-        vectors = [data['summary'] for data in prev_data] #notum bara summary til að geyma vigra i bili
-        ids = [data['id'] for data in prev_data]
-        self.kdtree = KDTree(data=np.array(vectors), indices=np.array(ids)) if ids and vectors else None
+        if len(prev_data) > 0:
+            vectors = np.concatenate([data['summary'] for data in prev_data],axis=0)  #notum bara summary til að geyma vigra i bili
+            print(vectors.shape)
+            ids = [data['id'] for data in prev_data]
+            self.kdtree = KDTree(data=vectors, indices=np.array(ids))
+        else:
+            self.kdtree = None
         
     
     def get_similar_bugs_k(self, summary: str=None, description: str=None, structured_info: str=None, k: int=5):
