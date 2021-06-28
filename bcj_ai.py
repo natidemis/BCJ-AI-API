@@ -37,10 +37,12 @@ class BCJAIapi:
             dataset='googlenews',
             googlenews_path='./GoogleNews-vectors-negative300.bin')
         prev_data = self.db.fetch_all()
-       
-        vec = np.vstack([data['summary'] for data in prev_data])
-        ids = np.array([data['id'] for data in prev_data])
-        self.kdtree = KDTree(data=vec, indices=ids) if len(prev_data) > 0 else None
+        if prev_data:
+            vec = np.vstack([data['summary'] for data in prev_data])
+            ids = np.array([data['id'] for data in prev_data])
+            self.kdtree = KDTree(data=vec, indices=ids)
+        else:
+            self.kdtree = None
 
         
     
