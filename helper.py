@@ -45,6 +45,7 @@ class QueryString(Enum):
     bucket = $2,
     dateUP = $3
     WHERE id = $4; """
+
     UPDATE_SUMM_AND_DESCR_NO_BUCKET = """
     UPDATE Vectors
     SET summary = $1,
@@ -59,11 +60,16 @@ class QueryString(Enum):
     bucket = $3,
     dateUP = $4
     WHERE id = $5; """
+
     UPDATE_BUCKET_ONLY = """
     UPDATE Vectors
     SET bucket = $1,
     dateUP = $2
     WHERE id = $3; """
+
+    DELETE_BUCKET = """
+    DELETE from Vectors 
+    WHERE bucket = $1;"""
 
 class Message(Enum):
     VALID_INPUT = 'Valid input, check status for result'
@@ -150,12 +156,27 @@ class Validator:
         None, raises ValueError if `data` invalid
         """
         schema = Schema({
-            "id": int #Bug id's are strings while batch id's are integers
+            "id": str #Bug id's are strings while batch id's are integers
         })
         try:
             schema.validate(data)
         except:
             raise ValueError
     
+    def validate_batch_id(self, data: dict) -> None:
+        """
+        Validate whether `data` is in the enforced format.
+
+        Returns
+        -------
+        None, raises ValueError if `data` invalid
+        """
+        schema = Schema({
+            "batch_id": str #Bug id's are strings while batch id's are integers
+        })
+        try:
+            schema.validate(data)
+        except:
+            raise ValueError
 
 
