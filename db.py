@@ -77,10 +77,10 @@ class Database:
 
         try:
             conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
-            rows = await conn.fetch(QueryString.FETCH)
+            rows = await conn.fetch(QueryString.FETCH.value)
             await conn.close()
             logging.info("Fetching all succeeded")
-            return [{'id': row['id'],'summary': row['summary'],'description': row['descr'],'bucket': row['bucket'],'date': row['date']} for row in rows]
+            return [{'id': row['id'],'summary': row['summary'],'description': row['descr'],'bucket': row['bucket'],'date': row['dateup']} for row in rows]
         except(ValueError):
             logging.error("Fetching all failed")
             return None
@@ -111,7 +111,6 @@ class Database:
                     date,
                     id)
             elif bool(summary) and not bool(descr) and not bool(bucket):
-                print(QueryString.UPDATE_SUMM_NO_BUCKET)
                 await conn.execute(
                     QueryString.UPDATE_SUMM_NO_BUCKET.value,
                     summary,
