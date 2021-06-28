@@ -30,7 +30,7 @@ class QueryString(Enum):
     UPDATE Vectors
     SET descr = $1,
     bucket = $2,
-    dateUP = $3,
+    dateUP = $3
     WHERE id = $4;"""
 
     UPDATE_SUMM_NO_BUCKET = """
@@ -61,8 +61,9 @@ class QueryString(Enum):
     WHERE id = $5; """
     UPDATE_BUCKET_ONLY = """
     UPDATE Vectors
-    SET bucket = $1
-    WHERE id = $2; """
+    SET bucket = $1,
+    dateUP = $2
+    WHERE id = $3; """
 
 class Message(Enum):
     VALID_INPUT = 'Valid input, check status for result'
