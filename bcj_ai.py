@@ -96,10 +96,11 @@ class BCJAIapi:
         bucket = structured_info['bucket'] if 'bucket' in structured_info else None # Bucket er optional
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) # Sækjum vigur á annar hvor þeirra
         new_id = structured_info['id']
+        type(new_id)
         if self.kdtree is None:
-            self.kdtree = KDTree(data=vec, indices=new_id)
+            self.kdtree = KDTree(data=vec, indices=[new_id])
         else:
-            self.kdtree.update(vec, new_id)
+            self.kdtree.update(vec, [new_id])
         res = self.db.insert(id=new_id,
                         date=structured_info['date'],
                         summary=vec, 
