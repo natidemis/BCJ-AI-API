@@ -125,7 +125,7 @@ class Database:
                     id)
             elif not bool(summary) and bool(descr) and not bool(bucket):
                 await conn.execute(
-                    QueryString.UPDATE_SUMM_W_BUCKET.value,
+                    QueryString.UPDATE_DESCR_NO_BUCKET.value,
                     descr,
                     date,
                     id)
