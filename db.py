@@ -11,7 +11,7 @@ import logging
 load_dotenv()
 
 logging.getLogger().setLevel(logging.INFO)
-asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+#asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 class Database:
   
