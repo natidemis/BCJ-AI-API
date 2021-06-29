@@ -93,7 +93,12 @@ class Validator:
         self.info_schema = Schema({
             'id': str,
             'date': str,
-            Optional("bucket"): str
+            Optional("batch_id"): str
+        })
+        self.batch_schema = Schema({
+            'id': str,
+            'date': str,
+            'batch_id': str
         })
         
     def validate_datestring(self, date: str) -> None:
@@ -148,6 +153,28 @@ class Validator:
         try:
             schema.validate(data)
             self.info_schema.validate(data['structured_info'])
+            self.validate_datestring(data['structured_info']['date'])
+        except(ValueError):
+            raise ValueError
+
+    def validate_batch_data(self,data: dict) -> None:
+        """
+        Validate whether `data` is in the enforced format.
+
+        Returns
+        -------
+        None, raises ValueError if data is not in proper format
+        """
+        schema = Schema({
+                "summary": str,
+                "description": str,
+                "structured_info": dict,
+                Optional("k"): And(int, lambda n: n>0)
+            })
+        
+        try:
+            schema.validate(data)
+            self.batch_schema.validate(data['structured_info'])
             self.validate_datestring(data['structured_info']['date'])
         except(ValueError):
             raise ValueError

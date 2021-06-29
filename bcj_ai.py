@@ -104,10 +104,11 @@ class BCJAIapi:
             OK if the bug insertion is successful
             ERROR if the bug insertion is unsuccessful
         """
-        if not (bool(summary) or bool(description) or bool(structured_info)):
-            return BCJStatus.ERROR       
+        #if not (bool(summary) or bool(description) or bool(structured_info)):
+        #    return BCJStatus.ERROR  
+
         data = description if bool(description) else summary # Sækjum annað hvort description eða summary
-        bucket = structured_info['bucket'] if 'bucket' in structured_info else None # Bucket er optional
+        batch_id = structured_info['batch_id'] if 'batch_id' in structured_info else None # Bucket er optional
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) # Sækjum vigur á annar hvor þeirra
         new_id = structured_info['id']
         self.__lock.acquire()
@@ -118,7 +119,7 @@ class BCJAIapi:
         res = self.db.insert(id=new_id,
                         date=structured_info['date'],
                         summary=vec, 
-                        bucket=bucket)
+                        batch_id=batch_id)
         self.__lock.release()
         if res:
             return BCJStatus.OK
@@ -154,7 +155,7 @@ class BCJAIapi:
             return BCJStatus.ERROR
         return BCJStatus.OK
     
-    def get_batch_by_id(self, idx: str) -> [BCJStatus,int]:
+    def get_batch_by_id(self, idx: str) -> [BCJStatus,int]: #Ólíklegt að þetta verði notað
         """
         Returns a specific batch of bugs. The batch's id is idx.
         """
@@ -175,3 +176,19 @@ class BCJAIapi:
             self.kdtree = None
         self.__lock.release()
         return BCJStatus.OK
+
+    
+    def add_batch(self, data: list) -> BCJStatus:
+        """
+        Adds a batch to the database and updates the KD-Tree
+        """
+        self.__lock.acquire()
+        for item in data:
+            data = description if bool(description) else summary # Sækjum annað hvort description eða summary
+            vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) # Sækjum vigur fyri desc eða summ
+            
+        new_id = structured_info['id']
+        result = self.db.insert_batch(data)
+        if result:
+            return BCJStatus.OK
+        return BCJStatus.ERROR
