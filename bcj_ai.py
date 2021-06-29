@@ -65,7 +65,7 @@ class BCJAIapi:
             return BCJStatus.NOT_FOUND, 'No examples available'
         if not(bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.NOT_FOUND, 'At least one of the parameters summary, description, or structured_info must be filled'
-        data = description if description is not None else summary #sækjum annað hvort description eða summary
+        data = description if bool(description) else summary #sækjum annað hvort description eða summary
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) #sækjum vigur á annar hvor þeirra
         result = self.kdtree.query(vec, k=k)
         response = {
@@ -73,7 +73,7 @@ class BCJAIapi:
             "dist": result[0].tolist()
         }
         print(response)
-        return BCJStatus.OK, json.dumps(response)
+        return BCJStatus.OK, response
 
     def get_similar_bugs_threshold(self, summary: str=None, description: str=None, structured_info: dict=None, threshold: str=0.5) -> BCJStatus and (list or str):
         """
@@ -105,13 +105,8 @@ class BCJAIapi:
             ERROR if the bug insertion is unsuccessful
         """
         if not (bool(summary) or bool(description) or bool(structured_info)):
-            return BCJStatus.ERROR
-        #-----------------------------------------------------------------------------
-        # summary og description eiga að vera vigrar í gagnagrunninum, ekki texti!!!
-        # Geymum all vigra undir 'summary' á meðan við getum bara sett inn einn vigur.
-        #-----------------------------------------------------------------------------
-       
-        data = description if description is not None else summary # Sækjum annað hvort description eða summary
+            return BCJStatus.ERROR       
+        data = description if bool(description) else summary # Sækjum annað hvort description eða summary
         bucket = structured_info['bucket'] if 'bucket' in structured_info else None # Bucket er optional
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) # Sækjum vigur á annar hvor þeirra
         new_id = structured_info['id']
@@ -119,7 +114,7 @@ class BCJAIapi:
         if self.kdtree is None:
             self.kdtree = KDTree(data=vec, indices=[new_id])
         else:
-            self.kdtree.update(vec, [new_id])
+            self.kdtree.update(vec, new_id)
         res = self.db.insert(id=new_id,
                         date=structured_info['date'],
                         summary=vec, 
