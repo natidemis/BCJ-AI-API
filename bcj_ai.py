@@ -154,7 +154,7 @@ class BCJAIapi:
             return BCJStatus.ERROR
         return BCJStatus.OK
     
-    def get_batch_by_id(self, idx: str) -> [BCJStatus,int]:
+    def get_batch_by_id(self, idx: str) -> [BCJStatus,int]: #Ólíklegt að þetta verði notað
         """
         Returns a specific batch of bugs. The batch's id is idx.
         """
@@ -175,3 +175,13 @@ class BCJAIapi:
             self.kdtree = None
         self.__lock.release()
         return BCJStatus.OK
+    
+    def add_batch(self, data: list) -> BCJStatus:
+        """
+        Adds a batch to the database and updates the KD-Tree
+        """
+        self.__lock.acquire()
+        result = self.db.insert_batch(data)
+        if result:
+            return BCJStatus.OK
+        return BCJStatus.ERROR
