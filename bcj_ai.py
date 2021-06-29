@@ -165,7 +165,7 @@ class BCJAIapi:
         Removes a batch of bugs. The batch's id is idx.
         """
         self.__lock.acquire()
-        self.db.delete_bucket(idx) #vitum ekki hvort við fjarlægðum úr gagnagrunninum
+        self.db.delete_batch(idx) #vitum ekki hvort við fjarlægðum úr gagnagrunninum
         prev_data = self.db.fetch_all()
         if prev_data:
             vec = np.vstack([data['summary'] for data in prev_data])

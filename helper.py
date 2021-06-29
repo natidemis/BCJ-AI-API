@@ -17,59 +17,64 @@ from flask import jsonify, make_response
 
 class QueryString(Enum):
     INSERT = """
-    INSERT INTO Vectors(id,summary,descr,bucket,dateup)
+    INSERT INTO Vectors(id,summary,descr,batch_id,dateup)
     VALUES($1,$2,$3,$4,$5);"""
     FETCH = "SELECT * FROM Vectors;"
     DELETE = "DELETE FROM Vectors WHERE id = $1"
-    UPDATE_DESCR_NO_BUCKET = """
+    UPDATE_DESCR_NO_BATCH = """
     UPDATE Vectors 
     SET descr = $1,
     dateUP = $2
     WHERE id = $3;"""
-    UPDATE_DESCR_W_BUCKET = """
+    UPDATE_DESCR_W_BATCH = """
     UPDATE Vectors
     SET descr = $1,
-    bucket = $2,
+    batch_id = $2,
     dateUP = $3
     WHERE id = $4;"""
 
-    UPDATE_SUMM_NO_BUCKET = """
+    UPDATE_SUMM_NO_BATCH = """
     UPDATE Vectors
     SET summary = $1,
     dateUP = $2
     WHERE id = $3; """
 
-    UPDATE_SUMM_W_BUCKET ="""
+    UPDATE_SUMM_W_BATCH ="""
     UPDATE Vectors
     SET summary = $1,
-    bucket = $2,
+    batch_id = $2,
     dateUP = $3
     WHERE id = $4; """
 
-    UPDATE_SUMM_AND_DESCR_NO_BUCKET = """
+    UPDATE_SUMM_AND_DESCR_NO_BATCH = """
     UPDATE Vectors
     SET summary = $1,
     descr = $2,
     dateUP = $3
     WHERE id = $4; """
     
-    UPDATE_SUMM_AND_DESCR_W_BUCKET = """
+    UPDATE_SUMM_AND_DESCR_W_BATCH = """
     UPDATE Vectors
     SET summary = $1,
     descr = $2,
-    bucket = $3,
+    batch_id = $3,
     dateUP = $4
     WHERE id = $5; """
 
-    UPDATE_BUCKET_ONLY = """
+    UPDATE_BATCH_ONLY = """
     UPDATE Vectors
-    SET bucket = $1,
+    SET batch_id = $1,
     dateUP = $2
     WHERE id = $3; """
 
-    DELETE_BUCKET = """
+    DELETE_BATCH = """
     DELETE from Vectors 
-    WHERE bucket = $1;"""
+    WHERE batch_id = $1;"""
+
+    GET_BATCH_BY_ID = """
+    SELECT * FROM Vectors
+    WHERE batch_id = $1;
+    """
 
 class Message(Enum):
     VALID_INPUT = 'Valid input, check status for result'
