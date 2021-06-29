@@ -15,6 +15,7 @@ from up_utils.kdtree import KDTreeUP as KDTree
 import numpy as np
 from db import Database
 import json
+from threading import Lock
 
 class BCJStatus(IntEnum):
     OK = 200
@@ -31,13 +32,21 @@ class BCJAIapi:
         Initialize the AI model from disk; read embedding vectors from disk;
         get ready for classifying bugs and returning similar bug ids.
         """
+        self.__lock = Lock()
         self.db = Database()
         self.model = tf.keras.models.load_model('Models', compile=False)
-        self.w2v = Word2Vec(wv_path='wordvectors.wv', dataset='googlenews', googlenews_path='./GoogleNews-vectors-negative300.bin')
+        self.w2v = Word2Vec(
+            wv_path='wordvectors.wv',
+            dataset='googlenews',
+            googlenews_path='./GoogleNews-vectors-negative300.bin')
         prev_data = self.db.fetch_all()
-        vectors = [data['summary'] for data in prev_data] #notum bara summary til að geyma vigra i bili
-        ids = [data['id'] for data in prev_data]
-        self.kdtree = KDTree(data=np.array(vectors), indices=np.array(ids)) if ids and vectors else None
+        if prev_data:
+            vec = np.vstack([data['summary'] for data in prev_data])
+            ids = np.array([data['id'] for data in prev_data])
+            self.kdtree = KDTree(data=vec, indices=ids)
+        else:
+            self.kdtree = None
+
         
     
     def get_similar_bugs_k(self, summary: str=None, description: str=None, structured_info: str=None, k: int=5):
@@ -106,7 +115,7 @@ class BCJAIapi:
         bucket = structured_info['bucket'] if 'bucket' in structured_info else None # Bucket er optional
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) # Sækjum vigur á annar hvor þeirra
         new_id = structured_info['id']
-        type(new_id)
+        self.__lock.acquire()
         if self.kdtree is None:
             self.kdtree = KDTree(data=vec, indices=[new_id])
         else:
@@ -115,6 +124,7 @@ class BCJAIapi:
                         date=structured_info['date'],
                         summary=vec, 
                         bucket=bucket)
+        self.__lock.release()
         if res:
             return BCJStatus.OK
         else:
@@ -159,4 +169,14 @@ class BCJAIapi:
         """
         Removes a batch of bugs. The batch's id is idx.
         """
+        self.__lock.acquire()
+        self.db.delete_bucket(idx) #vitum ekki hvort við fjarlægðum úr gagnagrunninum
+        prev_data = self.db.fetch_all()
+        if prev_data:
+            vec = np.vstack([data['summary'] for data in prev_data])
+            ids = np.array([data['id'] for data in prev_data])
+            self.kdtree = KDTree(data=vec, indices=ids)
+        else:
+            self.kdtree = None
+        self.__lock.release()
         return BCJStatus.OK
