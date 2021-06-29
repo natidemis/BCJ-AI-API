@@ -180,13 +180,13 @@ class Batch(Resource):
                 if batch_id != item['structured_info']['batch_id']:
                     raise ValueError('All batch_id must be the same')
                 if len(item['summary']) > 0 or len(item['description'])>0:
-                    data.append((
-                        item['structured_info']['id'],
-                        bleach.clean(item['summary']),
-                        bleach.clean(item['description']),
-                        item['structured_info']['batch_id'],
-                        item['structured_info']['date']
-                    ))
+                    data.append({
+                        "id": item['structured_info']['id'],
+                        "summary": bleach.clean(item['summary']),
+                        "description": bleach.clean(item['description']),
+                        "batch_id": item['structured_info']['batch_id'],
+                        "date": item['structured_info']['date']
+                    })
                 else:
                     raise ValueError('Both summary and description may not have string length of 0')
         except(SchemaError, ValueError):
