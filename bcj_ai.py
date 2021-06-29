@@ -108,7 +108,7 @@ class BCJAIapi:
             return BCJStatus.ERROR
         #-----------------------------------------------------------------------------
         # summary og description eiga að vera vigrar í gagnagrunninum, ekki texti!!!
-        # Geymum all vigra undir 'summary' á meðan við getum bara sett inn einn vigur.
+        # Geymum vigrana undir 'summary' í bili
         #-----------------------------------------------------------------------------
        
         data = description if description is not None else summary # Sækjum annað hvort description eða summary
@@ -170,7 +170,7 @@ class BCJAIapi:
         Removes a batch of bugs. The batch's id is idx.
         """
         self.__lock.acquire()
-        self.db.delete_bucket(idx) #vitum ekki hvort við fjarlægðum úr gagnagrunninum
+        self.db.delete_batch(idx) #vitum ekki hvort við fjarlægðum úr gagnagrunninum
         prev_data = self.db.fetch_all()
         if prev_data:
             vec = np.vstack([data['summary'] for data in prev_data])
