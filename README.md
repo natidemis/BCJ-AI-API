@@ -73,11 +73,21 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
 * `/bug`
   * `GET` query the **k** most similar bugs
   * `POST` insert a bug 
-    * data requirement for request: summary and description must be string values, may be empty strings. id must be a number or a number in string format, creationDate must be a string in the following format: YYY-MM-DD. Structured_info must be valid for insertion. `{
-   "summary": "summary",
-   "description": "description,
-   "structured_info": {id, creationDate}
- }` 
+    * Data requirement for request in JSON format:
+      * summary and description must be string values, may be empty strings
+      * id must be a string
+      * creationDate must be a string in the format `YYY-MM-DD`
+      * Structured_info must be valid for insertion
+      ```JSON
+      {
+        "summary": "summary",
+        "description": "description,
+        "structured_info": {
+          id,
+          creationDate
+          }
+        }
+ ```
   * `DELETE` delete a bug 
      * valid id in the format: `{ "id": "id" }`
   * `PATCH` update a bug 
