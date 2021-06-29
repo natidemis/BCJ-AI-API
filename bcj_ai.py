@@ -40,14 +40,23 @@ class BCJAIapi:
             dataset='googlenews',
             googlenews_path='./GoogleNews-vectors-negative300.bin')
         prev_data = self.db.fetch_all()
+        self.kdtree = self.__update_tree(prev_data)
+
+    def __update_tree(self,prev_data: list) -> KDTree:
+        """
+        Private method for updating the tree.
+        Main purpose is to reduce reiteration of the same lines of code.
+        
+        Returns
+        -------
+        KDTreeUP(KDTree)
+        """
         if prev_data:
             vec = np.vstack([data['summary'] for data in prev_data])
             ids = np.array([data['id'] for data in prev_data])
-            self.kdtree = KDTree(data=vec, indices=ids)
+            return KDTree(data=vec, indices=ids)
         else:
-            self.kdtree = None
-
-        
+            return None     
     
     def get_similar_bugs_k(self, summary: str=None, description: str=None, structured_info: str=None, k: int=5):
         """
@@ -160,12 +169,24 @@ class BCJAIapi:
     def get_batch_by_id(self, idx: str) -> [BCJStatus,int]: #Ólíklegt að þetta verði notað
         """
         Returns a specific batch of bugs. The batch's id is idx.
+
+        Returns
+        -------
+        status: BCJStatus
+            OK if bug update is successful
+            ERROR if bug update is unsuccessful
         """
         return BCJStatus.OK, idx
     
     def remove_batch(self, idx: str) -> BCJStatus:
         """
         Removes a batch of bugs. The batch's id is idx.
+
+        Returns
+        -------
+        status: BCJStatus
+            OK if bug update is successful
+            ERROR if bug update is unsuccessful
         """
         self.__lock.acquire()
         self.db.delete_batch(idx) #vitum ekki hvort við fjarlægðum úr gagnagrunninum
@@ -180,17 +201,30 @@ class BCJAIapi:
         return BCJStatus.OK
 
     
-    def add_batch(self, data: list) -> BCJStatus:
+    def add_batch(self, batch: list) -> BCJStatus:
         """
         Adds a batch to the database and updates the KD-Tree
+
+        Returns
+        -------
+        BCJStatus
         """
         self.__lock.acquire()
-        for item in data:
-            data = description if bool(description) else summary # Sækjum annað hvort description eða summary
+        vectored_batch = []
+        for bug in batch:
+            data = bug['description'] if bool(bug['description']) else bug['summary'] # Sækjum annað hvort description eða summary
             vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) # Sækjum vigur fyri desc eða summ
-            
-        new_id = structured_info['id']
-        result = self.db.insert_batch(data)
+            vectored_batch.append((
+                bug['id'],
+                vec,
+                None,
+                bug['batch_id'],
+                bug['date']
+            ))
+        result = self.db.insert_batch(vectored_batch)
         if result:
+            updated_results = self.db.fetch_all()
+            self.kdtree = self.__update_tree(updated_results)
+            self.__lock.release()
             return BCJStatus.OK
         return BCJStatus.ERROR
