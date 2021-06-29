@@ -14,6 +14,7 @@ from up_utils.word2vec import Word2Vec
 from up_utils.kdtree import KDTreeUP as KDTree
 import numpy as np
 from db import Database
+import json
 
 class BCJStatus(IntEnum):
     OK = 200
@@ -58,7 +59,12 @@ class BCJAIapi:
         data = description if description is not None else summary #sækjum annað hvort description eða summary
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) #sækjum vigur á annar hvor þeirra
         result = self.kdtree.query(vec, k=k)
-        return BCJStatus.OK, result
+        response = {
+            "id": result[1],
+            "dist": result[0].tolist()
+        }
+        print(response)
+        return BCJStatus.OK, json.dumps(response)
 
     def get_similar_bugs_threshold(self, summary: str=None, description: str=None, structured_info: dict=None, threshold: str=0.5) -> BCJStatus and (list or str):
         """
