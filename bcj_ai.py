@@ -223,10 +223,12 @@ class BCJAIapi:
                 bug['batch_id'],
                 bug['date']
             ))
-        result = self.db.insert_batch(vectored_batch)
-        if result:
-            updated_results = self.db.fetch_all()
-            self.kdtree = self.__update_tree(updated_results)
-            self.__lock.release()
-            return BCJStatus.OK
-        return BCJStatus.ERROR
+        try:
+            self.db.insert_batch(vectored_batch)
+        except:
+            return BCJStatus.ERROR
+  
+        updated_results = self.db.fetch_all()
+        self.kdtree = self.__update_tree(updated_results)
+        self.__lock.release()
+        return BCJStatus.OK
