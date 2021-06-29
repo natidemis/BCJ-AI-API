@@ -123,19 +123,21 @@ class BCJAIapi:
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) # Sækjum vigur á annar hvor þeirra
         new_id = structured_info['id']
         self.__lock.acquire()
+        try:
+            self.db.insert(id=new_id,
+                        date=structured_info['date'],
+                        summary=vec, 
+                        batch_id=batch_id)
+        except:
+            return BCJStatus.ERROR
+
         if self.kdtree is None:
             self.kdtree = KDTree(data=vec, indices=[new_id])
         else:
             self.kdtree.update(vec, new_id)
-        res = self.db.insert(id=new_id,
-                        date=structured_info['date'],
-                        summary=vec, 
-                        batch_id=batch_id)
+        
         self.__lock.release()
-        if res:
-            return BCJStatus.OK
-        else:
-            return BCJStatus.ERROR
+        return BCJStatus.OK
 
 
     def remove_bug(self, idx: str) -> BCJStatus:
