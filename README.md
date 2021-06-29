@@ -87,7 +87,7 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
           creationDate
           }
         }
- ```
+      ```
   * `DELETE` delete a bug 
      * valid id in the format: `{ "id": "id" }`
   * `PATCH` update a bug 
