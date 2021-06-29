@@ -47,7 +47,7 @@ class Database:
             return False
 
 
-    async def __insert(self, id: str,date: str, summary: list = None,descr: list = None, bucket: str= None) -> bool:
+    async def __insert(self, id: str,date: str, summary: list = None,descr: list = None, batch_id: str= None) -> bool:
         """
         Async method for inserting into the database
 
@@ -58,7 +58,7 @@ class Database:
 
         try:
             conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
-            await conn.execute(QueryString.INSERT.value,id,summary,descr,bucket,date)
+            await conn.execute(QueryString.INSERT.value,id,summary,descr,batch_id,date)
             await conn.close()
             logging.info("Insertion succcessful")
             return True
@@ -80,59 +80,59 @@ class Database:
             rows = await conn.fetch(QueryString.FETCH.value)
             await conn.close()
             logging.info("Fetching all succeeded")
-            return [{'id': row['id'],'summary': row['summary'],'description': row['descr'],'bucket': row['bucket'],'date': row['dateup']} for row in rows]
+            return [{'id': row['id'],'summary': row['summary'],'description': row['descr'],'batch_id': row['batch_id'],'date': row['dateup']} for row in rows]
         except(ValueError):
             logging.error("Fetching all failed")
             return None
         
-    async def __update(self, id: str, date: str, summary: str = None, descr: str=None, bucket: str=None) -> None:
+    async def __update(self, id: str, date: str, summary: str = None, descr: str=None, batch_id: str=None) -> None:
         try: 
             conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
-            if bool(summary) and bool(descr) and bool(bucket):
+            if bool(summary) and bool(descr) and bool(batch_id):
                 await conn.execute(
-                    QueryString.UPDATE_SUMM_AND_DESCR_W_BUCKET.value,
+                    QueryString.UPDATE_SUMM_AND_DESCR_W_BATCH.value,
                     summary,
                     descr,
-                    bucket,
+                    batch_id,
                     date,
                     id)
-            elif bool(summary) and bool(descr) and not bool(bucket):
+            elif bool(summary) and bool(descr) and not bool(batch_id):
                 await conn.execute(
-                    QueryString.UPDATE_SUMM_AND_DESCR_NO_BUCKET.value,
+                    QueryString.UPDATE_SUMM_AND_DESCR_NO_BATCH.value,
                     summary,
                     descr,
                     date,
                     id)
-            elif bool(summary) and not bool(descr) and bool(bucket):
+            elif bool(summary) and not bool(descr) and bool(batch_id):
                 await conn.execute(
-                    QueryString.UPDATE_SUMM_W_BUCKET.value,
+                    QueryString.UPDATE_SUMM_W_BATCH.value,
                     summary,
-                    bucket,
+                    batch_id,
                     date,
                     id)
-            elif bool(summary) and not bool(descr) and not bool(bucket):
+            elif bool(summary) and not bool(descr) and not bool(batch_id):
                 await conn.execute(
-                    QueryString.UPDATE_SUMM_NO_BUCKET.value,
+                    QueryString.UPDATE_SUMM_NO_BATCH.value,
                     summary,
                     date,
                     id)
-            elif not bool(summary) and bool(descr) and bool(bucket):
+            elif not bool(summary) and bool(descr) and bool(batch_id):
                 await conn.execute(
-                    QueryString.UPDATE_DESCR_W_BUCKET.value,
+                    QueryString.UPDATE_DESCR_W_BATCH.value,
                     descr,
-                    bucket,
+                    batch_id,
                     date,
                     id)
-            elif not bool(summary) and bool(descr) and not bool(bucket):
+            elif not bool(summary) and bool(descr) and not bool(batch_id):
                 await conn.execute(
-                    QueryString.UPDATE_DESCR_NO_BUCKET.value,
+                    QueryString.UPDATE_DESCR_NO_BATCH.value,
                     descr,
                     date,
                     id)
-            elif bool(bucket) and not bool(descr) and not bool(summary):
+            elif bool(batch_id) and not bool(descr) and not bool(summary):
                 await conn.execute(
-                    QueryString.UPDATE_BUCKET_ONLY.value,
-                    bucket,
+                    QueryString.UPDATE_BATCH_ONLY.value,
+                    batch_id,
                     date,
                     id)
             await conn.close()
@@ -157,9 +157,9 @@ class Database:
             logging.info("successfully deleted row")
         except:
             logging.info('Deletion error occured')
-    async def __delete_bucket(self,bucket_id: str) -> None:
+    async def __delete_batch_id(self,batch_id: str) -> None:
         """
-        Removes all rows with bucket_id
+        Removes all rows with batch_id
 
         Returns
         -------
@@ -167,7 +167,7 @@ class Database:
         """
         try:
             conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
-            await conn.execute(QueryString.DELETE_BUCKET.value,bucket_id)
+            await conn.execute(QueryString.DELETE_BATCH.value,batch_id)
             await conn.close()
             logging.info("successfully deleted row")
             return True
@@ -203,7 +203,7 @@ class Database:
 
         return asyncio.run(self.__make_table())
 
-    def insert(self, id: str, date: str,bucket: str=None, summary: list = None, descr: list=None) -> bool:
+    def insert(self, id: str, date: str,batch_id: str=None, summary: list = None, descr: list=None) -> bool:
         """
         Method for inserting into the database
 
@@ -211,7 +211,7 @@ class Database:
         -------
         True if insertion successful, false otherwise
         """
-        return asyncio.run(self.__insert(id=id,date=date,summary=summary,descr=descr,bucket=bucket))
+        return asyncio.run(self.__insert(id=id,date=date,summary=summary,descr=descr,batch_id=batch_id))
     
     def fetch_all(self) -> list:
         """
@@ -223,7 +223,7 @@ class Database:
         """
         return asyncio.run(self.__fetch_all())
     
-    def update(self, id: str, date: str, summary: str = None, descr: str=None, bucket: str=None) -> None:
+    def update(self, id: str, date: str, summary: str = None, descr: str=None, batch_id: str=None) -> None:
         """
         Update values of a row by id
 
@@ -231,7 +231,7 @@ class Database:
         -------
         Boolean, true if successfully updated, false otherwise
         """
-        return asyncio.run(self.__update(id=id,date=date,summary=summary,descr=descr,bucket=bucket))
+        return asyncio.run(self.__update(id=id,date=date,summary=summary,descr=descr,batch_id=batch_id))
     
     def delete(self, id: str) -> None:
         """
@@ -243,14 +243,14 @@ class Database:
         """
         return asyncio.run(self.__delete(id=id))
     
-    def delete_bucket(self, bucket_id: str) -> None:
+    def delete_batch_id(self, batch_id: str) -> None:
         """
-        Delete row by id
+        Delete row by batch_id
 
         Returns
         -------
         Boolean, true if successful, false otherwise
         """
 
-        return asyncio.run(self.__delete_bucket(bucket_id=bucket_id))
+        return asyncio.run(self.__delete_batch_id(batch_id=batch_id))
     
