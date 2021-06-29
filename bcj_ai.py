@@ -167,12 +167,24 @@ class BCJAIapi:
     def get_batch_by_id(self, idx: str) -> [BCJStatus,int]: #Ólíklegt að þetta verði notað
         """
         Returns a specific batch of bugs. The batch's id is idx.
+
+        Returns
+        -------
+        status: BCJStatus
+            OK if bug update is successful
+            ERROR if bug update is unsuccessful
         """
         return BCJStatus.OK, idx
     
     def remove_batch(self, idx: str) -> BCJStatus:
         """
         Removes a batch of bugs. The batch's id is idx.
+
+        Returns
+        -------
+        status: BCJStatus
+            OK if bug update is successful
+            ERROR if bug update is unsuccessful
         """
         self.__lock.acquire()
         self.db.delete_batch(idx) #vitum ekki hvort við fjarlægðum úr gagnagrunninum
@@ -190,6 +202,10 @@ class BCJAIapi:
     def add_batch(self, batch: list) -> BCJStatus:
         """
         Adds a batch to the database and updates the KD-Tree
+
+        Returns
+        -------
+        BCJStatus
         """
         self.__lock.acquire()
         vectored_batch = []
