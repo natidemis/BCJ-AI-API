@@ -1,6 +1,6 @@
 from db import Database
 db = Database()
-db.drop_table() #fjarlægja seinna
+#db.drop_table() #fjarlægja seinna
 success = db.make_table()
 
 from app import app
