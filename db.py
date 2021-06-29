@@ -65,6 +65,18 @@ class Database:
         except(ValueError):
             logging.error("Failed to insert")
             return False
+
+    async def __insert_batch(self,data) -> None:
+        try:
+            conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
+            await conn.executemany(QueryString.INSERT.value,data)
+            await conn.close()
+            logging.info("Batch insertion successful")
+            return True
+        except(ValueError):
+            logging.error("Failed to insert batch")
+            return False
+
     
     async def __fetch_all(self) -> list:
         """
@@ -253,4 +265,6 @@ class Database:
         """
 
         return asyncio.run(self.__delete_batch_id(batch_id=batch_id))
-    
+
+    def insert_batch(self, data) -> bool:
+        return asyncio.run(self.__insert_batch(data))    

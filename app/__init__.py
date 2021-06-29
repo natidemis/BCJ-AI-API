@@ -168,6 +168,31 @@ class Batch(Resource):
         if result == BCJStatus.OK:
             return make_response(jsonify({'message': Message.REMOVED.value}), result.value)
         return make_response(jsonify({'message': Message.INVALID.value}), result.value)
+    
+    @auth.login_required
+    def post(self):
+        req = request.json
+        data = []
+        try:
+            batch_id = req[0]['structured_info']['batch_id']
+            for item in req:
+                validator.validate_batch_data(item)
+                if batch_id != item['structured_info']['batch_id']:
+                    raise ValueError('All batch_id must be the same')
+                if len(item['summary']) > 0 or len(item['description'])>0:
+                    data.append({
+                        "id": item['structured_info']['id'],
+                        "summary": bleach.clean(item['summary']),
+                        "description": bleach.clean(item['description']),
+                        "batch_id": item['structured_info']['batch_id'],
+                        "date": item['structured_info']['date']
+                    })
+                else:
+                    raise ValueError('Both summary and description may not have string length of 0')
+        except(SchemaError, ValueError):
+            return make_response(jsonify({'message': Message.FAILURE.value}),400)
+        return make_response(jsonify(data={'message': Message.VALID_INPUT.value}), ai.add_batch(data))
+        return 200
         
 api.add_resource(Bug,'/bug')
 api.add_resource(Batch, '/batch')
