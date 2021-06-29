@@ -142,7 +142,7 @@ class Database:
             logging.error("Updating failed")
             return False
 
-    async def __delete(self, id) -> None:
+    async def __delete(self, id: str) -> None:
         """
         Removes a row from the database by ID
 
@@ -157,7 +157,23 @@ class Database:
             logging.info("successfully deleted row")
         except:
             logging.info('Deletion error occured')
+    async def __delete_bucket(self,bucket_id: str) -> None:
+        """
+        Removes all rows with bucket_id
 
+        Returns
+        -------
+        None
+        """
+        try:
+            conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
+            await conn.execute(QueryString.DELETE_BUCKET.value,bucket_id)
+            await conn.close()
+            logging.info("successfully deleted row")
+            return True
+        except:
+            logging.info('Deletion error occured')
+            return False
 
     async def __drop_table(self):
         """
@@ -226,3 +242,15 @@ class Database:
         Boolean, true if successful, false otherwise
         """
         return asyncio.run(self.__delete(id=id))
+    
+    def delete_bucket(self, bucket_id: str) -> None:
+        """
+        Delete row by id
+
+        Returns
+        -------
+        Boolean, true if successful, false otherwise
+        """
+
+        return asyncio.run(self.__delete_bucket(bucket_id=bucket_id))
+    

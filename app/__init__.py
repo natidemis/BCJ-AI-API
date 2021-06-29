@@ -160,11 +160,11 @@ class Batch(Resource):
         """
         req = request.json
         try:
-            validator.validate_id(req)
+            validator.validate_batch_id(req)
         except(SchemaError, ValueError):
             return {'message': Message.FAILURE.value},400
        
-        result = ai.remove_batch(req['id'])
+        result = ai.remove_batch(req['batch_id'])
         if result == BCJStatus.OK:
             return make_response(jsonify({'message': Message.REMOVED.value}), result.value)
         return make_response(jsonify({'message': Message.INVALID.value}), result.value)
