@@ -1,1 +1,1 @@
-web: gunicorn run:stopwords run:app
+web: gunicorn run:app
