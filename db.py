@@ -11,7 +11,7 @@ import logging
 load_dotenv()
 
 logging.getLogger().setLevel(logging.INFO)
-asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 
 class Database:
   
@@ -19,10 +19,8 @@ class Database:
         """
         Class to setup the database table when required.
         """
-        self.HOST = os.getenv('DB_HOST')
-        self.NAME = os.getenv('DB_NAME')
-        self.USER = os.getenv('DB_USER')
-        self.PASSWORD = os.getenv('DB_PASSWORD')
+        self.DATABASE_URL = os.getenv('DATABASE_URL')
+
 
     async def __make_table(self) -> bool:
         """
@@ -37,7 +35,7 @@ class Database:
         sql_file.close()
 
         try:
-            conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
+            conn = await asyncpg.connect(self.DATABASE_URL)
             await conn.execute(query)
             await conn.close()
             logging.info("Table created.")
@@ -57,7 +55,7 @@ class Database:
         """
 
         try:
-            conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
+            conn = await asyncpg.connect(self.DATABASE_URL)
             await conn.execute(QueryString.INSERT.value,id,summary,descr,batch_id,date)
             await conn.close()
             logging.info("Insertion succcessful")
@@ -68,7 +66,7 @@ class Database:
 
     async def __insert_batch(self,data) -> None:
         try:
-            conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
+            conn = await asyncpg.connect(self.DATABASE_URL)
             await conn.executemany(QueryString.INSERT.value,data)
             await conn.close()
             logging.info("Batch insertion successful")
@@ -88,7 +86,7 @@ class Database:
         """
 
         try:
-            conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
+            conn = await asyncpg.connect(self.DATABASE_URL)
             rows = await conn.fetch(QueryString.FETCH.value)
             await conn.close()
             logging.info("Fetching all succeeded")
@@ -99,7 +97,7 @@ class Database:
         
     async def __update(self, id: str, date: str, summary: str = None, descr: str=None, batch_id: str=None) -> None:
         try: 
-            conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
+            conn = await asyncpg.connect(self.DATABASE_URL)
             if bool(summary) and bool(descr) and bool(batch_id):
                 await conn.execute(
                     QueryString.UPDATE_SUMM_AND_DESCR_W_BATCH.value,
@@ -163,7 +161,7 @@ class Database:
         None
         """
         try:
-            conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
+            conn = await asyncpg.connect(self.DATABASE_URL)
             await conn.execute(QueryString.DELETE.value,id)
             await conn.close()
             logging.info("successfully deleted row")
@@ -178,7 +176,7 @@ class Database:
         None
         """
         try:
-            conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
+            conn = await asyncpg.connect(self.DATABASE_URL)
             await conn.execute(QueryString.DELETE_BATCH.value,batch_id)
             await conn.close()
             logging.info("successfully deleted row")
@@ -193,7 +191,7 @@ class Database:
         """
         try:
             q = "DROP TABLE IF EXISTS Vectors;"
-            conn = await asyncpg.connect('postgres://{}:{}@{}/{}'.format(self.USER,self.PASSWORD,self.HOST,self.NAME))
+            conn = await asyncpg.connect(self.DATABASE_URL)
             await conn.execute(q)
             await conn.close()
             logging.info("Dropped table to avoid unnecessary errors.")
@@ -201,7 +199,9 @@ class Database:
             logging.info("Error dropping table")
     
     def drop_table(self):
-        return asyncio.run(self.__drop_table())
+        loop = asyncio.get_event_loop()
+        result = loop.run_until_complete(self.__drop_table())
+        return result
     
     def make_table(self) -> bool:
         """
@@ -212,8 +212,9 @@ class Database:
         -------
         True if table creation is successful, false otherwise
         """
-
-        return asyncio.run(self.__make_table())
+        loop = asyncio.get_event_loop()
+        result = loop.run_until_complete(self.__make_table())
+        return result
 
     def insert(self, id: str, date: str,batch_id: str=None, summary: list = None, descr: list=None) -> bool:
         """
@@ -223,7 +224,9 @@ class Database:
         -------
         True if insertion successful, false otherwise
         """
-        return asyncio.run(self.__insert(id=id,date=date,summary=summary,descr=descr,batch_id=batch_id))
+        loop = asyncio.get_event_loop()
+        result = loop.run_until_complete(self.__insert(id=id,date=date,summary=summary,descr=descr,batch_id=batch_id))
+        return result
     
     def fetch_all(self) -> list:
         """
@@ -233,7 +236,9 @@ class Database:
         -------
         All rows, None if a problem occurs
         """
-        return asyncio.run(self.__fetch_all())
+        loop = asyncio.get_event_loop()
+        result = loop.run_until_complete(self.__fetch_all())
+        return result
     
     def update(self, id: str, date: str, summary: str = None, descr: str=None, batch_id: str=None) -> None:
         """
@@ -243,7 +248,9 @@ class Database:
         -------
         Boolean, true if successfully updated, false otherwise
         """
-        return asyncio.run(self.__update(id=id,date=date,summary=summary,descr=descr,batch_id=batch_id))
+        loop = asyncio.get_event_loop()
+        result = loop.run_until_complete(self.__update(id=id,date=date,summary=summary,descr=descr,batch_id=batch_id))
+        return result
     
     def delete(self, id: str) -> None:
         """
@@ -253,7 +260,9 @@ class Database:
         -------
         Boolean, true if successful, false otherwise
         """
-        return asyncio.run(self.__delete(id=id))
+        loop = asyncio.get_event_loop()
+        result = loop.run_until_complete(self.__delete(id=id))
+        return result
     
     def delete_batch_id(self, batch_id: str) -> None:
         """
@@ -263,8 +272,11 @@ class Database:
         -------
         Boolean, true if successful, false otherwise
         """
-
-        return asyncio.run(self.__delete_batch_id(batch_id=batch_id))
+        loop = asyncio.get_event_loop()
+        result = loop.run_until_complete(self.__delete_batch_id(batch_id=batch_id))
+        return result
 
     def insert_batch(self, data) -> bool:
-        return asyncio.run(self.__insert_batch(data))    
+        loop = asyncio.get_event_loop()
+        result = loop.run_until_complete(self.__insert_batch(data))
+        return result   
