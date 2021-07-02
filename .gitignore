@@ -5,3 +5,5 @@ config.py
 wordvectors.wv
 wordvectors.wv.vectors.npy
 *.bin
+glove.42B.300d.txt
+gensim_glove_vectors.txt
