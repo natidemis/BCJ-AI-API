@@ -1,7 +1,6 @@
 .env
 *.binwordvectors.wv
 *.bin
-wordvectors.wv
 wordvectors.wv.vectors.npy
 *.bin
 glove.42B.300d.txt
