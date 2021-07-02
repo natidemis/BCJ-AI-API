@@ -13,7 +13,8 @@ Artificial Intelligence API for usability problems.
 ## ToDo
 
 * Losna við key.pem, cert.pem, og Models úr git history
-* Remove the drop table functionality.
+* Remove the drop table functionality
+* Update Corpus part to incorporate CommonCrawl
 
 ***
 
@@ -31,6 +32,8 @@ Artificial Intelligence API for usability problems.
 
 ## Corpus
 The project requires a corpus. We used the **Google News** corpus which can be downloaded [here](https://github.com/mmihaltz/word2vec-GoogleNews-vectors). Once you've downloaded the file, use an archiving tool (we recommend winrar) to extract the file into the `BCJ-AI-API` folder.
+
+**CommonCrawl**: https://nlp.stanford.edu/projects/glove/
 
 ***
 
