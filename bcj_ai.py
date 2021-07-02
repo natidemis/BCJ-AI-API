@@ -16,6 +16,8 @@ import numpy as np
 from db import Database
 import json
 from threading import Lock
+import os
+from dotenv import load_dotenv
 
 class BCJStatus(IntEnum):
     OK = 200
@@ -35,17 +37,23 @@ class BCJAIapi:
         self.__lock = Lock()
         self.db = Database()
         self.model = tf.keras.models.load_model('Models', compile=False)
+        load_dotenv()
+        OUTPUT_FILE = os.getenv('OUTPUT_FILE')
+        DATASET = os.getenv('DATASET') # Dataset can either be googlenews or commoncrawl
+        COMMONCRAWL_PATH = os.getenv('COMMONCRAWL_PATH')
+        GOOGLENEWS_PATH = os.getenv('GOOGLENEWS_PATH')
         self.w2v = Word2Vec(
+            outputfile=OUTPUT_FILE,
             wv_path='wordvectors.wv',
-            dataset='googlenews',
-            googlenews_path='./GoogleNews-vectors-negative300.bin')
+            dataset=DATASET,
+            commoncrawl_path=COMMONCRAWL_PATH,
+            googlenews_path=GOOGLENEWS_PATH)
         prev_data = self.db.fetch_all()
         self.kdtree = self.__update_tree(prev_data)
 
     def __update_tree(self,prev_data: list) -> KDTree:
         """
         Private method for updating the tree.
-        Main purpose is to reduce reiteration of the same lines of code.
         
         Returns
         -------
