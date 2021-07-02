@@ -14,10 +14,10 @@ from up_utils.word2vec import Word2Vec
 from up_utils.kdtree import KDTreeUP as KDTree
 import numpy as np
 from db import Database
-import json
 from threading import Lock
 import os
 from dotenv import load_dotenv
+from bert_embedding import BertEmbedding
 
 class BCJStatus(IntEnum):
     OK = 200
