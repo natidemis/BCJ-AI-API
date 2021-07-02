@@ -1,0 +1,8 @@
+gensim
+nltk
+numpy
+pandas
+psutil
+pylint
+pytest
+sklearn
