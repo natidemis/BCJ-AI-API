@@ -17,7 +17,7 @@ from db import Database
 from threading import Lock
 import os
 from dotenv import load_dotenv
-from bert_embedding import BertEmbedding
+#from bert_embedding import BertEmbedding
 
 class BCJStatus(IntEnum):
     OK = 200
@@ -158,7 +158,15 @@ class BCJAIapi:
             OK if bug removal is successful
             ERRROR if bug removal is unsuccessful
         """
-        
+        try:
+            self.__lock.acquire()
+            self.db.delete(idx) #vitum ekki hvort við fjarlægðum úr gagnagrunninum
+            prev_data = self.db.fetch_all()
+            self.kdtree = self.__update_tree(prev_data)
+            self.__lock.release()
+        except:
+            self.__lock.release()
+            return BCJStatus.ERROR
         
         return BCJStatus.OK
 
@@ -172,7 +180,26 @@ class BCJAIapi:
             OK if bug update is successful
             ERROR if bug update is unsuccessful
         """
-        if not(bool(summary) or bool(description) or bool(structured_info)):
+        
+        #Gætum þurft að breyta ef 'DATE' þarf að fara í gervigreindina
+        if not(bool(summary) or bool(description)):
+            try:
+                batch_id = structured_info['batch_id'] if 'batch_id' in structured_info else None
+                self.__lock.acquire()
+                self.db.update(id=structured_info['id'],date=structured_info['date'],batch_id=batch_id)
+                self.__lock.release()
+                return BCJStatus.OK
+            except:
+                return BCJStatus.ERROR
+        data = description if bool(description) else summary
+        vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
+        try:
+            self.lock.acquire()
+            self.db.update(id=structured_info['id'],date=structured_info['date'],summary=vec,batch_id=batch_id)
+            prev_data = self.db.fetch_all()
+            self.kdtree = self.__update_tree(prev_data)
+            self.__lock.release()
+        except:
             return BCJStatus.ERROR
         return BCJStatus.OK
     
@@ -198,16 +225,15 @@ class BCJAIapi:
             OK if bug update is successful
             ERROR if bug update is unsuccessful
         """
-        self.__lock.acquire()
-        self.db.delete_batch(idx) #vitum ekki hvort við fjarlægðum úr gagnagrunninum
-        prev_data = self.db.fetch_all()
-        if prev_data:
-            vec = np.vstack([data['summary'] for data in prev_data])
-            ids = np.array([data['id'] for data in prev_data])
-            self.kdtree = KDTree(data=vec, indices=ids)
-        else:
-            self.kdtree = None
-        self.__lock.release()
+        try:
+            self.__lock.acquire()
+            self.db.delete_batch(idx) #vitum ekki hvort við fjarlægðum úr gagnagrunninum
+            prev_data = self.db.fetch_all()
+            self.kdtree = self.__update_tree(prev_data)
+            self.__lock.release()
+        except:
+            self.__lock.release()
+            return BCJStatus.ERROR
         return BCJStatus.OK
 
     
@@ -219,7 +245,7 @@ class BCJAIapi:
         -------
         BCJStatus
         """
-        self.__lock.acquire()
+        
         vectored_batch = []
         for bug in batch:
             data = bug['description'] if bool(bug['description']) else bug['summary'] # Sækjum annað hvort description eða summary
@@ -232,10 +258,13 @@ class BCJAIapi:
                 bug['date']
             ))
         try:
+            self.__lock.acquire()
             self.db.insert_batch(vectored_batch)
+            self.__lock.release()
         except:
             return BCJStatus.ERROR
-  
+
+        self.__lock.acquire()
         updated_results = self.db.fetch_all()
         self.kdtree = self.__update_tree(updated_results)
         self.__lock.release()
