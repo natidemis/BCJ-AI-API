@@ -17,7 +17,6 @@ from db import Database
 from threading import Lock
 import os
 from dotenv import load_dotenv
-from bert_embedding import BertEmbedding
 
 class BCJStatus(IntEnum):
     OK = 200
