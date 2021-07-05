@@ -20,6 +20,7 @@ class Database:
         Class to setup the database table when required.
         """
         self.DATABASE_URL = os.getenv('DATABASE_URL')
+    
 
 
     async def __make_table(self) -> bool:
@@ -145,6 +146,8 @@ class Database:
                     batch_id,
                     date,
                     id)
+            else:
+                raise ValueError
             await conn.close()
             logging.info("Update successful")
             return True
@@ -199,8 +202,9 @@ class Database:
             logging.info("Error dropping table")
     
     def drop_table(self):
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
         result = loop.run_until_complete(self.__drop_table())
+        loop.close()
         return result
     
     def make_table(self) -> bool:
@@ -212,8 +216,9 @@ class Database:
         -------
         True if table creation is successful, false otherwise
         """
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
         result = loop.run_until_complete(self.__make_table())
+        loop.close()
         return result
 
     def insert(self, id: str, date: str,batch_id: str=None, summary: list = None, descr: list=None) -> bool:
@@ -224,8 +229,9 @@ class Database:
         -------
         True if insertion successful, false otherwise
         """
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
         result = loop.run_until_complete(self.__insert(id=id,date=date,summary=summary,descr=descr,batch_id=batch_id))
+        loop.close()
         return result
     
     def fetch_all(self) -> list:
@@ -236,8 +242,9 @@ class Database:
         -------
         All rows, None if a problem occurs
         """
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
         result = loop.run_until_complete(self.__fetch_all())
+        loop.close()
         return result
     
     def update(self, id: str, date: str, summary: str = None, descr: str=None, batch_id: str=None) -> None:
@@ -248,8 +255,9 @@ class Database:
         -------
         Boolean, true if successfully updated, false otherwise
         """
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
         result = loop.run_until_complete(self.__update(id=id,date=date,summary=summary,descr=descr,batch_id=batch_id))
+        loop.close()
         return result
     
     def delete(self, id: str) -> None:
@@ -260,8 +268,9 @@ class Database:
         -------
         Boolean, true if successful, false otherwise
         """
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
         result = loop.run_until_complete(self.__delete(id=id))
+        loop.close()
         return result
     
     def delete_batch_id(self, batch_id: str) -> None:
@@ -272,11 +281,13 @@ class Database:
         -------
         Boolean, true if successful, false otherwise
         """
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
         result = loop.run_until_complete(self.__delete_batch_id(batch_id=batch_id))
+        loop.close()
         return result
 
     def insert_batch(self, data) -> bool:
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
         result = loop.run_until_complete(self.__insert_batch(data))
+        loop.close()
         return result   
