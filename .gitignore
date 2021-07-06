@@ -4,6 +4,7 @@
 wordvectors.wv.vectors.npy
 *.wv
 wordvectors.wv
+Models
 *.bin
 glove.42B.300d.txt
 gensim_glove_vectors.txt
