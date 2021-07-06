@@ -46,7 +46,7 @@ class Database:
             return False
 
 
-    async def __insert(self, id: str,date: str, summary: list = None,descr: list = None, batch_id: str= None) -> bool:
+    async def __insert(self, id: int,date: str, summary: list = None,descr: list = None, batch_id: int= None) -> bool:
         """
         Async method for inserting into the database
 
@@ -96,7 +96,7 @@ class Database:
             logging.error("Fetching all failed")
             return None
         
-    async def __update(self, id: str, date: str, summary: str = None, descr: str=None, batch_id: str=None) -> None:
+    async def __update(self, id: int, date: str, summary: str = None, descr: str=None, batch_id: int=None) -> None:
         try: 
             conn = await asyncpg.connect(self.DATABASE_URL)
             if bool(summary) and bool(descr) and bool(batch_id):
@@ -155,7 +155,7 @@ class Database:
             logging.error("Updating failed")
             return False
 
-    async def __delete(self, id: str) -> None:
+    async def __delete(self, id: int) -> None:
         """
         Removes a row from the database by ID
 
@@ -170,7 +170,7 @@ class Database:
             logging.info("successfully deleted row")
         except:
             logging.info('Deletion error occured')
-    async def __delete_batch_id(self,batch_id: str) -> None:
+    async def __delete_batch_id(self,batch_id: int) -> None:
         """
         Removes all rows with batch_id
 
@@ -221,7 +221,7 @@ class Database:
         loop.close()
         return result
 
-    def insert(self, id: str, date: str,batch_id: str=None, summary: list = None, descr: list=None) -> bool:
+    def insert(self, id: int, date: str,batch_id: int=None, summary: list = None, descr: list=None) -> bool:
         """
         Method for inserting into the database
 
@@ -247,7 +247,7 @@ class Database:
         loop.close()
         return result
     
-    def update(self, id: str, date: str, summary: str = None, descr: str=None, batch_id: str=None) -> None:
+    def update(self, id: int, date: str, summary: str = None, descr: str=None, batch_id: int=None) -> None:
         """
         Update values of a row by id
 
@@ -260,7 +260,7 @@ class Database:
         loop.close()
         return result
     
-    def delete(self, id: str) -> None:
+    def delete(self, id: int) -> None:
         """
         Delete row by id
 
@@ -273,7 +273,7 @@ class Database:
         loop.close()
         return result
     
-    def delete_batch_id(self, batch_id: str) -> None:
+    def delete_batch_id(self, batch_id: int) -> None:
         """
         Delete row by batch_id
 

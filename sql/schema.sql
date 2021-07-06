@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS Vectors(
-    id varchar(128) primary key,
+    id integer primary key,
     summary double precision[],
     descr double precision[],
-    batch_id varchar(128),
+    batch_id integer,
     dateUP varchar(128)
 );
