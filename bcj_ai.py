@@ -160,7 +160,7 @@ class BCJAIapi:
         """
         try:
             self.__lock.acquire()
-            rows = self.db.delete(idx) #vitum ekki hvort við fjarlægðum úr gagnagrunninum
+            rows = self.db.delete(idx)
             if rows > 0:
                 prev_data = self.db.fetch_all()
                 self.kdtree = self.__update_tree(prev_data)
