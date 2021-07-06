@@ -10,7 +10,7 @@ import logging
 
 load_dotenv()
 
-logging.getlogging().setLevel(logging.INFO)
+logging.getLogger().setLevel(logging.INFO)
 
 class Database:
   
@@ -174,7 +174,7 @@ class Database:
         except:
             logging.info('Deletion error occured')
             return None
-    async def __delete_batch_id(self,batch_id: int) -> None:
+    async def __delete_batch(self,batch_id: int) -> int:
         """
         Removes all rows with batch_id
 
@@ -184,13 +184,13 @@ class Database:
         """
         try:
             conn = await asyncpg.connect(self.DATABASE_URL)
-            await conn.execute(QueryString.DELETE_BATCH.value,batch_id)
+            result = await conn.fetch(QueryString.DELETE_BATCH.value,batch_id)
             await conn.close()
             logging.info("successfully deleted row")
-            return True
+            return result[0]['count']
         except:
             logging.info('Deletion error occured')
-            return False
+            return None
 
     async def __drop_table(self):
         """
@@ -281,7 +281,7 @@ class Database:
         loop.close()
         return result
     
-    def delete_batch_id(self, batch_id: int) -> None:
+    def delete_batch(self, batch_id: int) -> None:
         """
         Delete row by batch_id
 
@@ -290,7 +290,7 @@ class Database:
         Boolean, true if successful, false otherwise
         """
         loop = asyncio.new_event_loop()
-        result = loop.run_until_complete(self.__delete_batch_id(batch_id=batch_id))
+        result = loop.run_until_complete(self.__delete_batch(batch_id=batch_id))
         loop.close()
         return result
 

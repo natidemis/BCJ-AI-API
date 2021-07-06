@@ -20,7 +20,6 @@ class QueryString(Enum):
     INSERT INTO Vectors(id,summary,descr,batch_id,dateup)
     VALUES($1,$2,$3,$4,$5);"""
     FETCH = "SELECT * FROM Vectors;"
-   # DELETE = "DELETE FROM Vectors WHERE id = $1"
     DELETE = """
     WITH deleted AS (
         DELETE FROM Vectors 
@@ -75,8 +74,12 @@ class QueryString(Enum):
     WHERE id = $3; """
 
     DELETE_BATCH = """
-    DELETE from Vectors 
-    WHERE batch_id = $1;"""
+    WITH deleted AS (
+        DELETE FROM Vectors 
+        WHERE batch_id = $1 RETURNING *
+        )
+    SELECT count(*) 
+    FROM deleted;"""
 
     GET_BATCH_BY_ID = """
     SELECT * FROM Vectors
@@ -176,7 +179,6 @@ class Validator:
                 "summary": str,
                 "description": str,
                 "structured_info": dict,
-                Optional("k"): And(int, lambda n: n>0)
             })
         
         try:
