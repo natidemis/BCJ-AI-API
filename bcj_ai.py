@@ -136,6 +136,7 @@ class BCJAIapi:
                         summary=vec, 
                         batch_id=batch_id)
         except:
+            self.__lock.release()
             return BCJStatus.ERROR
 
         if self.kdtree is None:
@@ -159,9 +160,10 @@ class BCJAIapi:
         """
         try:
             self.__lock.acquire()
-            self.db.delete(idx) #vitum ekki hvort við fjarlægðum úr gagnagrunninum
-            prev_data = self.db.fetch_all()
-            self.kdtree = self.__update_tree(prev_data)
+            rows = self.db.delete(idx) #vitum ekki hvort við fjarlægðum úr gagnagrunninum
+            if rows > 0:
+                prev_data = self.db.fetch_all()
+                self.kdtree = self.__update_tree(prev_data)
             self.__lock.release()
         except:
             self.__lock.release()

@@ -10,8 +10,7 @@ import logging
 
 load_dotenv()
 
-logging.getLogger().setLevel(logging.INFO)
-
+logging.getlogging().setLevel(logging.INFO)
 
 class Database:
   
@@ -33,11 +32,14 @@ class Database:
         """
         sql_file = open('sql/schema.sql','r')
         query = sql_file.read()
+        query = query.split(';')
         sql_file.close()
 
         try:
             conn = await asyncpg.connect(self.DATABASE_URL)
-            await conn.execute(query)
+            await conn.execute(query[0])
+            await conn.execute(query[1])
+            await conn.execute(query[2])
             await conn.close()
             logging.info("Table created.")
             return True
@@ -165,11 +167,13 @@ class Database:
         """
         try:
             conn = await asyncpg.connect(self.DATABASE_URL)
-            await conn.execute(QueryString.DELETE.value,id)
+            result = await conn.fetch(QueryString.DELETE.value,id)
             await conn.close()
             logging.info("successfully deleted row")
+            return result[0]['count']
         except:
             logging.info('Deletion error occured')
+            return None
     async def __delete_batch_id(self,batch_id: int) -> None:
         """
         Removes all rows with batch_id
@@ -194,8 +198,12 @@ class Database:
         """
         try:
             q = "DROP TABLE IF EXISTS Vectors;"
+            q1 = "DROP INDEX IF EXISTS vectors_id;"
+            q2 = "DROP INDEX IF EXISTS vectors_batch;"
             conn = await asyncpg.connect(self.DATABASE_URL)
             await conn.execute(q)
+            await conn.execute(q1)
+            await conn.execute(q2)
             await conn.close()
             logging.info("Dropped table to avoid unnecessary errors.")
         except:
