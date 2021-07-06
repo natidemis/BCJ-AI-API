@@ -174,6 +174,7 @@ class Batch(Resource):
         req = request.json
         data = []
         try:
+            validator.validate_batch_data(req[0])
             batch_id = req[0]['structured_info']['batch_id']
             for item in req:
                 validator.validate_batch_data(item)
@@ -192,7 +193,6 @@ class Batch(Resource):
         except(SchemaError, ValueError):
             return make_response(jsonify({'message': Message.FAILURE.value}),400)
         return make_response(jsonify(data={'message': Message.VALID_INPUT.value}), ai.add_batch(data))
-        return 200
         
 api.add_resource(Bug,'/bug')
 api.add_resource(Batch, '/batch')

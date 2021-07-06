@@ -86,7 +86,9 @@ class BCJAIapi:
             k=N
         data = description if bool(description) else summary #sækjum annað hvort description eða summary
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) #sækjum vigur á annar hvor þeirra
+        self.__lock.acquire()
         result = self.kdtree.query(vec, k=k)
+        self.__lock.release()
         response = {
             "id": result[1],
             "dist": result[0].tolist()
@@ -122,8 +124,7 @@ class BCJAIapi:
             OK if the bug insertion is successful
             ERROR if the bug insertion is unsuccessful
         """
-        #if not (bool(summary) or bool(description) or bool(structured_info)):
-        #    return BCJStatus.ERROR  
+
 
         data = description if bool(description) else summary # Sækjum annað hvort description eða summary
         batch_id = structured_info['batch_id'] if 'batch_id' in structured_info else None # Bucket er optional
@@ -183,7 +184,7 @@ class BCJAIapi:
         """
         
         #Gætum þurft að breyta ef 'DATE' þarf að fara í gervigreindina
-        if not(bool(summary) or bool(description)):
+        if not(bool(summary) and bool(description)):
             try:
                 batch_id = structured_info['batch_id'] if 'batch_id' in structured_info else None
                 self.__lock.acquire()
@@ -191,7 +192,9 @@ class BCJAIapi:
                 self.__lock.release()
                 return BCJStatus.OK
             except:
+                self.__lock.release()
                 return BCJStatus.ERROR
+
         data = description if bool(description) else summary
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
         try:
@@ -201,6 +204,7 @@ class BCJAIapi:
             self.kdtree = self.__update_tree(prev_data)
             self.__lock.release()
         except:
+            self.__lock.release()
             return BCJStatus.ERROR
         return BCJStatus.OK
     
@@ -228,9 +232,10 @@ class BCJAIapi:
         """
         try:
             self.__lock.acquire()
-            self.db.delete_batch(idx) #vitum ekki hvort við fjarlægðum úr gagnagrunninum
-            prev_data = self.db.fetch_all()
-            self.kdtree = self.__update_tree(prev_data)
+            num_of_deleted_rows = self.db.delete_batch(idx) #vitum ekki hvort við fjarlægðum úr gagnagrunninum
+            if num_of_deleted_rows > 0:
+                prev_data = self.db.fetch_all()
+                self.kdtree = self.__update_tree(prev_data)
             self.__lock.release()
         except:
             self.__lock.release()
@@ -263,6 +268,7 @@ class BCJAIapi:
             self.db.insert_batch(vectored_batch)
             self.__lock.release()
         except:
+            self.lock.release()
             return BCJStatus.ERROR
 
         self.__lock.acquire()
