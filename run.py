@@ -1,8 +1,14 @@
+#Set up the database tables
 from db import Database
 db = Database()
-db.drop_table() #fjarlægja seinna
+db.drop_table() 
 success = db.make_table()
 
+#Fetch vectors for the models.
+exec(open("./fetch_vectors.py").read())
+
+
+#Run app
 from app import app
 import logging
 
