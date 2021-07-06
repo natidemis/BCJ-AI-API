@@ -20,7 +20,14 @@ class QueryString(Enum):
     INSERT INTO Vectors(id,summary,descr,batch_id,dateup)
     VALUES($1,$2,$3,$4,$5);"""
     FETCH = "SELECT * FROM Vectors;"
-    DELETE = "DELETE FROM Vectors WHERE id = $1"
+   # DELETE = "DELETE FROM Vectors WHERE id = $1"
+    DELETE = """
+    WITH deleted AS (
+        DELETE FROM Vectors 
+        WHERE id = $1 RETURNING *
+        )
+    SELECT count(*) 
+    FROM deleted;"""
     UPDATE_DESCR_NO_BATCH = """
     UPDATE Vectors 
     SET descr = $1,
