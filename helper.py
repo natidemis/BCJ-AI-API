@@ -91,14 +91,14 @@ class Validator:
         A class containing validation functions for the app
         """
         self.info_schema = Schema({
-            'id': str,
+            'id': int,
             'date': str,
-            Optional("batch_id"): str
+            Optional("batch_id"): int
         })
         self.batch_schema = Schema({
-            'id': str,
+            'id': int,
             'date': str,
-            'batch_id': str
+            'batch_id': int
         })
         
     def validate_datestring(self, date: str) -> None:
@@ -188,7 +188,7 @@ class Validator:
         None, raises ValueError if `data` invalid
         """
         schema = Schema({
-            "id": str #Bug id's are strings while batch id's are integers
+            "id": int #Bug id's are strings while batch id's are integers
         })
         try:
             schema.validate(data)
@@ -204,7 +204,7 @@ class Validator:
         None, raises ValueError if `data` invalid
         """
         schema = Schema({
-            "batch_id": str #Bug id's are strings while batch id's are integers
+            "batch_id": int #Bug id's are strings while batch id's are integers
         })
         try:
             schema.validate(data)

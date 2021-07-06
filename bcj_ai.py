@@ -147,7 +147,7 @@ class BCJAIapi:
         return BCJStatus.OK
 
 
-    def remove_bug(self, idx: str) -> BCJStatus:
+    def remove_bug(self, idx: int) -> BCJStatus:
         """
         Remove a bug with idx as its id.
         
@@ -202,7 +202,7 @@ class BCJAIapi:
             return BCJStatus.ERROR
         return BCJStatus.OK
     
-    def get_batch_by_id(self, idx: str) -> [BCJStatus,int]: #Ólíklegt að þetta verði notað
+    def get_batch_by_id(self, idx: int) -> [BCJStatus,int]: #Ólíklegt að þetta verði notað
         """
         Returns a specific batch of bugs. The batch's id is idx.
 
@@ -214,7 +214,7 @@ class BCJAIapi:
         """
         return BCJStatus.OK, idx
     
-    def remove_batch(self, idx: str) -> BCJStatus:
+    def remove_batch(self, idx: int) -> BCJStatus:
         """
         Removes a batch of bugs. The batch's id is idx.
 
