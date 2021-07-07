@@ -50,6 +50,7 @@ class BCJAIapi:
         prev_data = self.db.fetch_all()
         self.kdtree = self.__update_tree(prev_data)
 
+    @staticmethod
     def __update_tree(self,prev_data: list) -> KDTree:
         """
         Private method for updating the tree.
