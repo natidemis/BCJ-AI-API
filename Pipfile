@@ -1,0 +1,41 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+aniso8601 = "*"
+bleach = "*"
+click = "*"
+colorama = "*"
+contextlib2 = "*"
+itsdangerous = "*"
+pyparsing = "*"
+pytz = "*"
+schema = "*"
+six = "*"
+webencodings = "*"
+"zope.interface" = "*"
+gunicorn = "*"
+python-dotenv = "*"
+tensorflow-cpu = "==2.4.1"
+pandas = "*"
+sklearn = "*"
+nltk = "*"
+psutil = "*"
+gensim = "*"
+asyncio = "*"
+asyncpg = "*"
+gdown = "*"
+DateTime = "*"
+Flask = "*"
+Flask-HTTPAuth = "*"
+Flask-RESTful = "*"
+Jinja2 = "*"
+MarkupSafe = "==2.0.1"
+Werkzeug = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.8"
