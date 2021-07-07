@@ -12,12 +12,15 @@ exec(open("./fetch_vectors.py").read())
 from app import app
 import logging
 
-logging.getLogger().setLevel(logging.INFO)
+logging.basicConfig(format='%(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+    datefmt='%Y-%m-%d:%H:%M:%S',
+    level=logging.DEBUG)
 
+logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
     if not success:
-        logging.error("Setting up the database failed, server will not run.")
+        logger.error("Setting up the database failed, server will not run.")
     else:
-        logging.info("Database initialized successfully, starting app..")
+        logger.info("Database initialized successfully, starting app..")
         app.run()

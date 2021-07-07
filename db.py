@@ -10,7 +10,11 @@ import logging
 
 load_dotenv()
 
-logging.getLogger().setLevel(logging.INFO)
+logging.basicConfig(format='%(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+    datefmt='%Y-%m-%d:%H:%M:%S',
+    level=logging.DEBUG)
+
+logger = logging.getLogger(__name__)
 
 class Database:
   
@@ -41,10 +45,10 @@ class Database:
             await conn.execute(query[1])
             await conn.execute(query[2])
             await conn.close()
-            logging.info("Table created.")
+            logger.info("Table created.")
             return True
         except:
-            logging.error("Creating table failed, re-evaluate enviroment variables.")
+            logger.error("Creating table failed, re-evaluate enviroment variables.")
             return False
 
 
@@ -61,10 +65,10 @@ class Database:
             conn = await asyncpg.connect(self.DATABASE_URL)
             await conn.execute(QueryString.INSERT.value,id,summary,descr,batch_id,date)
             await conn.close()
-            logging.info("Insertion succcessful")
+            logger.info("Insertion succcessful")
             return True
         except(ValueError):
-            logging.error("Failed to insert")
+            logger.error("Failed to insert")
             return False
 
     async def __insert_batch(self,data) -> None:
@@ -72,10 +76,10 @@ class Database:
             conn = await asyncpg.connect(self.DATABASE_URL)
             await conn.executemany(QueryString.INSERT.value,data)
             await conn.close()
-            logging.info("Batch insertion successful")
+            logger.info("Batch insertion successful")
             return True
         except(ValueError):
-            logging.error("Failed to insert batch")
+            logger.error("Failed to insert batch")
             return False
 
     
@@ -92,10 +96,10 @@ class Database:
             conn = await asyncpg.connect(self.DATABASE_URL)
             rows = await conn.fetch(QueryString.FETCH.value)
             await conn.close()
-            logging.info("Fetching all succeeded")
+            logger.info("Fetching all succeeded")
             return [{'id': row['id'],'summary': row['summary'],'description': row['descr'],'batch_id': row['batch_id'],'date': row['dateup']} for row in rows]
         except(ValueError):
-            logging.error("Fetching all failed")
+            logger.error("Fetching all failed")
             return None
         
     async def __update(self, id: int, date: str, summary: str = None, descr: str=None, batch_id: int=None) -> None:
@@ -151,10 +155,10 @@ class Database:
             else:
                 raise ValueError
             await conn.close()
-            logging.info("Update successful")
+            logger.info("Update successful")
             return True
         except(ValueError):
-            logging.error("Updating failed")
+            logger.error("Updating failed")
             return False
 
     async def __delete(self, id: int) -> None:
@@ -169,10 +173,10 @@ class Database:
             conn = await asyncpg.connect(self.DATABASE_URL)
             result = await conn.fetch(QueryString.DELETE.value,id)
             await conn.close()
-            logging.info("successfully deleted row")
+            logger.info("successfully deleted row")
             return result[0]['count']
         except:
-            logging.info('Deletion error occured')
+            logger.info('Deletion error occured')
             return None
     async def __delete_batch(self,batch_id: int) -> int:
         """
@@ -186,10 +190,10 @@ class Database:
             conn = await asyncpg.connect(self.DATABASE_URL)
             result = await conn.fetch(QueryString.DELETE_BATCH.value,batch_id)
             await conn.close()
-            logging.info("successfully deleted row")
+            logger.info("successfully deleted row")
             return result[0]['count']
         except:
-            logging.info('Deletion error occured')
+            logger.info('Deletion error occured')
             return None
 
     async def __drop_table(self):
@@ -205,9 +209,9 @@ class Database:
             await conn.execute(q1)
             await conn.execute(q2)
             await conn.close()
-            logging.info("Dropped table to avoid unnecessary errors.")
+            logger.info("Dropped table to avoid unnecessary errors.")
         except:
-            logging.info("Error dropping table")
+            logger.info("Error dropping table")
     
     def drop_table(self):
         loop = asyncio.new_event_loop()
