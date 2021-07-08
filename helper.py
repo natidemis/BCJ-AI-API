@@ -179,7 +179,7 @@ class Validator:
         schema = Schema({
                 "summary": str,
                 "description": str,
-                optional("date"): str,
+                Optional("date"): str,
                 Optional("k"): And(int, lambda n: n>0)
             })
         
