@@ -182,7 +182,7 @@ class Validator:
         schema = Schema({
                 "summary": str,
                 "description": str,
-                'structured_info': str,
+                'structured_info': dict,
                 Optional("k"): And(int, lambda n: n>0)
             })
         
