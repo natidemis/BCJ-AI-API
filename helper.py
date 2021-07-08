@@ -88,7 +88,7 @@ class QueryString(Enum):
 
 class Message(Enum):
     VALID_INPUT = 'Valid input, check status for result'
-    FAILURE = 'Data not in proper format, read the requirements here: -----'
+    FAILURE = 'Data not in proper format, read the requirements in README.md or on github: https://github.com/natidemis/BCJ-AI-API'
     UNFULFILLED_REQ = 'Either summary or description must have length > 0'
     UNAUTHORIZED = 'Unauthorized, wrong token'
     REMOVED = 'Successfully removed'
