@@ -78,12 +78,14 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
 ## Web service
 * `/bug`
   * `GET` query the **k** most similar bugs
-      *  Summary and description are required. date is optional, string in the form `YYYY-MM-DD`.  
+      *  Summary and description are required. date, string in the form `YYYY-MM-DD`.  
       ```JSON
       {
          "summary": "summary",
          "description": "description,
-         "date"(optional): "YYYY-MM-DD"
+         "structured_info": {
+                "date": "YYYY-MM-DDD"
+         }
       }
       ``` 
   * `POST` insert a bug 
@@ -103,9 +105,29 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
           "batch_id"(optional): 1
           }
         }
-      ```
+        ```
+         * Response: status code, json object, that may explain the status response.
+         ```JSON
+         {
+            "message": "message"
+         }
+         
+         ```
+
   * `DELETE` delete a bug 
-     * valid id in the format: `{ "id": 1 }`
+     * valid id in the format: 
+     ```JSON
+     {
+          "id": 1 
+     }
+     ```
+     * Response: status code, json object, that may explain the status response.
+         ```JSON
+         {
+            "message": "message"
+         }
+         
+         ```
   * `PATCH` update a bug 
       * summary and description are optional, structured info, mainly id and date are required.
       ```JSON
@@ -119,6 +141,12 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
           }
        }
       ```
+      * Response: status code, json object, that may explain the status response.
+         ```JSON
+         {
+            "message": "message"
+         }
+      
 * `/batch`
   * `POST` insert k bugs 
       * Most similar to the `post` on `/bug`
