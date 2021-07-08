@@ -19,9 +19,12 @@ Artificial Intelligence API for usability problems.
 ***
 
 ## Setup
-
+- Install python 3.8.10
+   *  other versions may or may not work.
 - Install dependencies by writing ``pip install -r requirements.txt`` into terminal
     * Note that the versions in the file may be outdated
+- If the above step failed to properly install all packages, install pipenv by writing `pip install pipenv` into the terminal and then run `pipenv install` to install using the pipfile
+   * Note that if both steps fail, it may be worth trying to remove the specified versions of some of the packages to install their latest versions.
     
 - Run `gentoken.py` to generate a secret token
     * The token appears in a new file called ``.env``
@@ -41,7 +44,7 @@ The project requires a corpus. We used the **Google News** corpus which can be d
 
 Run the file run.py to start the server (e.g. by writing ``python run.py`` in terminal).
 
-The pacakge NLTK should install itself with stopwords if it isn't already installed. If it doesn't install itself, write the following into a python console:
+The pacakge NLTK should install itself with stopwords if it isn't already installed. If it doesn't install itself, either run `stopwords.py` or write the following into a python console:
 
 ```
 >>> import nltk
@@ -75,28 +78,80 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
 ## Web service
 * `/bug`
   * `GET` query the **k** most similar bugs
+      *  Summary and description are required. date is optional, string in the form `YYYY-MM-DD`.  
+      ```JSON
+      {
+         "summary": "summary",
+         "description": "description,
+         "date"(optional): "YYYY-MM-DD"
+      }
+      ``` 
   * `POST` insert a bug 
     * Data requirement for request in JSON format:
-      * summary and description must be string values, may be empty strings
-      * id must be a string
-      * creationDate must be a string in the format `YYY-MM-DD`
-      * Structured_info must be valid for insertion
+      * summary and description must be string values, either summary or description may be empty but not both.
+      * Structured_info must be valid for insertion and must contain the following:
+         *  id, an integer and unique in the database.
+         *  date, a string in the format `YYYY-MM-DD`
+         *  batch_id(optional, not required), an integer for the purposes of grouping a set of bugs together, most useful for deleting a group of bugs at once.
       ```JSON
       {
         "summary": "summary",
-        "description": "description,
+        "description": "description",
         "structured_info": {
-          id,
-          creationDate
+          "id": 1,
+          "date": "YYYY-MM-DD",
+          "batch_id"(optional): 1
           }
         }
       ```
   * `DELETE` delete a bug 
-     * valid id in the format: `{ "id": "id" }`
+     * valid id in the format: `{ "id": 1 }`
   * `PATCH` update a bug 
+      * summary and description are optional, structured info, mainly id and date are required.
+      ```JSON
+      {
+        "summary"(optional): "summary",
+        "description"(optional): "description",
+        "structured_info": {
+          "id": 1,
+          "date": "YYYY-MM-DD",
+          "batch_id"(optional): 1
+          }
+       }
+      ```
 * `/batch`
   * `POST` insert k bugs 
-  * `DELETE` delete k bugs 
+      * Most similar to the `post` on `/bug`
+      * for each bug, the json oject passed must be in the same format as specified for `post` on `/bug`
+      * All k bugs must have the same `batch_id`, batch_id is a requirement.
+      ```JSON
+      [
+         {
+        "summary": "summary",
+        "description": "description",
+        "structured_info": {
+          "id": 1,
+          "date": "YYYY-MM-DD",
+          "batch_id"(required): 1
+          }
+        },
+        {
+        "summary": "summary",
+        "description": "description",
+        "structured_info": {
+          "id": 2,
+          "date": "YYYY-MM-DD",
+          "batch_id"(required): 1
+          }
+        }
+      ]
+      ```
+  * `DELETE` delete k bugs(a batch)
+      ```JSON
+      {
+         "batch_id": 1
+      }
+      ```
   
 ***
 
