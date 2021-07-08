@@ -174,12 +174,22 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
         }
       ]
       ```
+      * Response: status code, json object, that may explain the status response.
+         ```JSON
+         {
+            "message": "message"
+         }
   * `DELETE` delete k bugs(a batch)
       ```JSON
       {
          "batch_id": 1
       }
       ```
+      * Response: status code, json object, that may explain the status response.
+         ```JSON
+         {
+            "message": "message"
+         }
   
 ***
 
