@@ -110,6 +110,9 @@ class Validator:
             'date': str,
             'batch_id': int
         })
+        self.info_schema_get = Schema({
+            'date': str,
+        })
         
     def validate_datestring(self, date: str) -> None:
         """
@@ -179,14 +182,15 @@ class Validator:
         schema = Schema({
                 "summary": str,
                 "description": str,
-                optional("date"): str,
+                'structured_info': str,
                 Optional("k"): And(int, lambda n: n>0)
             })
         
         try:
             schema.validate(data)
             self.info_schema_get.validate(data['structured_info'])
-            self.validate_datestring(data['structured_info']['date'])
+            if 'date' in data['structured_info']:
+                self.validate_datestring(data['structured_info']['date'])
         except(ValueError):
             raise ValueError
 
