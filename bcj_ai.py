@@ -43,7 +43,6 @@ class BCJAIapi:
         GOOGLENEWS_PATH = os.getenv('GOOGLENEWS_PATH')
         self.w2v = Word2Vec(
             outputfile=OUTPUT_FILE,
-            wv_path='wordvectors.wv',
             dataset=DATASET,
             commoncrawl_path=COMMONCRAWL_PATH,
             googlenews_path=GOOGLENEWS_PATH)
