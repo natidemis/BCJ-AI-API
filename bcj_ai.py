@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103
 """
 @authors: kra33, Gitcelo, natidemis
 May 2021
@@ -7,18 +8,20 @@ API module for Bug Consolidation for Jira (BCJ) AI model.
 Used to store bugs and classify them.
 """
 
-import random
 from enum import IntEnum
+import os
+from threading import Lock
 import tensorflow as tf
+import numpy as np
+from dotenv import load_dotenv
 from up_utils.word2vec import Word2Vec
 from up_utils.kdtree import KDTreeUP as KDTree
-import numpy as np
 from db import Database
-from threading import Lock
-import os
-from dotenv import load_dotenv
 
 class BCJStatus(IntEnum):
+    """
+    Class that contains status codes
+    """
     OK = 200
     NOT_FOUND = 404
     ERROR = 500
@@ -34,7 +37,7 @@ class BCJAIapi:
         get ready for classifying bugs and returning similar bug ids.
         """
         self.__lock = Lock()
-        self.db = Database()
+        self.database = Database()
         self.model = tf.keras.models.load_model('Models', compile=False)
         load_dotenv()
         OUTPUT_FILE = os.getenv('OUTPUT_FILE')
@@ -46,11 +49,11 @@ class BCJAIapi:
             dataset=DATASET,
             commoncrawl_path=COMMONCRAWL_PATH,
             googlenews_path=GOOGLENEWS_PATH)
-        prev_data = self.db.fetch_all()
+        prev_data = self.database.fetch_all()
         self.kdtree = self.__update_tree(prev_data)
 
-
-    def __update_tree(self,prev_data: list) -> KDTree:
+    @staticmethod
+    def __update_tree(prev_data: list) -> KDTree:
         """
         Private method for updating the tree.
 
@@ -62,8 +65,7 @@ class BCJAIapi:
             vec = np.vstack([data['summary'] for data in prev_data])
             ids = np.array([data['id'] for data in prev_data])
             return KDTree(data=vec, indices=ids)
-        else:
-            return None
+        return None
 
     def get_similar_bugs_k(self,
                             summary: str=None,
@@ -88,15 +90,14 @@ class BCJAIapi:
                 '''At least one of the parameters summary,
                 description, or structured_info must be filled'''
         N = len(self.kdtree.indices)
-        if k>N:
-            k=N
+        k = min(k,N)
         data = description if bool(description) else summary
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
-        self.__lock.acquire()
-        result = self.kdtree.query(vec, k=k)
-        ids = result[1][0]
-        dists = result[0][0]
-        self.__lock.release()
+        with self. __lock:
+            result = self.kdtree.query(vec, k=k)
+            ids = result[1][0]
+            dists = result[0][0]
+
         if k>1:
             ids = list(map(int, ids))
             dists = dists.tolist()
@@ -109,26 +110,26 @@ class BCJAIapi:
         }
         return BCJStatus.OK, response
 
-    def get_similar_bugs_threshold(self,
-                                summary: str=None,
-                                description: str=None,
-                                structured_info: dict=None,
-                                threshold: str=0.5) -> BCJStatus and (list or str):
-        """
-        Return the ID of bugs at least `threshold` similar; based on given summary, desription, and
-        structured information.
-
-        Returns
-        -------
-        status : BCJStatus
-            OK if the requested number of bugs were found.
-            ERROR if less than k bugs were found.
-        idx : list
-            A list of `min(k,N)` most similar bugs where N is the total number of bugs
-        """
-        if self.kdtree is None:
-            return BCJStatus.NOT_FOUND, 'No examples available'
-        return BCJStatus.OK, [random.randint(1,1000) for _ in range(k)]
+#    def get_similar_bugs_threshold(self,
+#                                summary: str=None,
+#                                description: str=None,
+#                                structured_info: dict=None,
+#                                threshold: str=0.5) -> BCJStatus and (list or str):
+#        """
+#        Return the ID of bugs at least `threshold` similar; based on given summary, desription, and
+#        structured information.
+#
+#        Returns
+#        -------
+#        status : BCJStatus
+#            OK if the requested number of bugs were found.
+#            ERROR if less than k bugs were found.
+#        idx : list
+#            A list of `min(k,N)` most similar bugs where N is the total number of bugs
+#        """
+#        if self.kdtree is None:
+#            return BCJStatus.NOT_FOUND, 'No examples available'
+#        return BCJStatus.OK, [random.randint(1,1000) for _ in range(k)]
 
     def add_bug(self,
                 summary: str=None,
@@ -153,22 +154,20 @@ class BCJAIapi:
         batch_id = structured_info['batch_id'] if 'batch_id' in structured_info else None
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
         new_id = structured_info['id']
-        self.__lock.acquire()
-        try:
-            self.db.insert(id=new_id,
-                        date=structured_info['date'],
-                        summary=vec,
-                        batch_id=batch_id)
-        except:
-            self.__lock.release()
-            return BCJStatus.ERROR
 
-        if self.kdtree is None:
-            self.kdtree = KDTree(data=vec, indices=[new_id])
-        else:
-            self.kdtree.update(vec, new_id)
-
-        self.__lock.release()
+        with self.__lock:
+            try:
+                self.database.insert(id=new_id,
+                            date=structured_info['date'],
+                            summary=vec,
+                            batch_id=batch_id)
+            except TypeError:
+                return BCJStatus.ERROR
+        with self.__lock:
+            if self.kdtree is None:
+                self.kdtree = KDTree(data=vec, indices=[new_id])
+            else:
+                self.kdtree.update(vec, new_id)
         return BCJStatus.OK
 
 
@@ -182,17 +181,14 @@ class BCJAIapi:
             OK if bug removal is successful
             ERRROR if bug removal is unsuccessful
         """
-        try:
-            self.__lock.acquire()
-            rows = self.db.delete(idx)
-            if rows > 0:
-                prev_data = self.db.fetch_all()
-                self.kdtree = self.__update_tree(prev_data)
-            self.__lock.release()
-        except:
-            self.__lock.release()
-            return BCJStatus.ERROR
-
+        with self.__lock:
+            try:
+                rows = self.database.delete(idx)
+                if rows > 0:
+                    prev_data = self.database.fetch_all()
+                    self.kdtree = self.__update_tree(prev_data)
+            except ValueError:
+                return BCJStatus.ERROR
         return BCJStatus.OK
 
     def update_bug(self,
@@ -211,44 +207,29 @@ class BCJAIapi:
 
         #Gætum þurft að breyta ef 'DATE' þarf að fara í gervigreindina
         if not(bool(summary) and bool(description)):
-            try:
-                batch_id = structured_info['batch_id'] if 'batch_id' in structured_info else None
-                self.__lock.acquire()
-                self.db.update(id=structured_info['id'],
-                                date=structured_info['date'],
-                                batch_id=batch_id)
-                self.__lock.release()
-                return BCJStatus.OK
-            except:
-                self.__lock.release()
-                return BCJStatus.ERROR
+            with self.__lock:
+                try:
+                    batch_id = structured_info['batch_id'] if \
+                        'batch_id' in structured_info else None
+                    self.database.update(id=structured_info['id'],
+                                    date=structured_info['date'],
+                                    batch_id=batch_id)
+                    return BCJStatus.OK
+                except ValueError:
+                    return BCJStatus.ERROR
 
         data = description if bool(description) else summary
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
-        try:
-            self.lock.acquire()
-            self.db.update(id=structured_info['id'],
-                            date=structured_info['date'],
-                            summary=vec,batch_id=batch_id)
-            prev_data = self.db.fetch_all()
-            self.kdtree = self.__update_tree(prev_data)
-            self.__lock.release()
-        except:
-            self.__lock.release()
-            return BCJStatus.ERROR
+        with self.__lock:
+            try:
+                self.database.update(id=structured_info['id'],
+                                date=structured_info['date'],
+                                summary=vec,batch_id=batch_id)
+                prev_data = self.database.fetch_all()
+                self.kdtree = self.__update_tree(prev_data)
+            except ValueError:
+                return BCJStatus.ERROR
         return BCJStatus.OK
-
-    def get_batch_by_id(self, idx: int) -> [BCJStatus,int]: #Ólíklegt að þetta verði notað
-        """
-        Returns a specific batch of bugs. The batch's id is idx.
-
-        Returns
-        -------
-        status: BCJStatus
-            OK if bug update is successful
-            ERROR if bug update is unsuccessful
-        """
-        return BCJStatus.OK, idx
 
     def remove_batch(self, idx: int) -> BCJStatus:
         """
@@ -260,17 +241,15 @@ class BCJAIapi:
             OK if bug update is successful
             ERROR if bug update is unsuccessful
         """
-        try:
-            self.__lock.acquire()
-            #vitum ekki hvort við fjarlægðum úr gagnagrunninum
-            num_of_deleted_rows = self.db.delete_batch(idx)
-            if num_of_deleted_rows > 0:
-                prev_data = self.db.fetch_all()
-                self.kdtree = self.__update_tree(prev_data)
-            self.__lock.release()
-        except:
-            self.__lock.release()
-            return BCJStatus.ERROR
+        with self.__lock:
+            try:
+                #vitum ekki hvort við fjarlægðum úr gagnagrunninum
+                num_of_deleted_rows = self.database.delete_batch(idx)
+                if num_of_deleted_rows > 0:
+                    prev_data = self.database.fetch_all()
+                    self.kdtree = self.__update_tree(prev_data)
+            except ValueError:
+                return BCJStatus.ERROR
         return BCJStatus.OK
 
 
@@ -290,16 +269,11 @@ class BCJAIapi:
         vectorized_sentences = self.model.predict(np.array(self.w2v.get_sentence_matrix(sentences)))
         vectored_batch = [(bug['id'],vec,None,bug['batch_id'],bug['date'])
                             for bug, vec in zip(batch, vectorized_sentences)]
-        try:
-            self.__lock.acquire()
-            self.db.insert_batch(vectored_batch)
-            self.__lock.release()
-        except:
-            self.lock.release()
-            return BCJStatus.ERROR
-
-        self.__lock.acquire()
-        updated_results = self.db.fetch_all()
-        self.kdtree = self.__update_tree(updated_results)
-        self.__lock.release()
+        with self.__lock:
+            try:
+                self.database.insert_batch(vectored_batch)
+            except ValueError:
+                return BCJStatus.ERROR
+            updated_results = self.database.fetch_all()
+            self.kdtree = self.__update_tree(updated_results)
         return BCJStatus.OK
