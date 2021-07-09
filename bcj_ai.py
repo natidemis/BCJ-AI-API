@@ -135,8 +135,10 @@ class BCJAIapi:
                 description: str=None,
                 structured_info: dict=None) -> BCJStatus:
         """
-        Add a bug with given summary, description and structured information. Here it is assumed that all the data
-        has already been validated and sanitized. To see how we sanitized the data, see __init__.py in the folder
+        Add a bug with given summary, description and structured information.
+        Here it is assumed that all the data
+        has already been validated and sanitized.
+        To see how we sanitized the data, see __init__.py in the folder
         app.
 
         Returns
@@ -147,15 +149,15 @@ class BCJAIapi:
         """
 
 
-        data = description if bool(description) else summary # Sækjum annað hvort description eða summary
-        batch_id = structured_info['batch_id'] if 'batch_id' in structured_info else None # Bucket er optional
-        vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) # Sækjum vigur á annar hvor þeirra
+        data = description if bool(description) else summary
+        batch_id = structured_info['batch_id'] if 'batch_id' in structured_info else None
+        vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
         new_id = structured_info['id']
         self.__lock.acquire()
         try:
             self.db.insert(id=new_id,
                         date=structured_info['date'],
-                        summary=vec, 
+                        summary=vec,
                         batch_id=batch_id)
         except:
             self.__lock.release()
@@ -165,7 +167,7 @@ class BCJAIapi:
             self.kdtree = KDTree(data=vec, indices=[new_id])
         else:
             self.kdtree.update(vec, new_id)
-        
+
         self.__lock.release()
         return BCJStatus.OK
 
@@ -173,7 +175,7 @@ class BCJAIapi:
     def remove_bug(self, idx: int) -> BCJStatus:
         """
         Remove a bug with idx as its id.
-        
+
         Returns
         -------
         status: BCJstatus
@@ -190,7 +192,7 @@ class BCJAIapi:
         except:
             self.__lock.release()
             return BCJStatus.ERROR
-        
+
         return BCJStatus.OK
 
     def update_bug(self,
@@ -199,20 +201,22 @@ class BCJAIapi:
                     structured_info: str=None) -> BCJStatus:
         """
         Updates a bug with the parameters given. The id of the bug should be in structured_info.
-        
+
         Returns
         -------
         status: BCJStatus
             OK if bug update is successful
             ERROR if bug update is unsuccessful
         """
-        
+
         #Gætum þurft að breyta ef 'DATE' þarf að fara í gervigreindina
         if not(bool(summary) and bool(description)):
             try:
                 batch_id = structured_info['batch_id'] if 'batch_id' in structured_info else None
                 self.__lock.acquire()
-                self.db.update(id=structured_info['id'],date=structured_info['date'],batch_id=batch_id)
+                self.db.update(id=structured_info['id'],
+                                date=structured_info['date'],
+                                batch_id=batch_id)
                 self.__lock.release()
                 return BCJStatus.OK
             except:
@@ -223,7 +227,9 @@ class BCJAIapi:
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
         try:
             self.lock.acquire()
-            self.db.update(id=structured_info['id'],date=structured_info['date'],summary=vec,batch_id=batch_id)
+            self.db.update(id=structured_info['id'],
+                            date=structured_info['date'],
+                            summary=vec,batch_id=batch_id)
             prev_data = self.db.fetch_all()
             self.kdtree = self.__update_tree(prev_data)
             self.__lock.release()
@@ -231,7 +237,7 @@ class BCJAIapi:
             self.__lock.release()
             return BCJStatus.ERROR
         return BCJStatus.OK
-    
+
     def get_batch_by_id(self, idx: int) -> [BCJStatus,int]: #Ólíklegt að þetta verði notað
         """
         Returns a specific batch of bugs. The batch's id is idx.
@@ -243,7 +249,7 @@ class BCJAIapi:
             ERROR if bug update is unsuccessful
         """
         return BCJStatus.OK, idx
-    
+
     def remove_batch(self, idx: int) -> BCJStatus:
         """
         Removes a batch of bugs. The batch's id is idx.
@@ -256,7 +262,8 @@ class BCJAIapi:
         """
         try:
             self.__lock.acquire()
-            num_of_deleted_rows = self.db.delete_batch(idx) #vitum ekki hvort við fjarlægðum úr gagnagrunninum
+            #vitum ekki hvort við fjarlægðum úr gagnagrunninum
+            num_of_deleted_rows = self.db.delete_batch(idx)
             if num_of_deleted_rows > 0:
                 prev_data = self.db.fetch_all()
                 self.kdtree = self.__update_tree(prev_data)
@@ -266,7 +273,7 @@ class BCJAIapi:
             return BCJStatus.ERROR
         return BCJStatus.OK
 
-    
+
     def add_batch(self, batch: list) -> BCJStatus:
         """
         Adds a batch to the database and updates the KD-Tree
@@ -275,18 +282,14 @@ class BCJAIapi:
         -------
         BCJStatus
         """
-        
-        vectored_batch = []
+
+        sentences = []
         for bug in batch:
-            data = bug['description'] if bool(bug['description']) else bug['summary'] # Sækjum annað hvort description eða summary
-            vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) # Sækjum vigur fyri desc eða summ
-            vectored_batch.append((
-                bug['id'],
-                vec,
-                None,
-                bug['batch_id'],
-                bug['date']
-            ))
+            sentence = bug['description'] if bool(bug['description']) else bug['summary']
+            sentences.append(sentence)
+        vectorized_sentences = self.model.predict(np.array(self.w2v.get_sentence_matrix(sentences)))
+        vectored_batch = [(bug['id'],vec,None,bug['batch_id'],bug['date'])
+                            for bug, vec in zip(batch, vectorized_sentences)]
         try:
             self.__lock.acquire()
             self.db.insert_batch(vectored_batch)
