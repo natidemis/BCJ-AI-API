@@ -65,7 +65,7 @@ class Database:
             conn = await asyncpg.connect(self.DATABASE_URL)
             await conn.execute(QueryString.INSERT.value,id,summary,descr,batch_id,date)
             await conn.close()
-            logger.info("Insertion succcessful")
+            logger.info("Insertion successful")
             return True
         except(ValueError):
             logger.error("Failed to insert")

@@ -88,7 +88,7 @@ class QueryString(Enum):
 
 class Message(Enum):
     VALID_INPUT = 'Valid input, check status for result'
-    FAILURE = 'Data not in proper format, read the requirements here: -----'
+    FAILURE = 'Data not in proper format, read the requirements in README.md or on github: https://github.com/natidemis/BCJ-AI-API'
     UNFULFILLED_REQ = 'Either summary or description must have length > 0'
     UNAUTHORIZED = 'Unauthorized, wrong token'
     REMOVED = 'Successfully removed'
@@ -109,6 +109,9 @@ class Validator:
             'id': int,
             'date': str,
             'batch_id': int
+        })
+        self.info_schema_get = Schema({
+            'date': str,
         })
         
     def validate_datestring(self, date: str) -> None:
@@ -179,14 +182,15 @@ class Validator:
         schema = Schema({
                 "summary": str,
                 "description": str,
-                Optional("date"): str,
+                'structured_info': dict,
                 Optional("k"): And(int, lambda n: n>0)
             })
         
         try:
             schema.validate(data)
             self.info_schema_get.validate(data['structured_info'])
-            self.validate_datestring(data['structured_info']['date'])
+            if 'date' in data['structured_info']:
+                self.validate_datestring(data['structured_info']['date'])
         except(ValueError):
             raise ValueError
 
