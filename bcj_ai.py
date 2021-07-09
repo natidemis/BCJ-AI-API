@@ -157,10 +157,10 @@ class BCJAIapi:
 
         with self.__lock:
             try:
-                self.database.insert(id=new_id,
+                self.database.insert(_id=new_id,
                             date=structured_info['date'],
                             summary=vec,
-                            batch_id=batch_id)
+                            batch__id=batch_id)
             except TypeError:
                 return BCJStatus.ERROR
         with self.__lock:
@@ -211,9 +211,9 @@ class BCJAIapi:
                 try:
                     batch_id = structured_info['batch_id'] if \
                         'batch_id' in structured_info else None
-                    self.database.update(id=structured_info['id'],
+                    self.database.update(_id=structured_info['id'],
                                     date=structured_info['date'],
-                                    batch_id=batch_id)
+                                    batch__id=batch_id)
                     return BCJStatus.OK
                 except ValueError:
                     return BCJStatus.ERROR
@@ -222,9 +222,10 @@ class BCJAIapi:
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
         with self.__lock:
             try:
-                self.database.update(id=structured_info['id'],
+                self.database.update(_id=structured_info['id'],
                                 date=structured_info['date'],
-                                summary=vec,batch_id=batch_id)
+                                summary=vec,
+                                batch__id=batch_id)
                 prev_data = self.database.fetch_all()
                 self.kdtree = self.__update_tree(prev_data)
             except ValueError:
