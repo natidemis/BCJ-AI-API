@@ -3,7 +3,7 @@
 @authors: kra33, Gitcelo, natidemis
 May 2021
 
-API module for Bug Consolidation for Jira (BCJ) AI model. 
+API module for Bug Consolidation for Jira (BCJ) AI model.
 Used to store bugs and classify them.
 """
 
@@ -49,11 +49,11 @@ class BCJAIapi:
         prev_data = self.db.fetch_all()
         self.kdtree = self.__update_tree(prev_data)
 
-    
+
     def __update_tree(self,prev_data: list) -> KDTree:
         """
         Private method for updating the tree.
-        
+
         Returns
         -------
         KDTreeUP(KDTree)
@@ -63,8 +63,8 @@ class BCJAIapi:
             ids = np.array([data['id'] for data in prev_data])
             return KDTree(data=vec, indices=ids)
         else:
-            return None     
-    
+            return None
+
     def get_similar_bugs_k(self,
                             summary: str=None,
                             description: str=None,
@@ -84,12 +84,14 @@ class BCJAIapi:
         if self.kdtree is None:
             return BCJStatus.NOT_FOUND, 'No examples available'
         if not(bool(summary) or bool(description) or bool(structured_info)):
-            return BCJStatus.NOT_FOUND, 'At least one of the parameters summary, description, or structured_info must be filled'
+            return BCJStatus.NOT_FOUND, \
+                '''At least one of the parameters summary,
+                description, or structured_info must be filled'''
         N = len(self.kdtree.indices)
         if k>N:
             k=N
-        data = description if bool(description) else summary #sækjum annað hvort description eða summary
-        vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) #sækjum vigur á annar hvor þeirra
+        data = description if bool(description) else summary
+        vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
         self.__lock.acquire()
         result = self.kdtree.query(vec, k=k)
         ids = result[1][0]
@@ -131,7 +133,7 @@ class BCJAIapi:
     def add_bug(self,
                 summary: str=None,
                 description: str=None,
-                structured_info: dict=None) -> BCJStatus: 
+                structured_info: dict=None) -> BCJStatus:
         """
         Add a bug with given summary, description and structured information. Here it is assumed that all the data
         has already been validated and sanitized. To see how we sanitized the data, see __init__.py in the folder
