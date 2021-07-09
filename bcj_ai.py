@@ -98,12 +98,9 @@ class BCJAIapi:
             ids = result[1][0]
             dists = result[0][0]
 
-        if k>1:
-            ids = list(map(int, ids))
-            dists = dists.tolist()
-        else:
-            ids = [ids]
-            dists = [float(dists)]
+        ids = list(map(int,ids)) if k>1 else [ids]
+        dists = dists.tolist() if k>1 else [float(dists)]
+        
         response = {
             "id": ids,
             "dist": dists
