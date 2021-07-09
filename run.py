@@ -23,4 +23,4 @@ if __name__ == '__main__':
         logger.error("Setting up the database failed, server will not run.")
     else:
         logger.info("Database initialized successfully, starting app..")
-        app.run()
+        app.run(debug=True)

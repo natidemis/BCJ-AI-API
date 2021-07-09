@@ -65,7 +65,11 @@ class BCJAIapi:
         else:
             return None     
     
-    def get_similar_bugs_k(self, summary: str=None, description: str=None, structured_info: str=None, k: int=5):
+    def get_similar_bugs_k(self,
+                            summary: str=None,
+                            description: str=None,
+                            structured_info: str=None,
+                            k: int=5):
         """
         Return the ID of the k most similar bugs based on given summary, desription, and
         structured information.
@@ -88,14 +92,26 @@ class BCJAIapi:
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)])) #sækjum vigur á annar hvor þeirra
         self.__lock.acquire()
         result = self.kdtree.query(vec, k=k)
+        ids = result[1][0]
+        dists = result[0][0]
         self.__lock.release()
+        if k>1:
+            ids = list(map(int, ids))
+            dists = dists.tolist()
+        else:
+            ids = [ids]
+            dists = [float(dists)]
         response = {
-            "id": result[1],
-            "dist": result[0].tolist()
+            "id": ids,
+            "dist": dists
         }
         return BCJStatus.OK, response
 
-    def get_similar_bugs_threshold(self, summary: str=None, description: str=None, structured_info: dict=None, threshold: str=0.5) -> BCJStatus and (list or str):
+    def get_similar_bugs_threshold(self,
+                                summary: str=None,
+                                description: str=None,
+                                structured_info: dict=None,
+                                threshold: str=0.5) -> BCJStatus and (list or str):
         """
         Return the ID of bugs at least `threshold` similar; based on given summary, desription, and
         structured information.
@@ -112,7 +128,10 @@ class BCJAIapi:
             return BCJStatus.NOT_FOUND, 'No examples available'
         return BCJStatus.OK, [random.randint(1,1000) for _ in range(k)]
 
-    def add_bug(self, summary: str=None, description: str=None, structured_info: dict=None) -> BCJStatus: 
+    def add_bug(self,
+                summary: str=None,
+                description: str=None,
+                structured_info: dict=None) -> BCJStatus: 
         """
         Add a bug with given summary, description and structured information. Here it is assumed that all the data
         has already been validated and sanitized. To see how we sanitized the data, see __init__.py in the folder
@@ -172,7 +191,10 @@ class BCJAIapi:
         
         return BCJStatus.OK
 
-    def update_bug(self, summary: str=None, description: str=None, structured_info: str=None) -> BCJStatus:
+    def update_bug(self,
+                    summary: str=None,
+                    description: str=None,
+                    structured_info: str=None) -> BCJStatus:
         """
         Updates a bug with the parameters given. The id of the bug should be in structured_info.
         
