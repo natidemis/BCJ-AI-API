@@ -192,7 +192,7 @@ class Batch(Resource):
                     raise ValueError('Both summary and description may not have string length of 0')
         except(SchemaError, ValueError):
             return make_response(jsonify({'message': Message.FAILURE.value}),400)
-        return make_response(jsonify(data={'message': Message.VALID_INPUT.value}), ai.add_batch(data))
+        return make_response(jsonify(data={'message': Message.VALID_INPUT.value}), ai.add_batch(data).value)
         
 api.add_resource(Bug,'/bug')
 api.add_resource(Batch, '/batch')
