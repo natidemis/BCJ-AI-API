@@ -101,7 +101,7 @@ class BCJAIapi:
 
         ids = list(map(int,ids)) if k>1 else [ids]
         dists = dists.tolist() if k>1 else [float(dists)]
-        
+
         response = {
             "id": ids,
             "dist": dists
