@@ -130,9 +130,9 @@ class BCJAIapi:
 #        return BCJStatus.OK, [random.randint(1,1000) for _ in range(k)]
 
     def add_bug(self,
+                structured_info: dict,
                 summary: str=None,
-                description: str=None,
-                structured_info: dict=None) -> BCJStatus:
+                description: str=None) -> BCJStatus:
         """
         Add a bug with given summary, description and structured information.
         Here it is assumed that all the data
@@ -190,9 +190,9 @@ class BCJAIapi:
         return BCJStatus.OK
 
     def update_bug(self,
+                    structured_info: dict,
                     summary: str=None,
-                    description: str=None,
-                    structured_info: str=None) -> BCJStatus:
+                    description: str=None) -> BCJStatus:
         """
         Updates a bug with the parameters given. The id of the bug should be in structured_info.
 
