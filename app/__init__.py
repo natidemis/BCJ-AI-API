@@ -174,6 +174,8 @@ class Batch(Resource):
         req = request.json
         data = []
         try:
+            if not isinstance(req,list):
+                raise ValueError
             validator.validate_batch_data(req[0])
             batch_id = req[0]['structured_info']['batch_id']
             for item in req:
