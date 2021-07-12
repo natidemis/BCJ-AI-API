@@ -1,12 +1,16 @@
+"""
+@author nat_idemis
+June 2021
+
+Contains the database class used for setting up for and
+making query to the database
+"""
+import os
+import asyncio
+import logging
 from dotenv import load_dotenv
 import asyncpg
-import asyncio
-import os
-import dotenv
-from enum import Enum
-from helper import QueryString 
-from datetime import datetime
-import logging
+from helper import QueryString
 
 load_dotenv()
 
@@ -17,42 +21,48 @@ logging.basicConfig(format='%(levelname)-8s [%(filename)s:%(lineno)d] %(message)
 logger = logging.getLogger(__name__)
 
 class Database:
-  
+    """
+    Class for handling database connection and queries
+    """
     def __init__(self):
         """
         Class to setup the database table when required.
         """
-        self.DATABASE_URL = os.getenv('DATABASE_URL')
-    
+        self.database_url = os.getenv('DATABASE_URL')
+
 
 
     async def __make_table(self) -> bool:
         """
-        Asyncronous function to create the table 
+        Asyncronous function to create the table
 
         Returns
         -------
         True if table creation successful, false otherwise
         """
-        sql_file = open('sql/schema.sql','r')
-        query = sql_file.read()
-        query = query.split(';')
-        sql_file.close()
+        with open('sql/schema.sql','r') as sql_file:
+            query = sql_file.read()
+            query = query.split(';')
 
         try:
-            conn = await asyncpg.connect(self.DATABASE_URL)
+            conn = await asyncpg.connect(self.database_url)
             await conn.execute(query[0])
             await conn.execute(query[1])
             await conn.execute(query[2])
             await conn.close()
             logger.info("Table created.")
             return True
-        except:
+        except RuntimeError:
             logger.error("Creating table failed, re-evaluate enviroment variables.")
             return False
 
 
-    async def __insert(self, id: int,date: str, summary: list = None,descr: list = None, batch_id: int= None) -> bool:
+    async def __insert(self,
+                        _id: int,
+                        date: str,
+                        summary: list = None,
+                        descr: list = None,
+                        batch__id: int= None) -> bool:
         """
         Async method for inserting into the database
 
@@ -62,27 +72,27 @@ class Database:
         """
 
         try:
-            conn = await asyncpg.connect(self.DATABASE_URL)
-            await conn.execute(QueryString.INSERT.value,id,summary,descr,batch_id,date)
+            conn = await asyncpg.connect(self.database_url)
+            await conn.execute(QueryString.INSERT.value,_id,summary,descr,batch__id,date)
             await conn.close()
             logger.info("Insertion successful")
             return True
-        except(ValueError):
+        except RuntimeError:
             logger.error("Failed to insert")
             return False
 
     async def __insert_batch(self,data) -> None:
         try:
-            conn = await asyncpg.connect(self.DATABASE_URL)
+            conn = await asyncpg.connect(self.database_url)
             await conn.executemany(QueryString.INSERT.value,data)
             await conn.close()
             logger.info("Batch insertion successful")
             return True
-        except(ValueError):
+        except RuntimeError:
             logger.error("Failed to insert batch")
             return False
 
-    
+
     async def __fetch_all(self) -> list:
         """
         Async method for fetching all rows in the database
@@ -93,106 +103,115 @@ class Database:
         """
 
         try:
-            conn = await asyncpg.connect(self.DATABASE_URL)
+            conn = await asyncpg.connect(self.database_url)
             rows = await conn.fetch(QueryString.FETCH.value)
             await conn.close()
             logger.info("Fetching all succeeded")
-            return [{'id': row['id'],'summary': row['summary'],'description': row['descr'],'batch_id': row['batch_id'],'date': row['dateup']} for row in rows]
-        except(ValueError):
+            return [{'_id': row['_id'],
+                    'summary': row['summary'],
+                    'description': row['descr'],
+                    'batch__id': row['batch__id'],
+                    'date': row['dateup']} for row in rows]
+        except RuntimeError:
             logger.error("Fetching all failed")
             return None
-        
-    async def __update(self, id: int, date: str, summary: str = None, descr: str=None, batch_id: int=None) -> None:
-        try: 
-            conn = await asyncpg.connect(self.DATABASE_URL)
-            if bool(summary) and bool(descr) and bool(batch_id):
+
+    async def __update(self,
+                        _id: int,
+                        date: str,
+                        summary: str = None,
+                        descr: str=None,
+                        batch__id: int=None) -> None:
+        try:
+            conn = await asyncpg.connect(self.database_url)
+            if bool(summary) and bool(descr) and bool(batch__id):
                 await conn.execute(
                     QueryString.UPDATE_SUMM_AND_DESCR_W_BATCH.value,
                     summary,
                     descr,
-                    batch_id,
+                    batch__id,
                     date,
-                    id)
-            elif bool(summary) and bool(descr) and not bool(batch_id):
+                    _id)
+            elif bool(summary) and bool(descr) and not bool(batch__id):
                 await conn.execute(
                     QueryString.UPDATE_SUMM_AND_DESCR_NO_BATCH.value,
                     summary,
                     descr,
                     date,
-                    id)
-            elif bool(summary) and not bool(descr) and bool(batch_id):
+                    _id)
+            elif bool(summary) and not bool(descr) and bool(batch__id):
                 await conn.execute(
                     QueryString.UPDATE_SUMM_W_BATCH.value,
                     summary,
-                    batch_id,
+                    batch__id,
                     date,
-                    id)
-            elif bool(summary) and not bool(descr) and not bool(batch_id):
+                    _id)
+            elif bool(summary) and not bool(descr) and not bool(batch__id):
                 await conn.execute(
                     QueryString.UPDATE_SUMM_NO_BATCH.value,
                     summary,
                     date,
-                    id)
-            elif not bool(summary) and bool(descr) and bool(batch_id):
+                    _id)
+            elif not bool(summary) and bool(descr) and bool(batch__id):
                 await conn.execute(
                     QueryString.UPDATE_DESCR_W_BATCH.value,
                     descr,
-                    batch_id,
+                    batch__id,
                     date,
-                    id)
-            elif not bool(summary) and bool(descr) and not bool(batch_id):
+                    _id)
+            elif not bool(summary) and bool(descr) and not bool(batch__id):
                 await conn.execute(
                     QueryString.UPDATE_DESCR_NO_BATCH.value,
                     descr,
                     date,
-                    id)
-            elif bool(batch_id) and not bool(descr) and not bool(summary):
+                    _id)
+            elif bool(batch__id) and not bool(descr) and not bool(summary):
                 await conn.execute(
                     QueryString.UPDATE_BATCH_ONLY.value,
-                    batch_id,
+                    batch__id,
                     date,
-                    id)
+                    _id)
             else:
                 raise ValueError
             await conn.close()
             logger.info("Update successful")
             return True
-        except(ValueError):
+        except RuntimeError:
             logger.error("Updating failed")
             return False
 
-    async def __delete(self, id: int) -> None:
+    async def __delete(self, _id: int) -> None:
         """
-        Removes a row from the database by ID
+        Removes a row from the database by _ID
 
         Returns
         -------
         None
         """
         try:
-            conn = await asyncpg.connect(self.DATABASE_URL)
-            result = await conn.fetch(QueryString.DELETE.value,id)
+            conn = await asyncpg.connect(self.database_url)
+            result = await conn.fetch(QueryString.DELETE.value,_id)
             await conn.close()
             logger.info("successfully deleted row")
             return result[0]['count']
-        except:
+        except RuntimeError:
             logger.info('Deletion error occured')
             return None
-    async def __delete_batch(self,batch_id: int) -> int:
+    async def __delete_batch(self,batch__id: int) -> int:
         """
-        Removes all rows with batch_id
+        Removes all rows with batch__id
 
         Returns
         -------
         None
         """
         try:
-            conn = await asyncpg.connect(self.DATABASE_URL)
-            result = await conn.fetch(QueryString.DELETE_BATCH.value,batch_id)
+            conn = await asyncpg.connect(self.database_url)
+            result = await conn.fetch(QueryString.DELETE_BATCH.value,batch__id)
             await conn.close()
             logger.info("successfully deleted row")
             return result[0]['count']
-        except:
+        except RuntimeError:
             logger.info('Deletion error occured')
             return None
 
@@ -201,27 +220,30 @@ class Database:
         Method for dropping table for each setup of the server in development mode.
         """
         try:
-            q = "DROP TABLE IF EXISTS Vectors;"
-            q1 = "DROP INDEX IF EXISTS vectors_id;"
-            q2 = "DROP INDEX IF EXISTS vectors_batch;"
-            conn = await asyncpg.connect(self.DATABASE_URL)
-            await conn.execute(q)
-            await conn.execute(q1)
-            await conn.execute(q2)
+            query_ = "DROP TABLE IF EXISTS Vectors;"
+            query_1 = "DROP INDEX IF EXISTS vectors__id;"
+            query_2 = "DROP INDEX IF EXISTS vectors_batch;"
+            conn = await asyncpg.connect(self.database_url)
+            await conn.execute(query_)
+            await conn.execute(query_1)
+            await conn.execute(query_2)
             await conn.close()
-            logger.info("Dropped table to avoid unnecessary errors.")
-        except:
+            logger.info("Dropped table to avo_id unnecessary errors.")
+        except RuntimeError:
             logger.info("Error dropping table")
-    
+
     def drop_table(self):
+        """
+        Method for dropping the table
+        """
         loop = asyncio.new_event_loop()
         result = loop.run_until_complete(self.__drop_table())
         loop.close()
         return result
-    
+
     def make_table(self) -> bool:
         """
-        One time use to set up the Vectors table, 
+        One time use to set up the Vectors table,
         required to determine vector length.
 
         Returns
@@ -233,7 +255,12 @@ class Database:
         loop.close()
         return result
 
-    def insert(self, id: int, date: str,batch_id: int=None, summary: list = None, descr: list=None) -> bool:
+    def insert(self,
+                _id: int,
+                date: str,
+                batch__id: int=None,
+                summary: list = None,
+                descr: list=None) -> bool:
         """
         Method for inserting into the database
 
@@ -242,10 +269,15 @@ class Database:
         True if insertion successful, false otherwise
         """
         loop = asyncio.new_event_loop()
-        result = loop.run_until_complete(self.__insert(id=id,date=date,summary=summary,descr=descr,batch_id=batch_id))
+        result = loop.run_until_complete(self.__insert(
+                                                    _id=_id,
+                                                    date=date,
+                                                    summary=summary,
+                                                    descr=descr,
+                                                    batch__id=batch__id))
         loop.close()
         return result
-    
+
     def fetch_all(self) -> list:
         """
         Fetches all rows in the table
@@ -258,48 +290,64 @@ class Database:
         result = loop.run_until_complete(self.__fetch_all())
         loop.close()
         return result
-    
-    def update(self, id: int, date: str, summary: str = None, descr: str=None, batch_id: int=None) -> None:
+
+    def update(
+            self,
+            _id: int,
+            date: str,
+            summary: str = None, descr: str=None, batch__id: int=None) -> None:
         """
-        Update values of a row by id
+        Update values of a row by _id
 
         Returns
         -------
         Boolean, true if successfully updated, false otherwise
         """
         loop = asyncio.new_event_loop()
-        result = loop.run_until_complete(self.__update(id=id,date=date,summary=summary,descr=descr,batch_id=batch_id))
+        result = loop.run_until_complete(self.__update(
+                                                        _id=_id,
+                                                        date=date,
+                                                        summary=summary,
+                                                        descr=descr,
+                                                        batch__id=batch__id))
         loop.close()
         return result
-    
-    def delete(self, id: int) -> None:
+
+    def delete(self, _id: int) -> None:
         """
-        Delete row by id
+        Delete row by _id
 
         Returns
         -------
         Boolean, true if successful, false otherwise
         """
         loop = asyncio.new_event_loop()
-        result = loop.run_until_complete(self.__delete(id=id))
+        result = loop.run_until_complete(self.__delete(_id=_id))
         loop.close()
         return result
-    
-    def delete_batch(self, batch_id: int) -> None:
+
+    def delete_batch(self, batch__id: int) -> None:
         """
-        Delete row by batch_id
+        Delete row by batch__id
 
         Returns
         -------
         Boolean, true if successful, false otherwise
         """
         loop = asyncio.new_event_loop()
-        result = loop.run_until_complete(self.__delete_batch(batch_id=batch_id))
+        result = loop.run_until_complete(self.__delete_batch(batch__id=batch__id))
         loop.close()
         return result
 
     def insert_batch(self, data) -> bool:
+        """
+        Method for inserting a batch of data
+
+        Returns
+        -------
+        Number of inserted data
+        """
         loop = asyncio.new_event_loop()
         result = loop.run_until_complete(self.__insert_batch(data))
         loop.close()
-        return result   
+        return result

@@ -84,7 +84,7 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
 ## Web service
 * `/bug`
   * `GET` query the **k** most similar bugs
-      *  Summary and description are required. date, string in the form `YYYY-MM-DD`.  
+      *  Summary and description are required. date, string in the form `YYYY-MM-DD`.
       ```JSON
       {
          "summary": "summary",
@@ -94,6 +94,26 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
          }
       }
       ``` 
+    * Response: a list, "id" with all ids ordered from the closest to the farthest. "dist", a list with the distance values for each ID
+        * Example:
+        ```JSON
+         {
+            "data": {
+                "dist": [
+                    0.0,
+                    0.05297874857599651,
+                    0.05297874857599651,
+                    0.05297874857599651
+                ],
+                "id": [
+                    4,
+                    3,
+                    2,
+                    1
+                ]
+            }
+         }
+         ```
   * `POST` insert a bug 
     * Data requirement for request in JSON format:
       * summary and description must be string values, either summary or description may be empty but not both.
@@ -115,7 +135,9 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
          * Response: status code, json object, that may explain the status response.
          ```JSON
          {
-            "message": "message"
+            "data": {
+               "message": "message"
+            }
          }
          
          ```
@@ -130,7 +152,9 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
      * Response: status code, json object, that may explain the status response.
          ```JSON
          {
-            "message": "message"
+            "data": {
+               "message": "message"
+            }
          }
          
          ```
@@ -150,8 +174,12 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
       * Response: status code, json object, that may explain the status response.
          ```JSON
          {
-            "message": "message"
+            "data": {
+               "message": "message"
+            }
          }
+         
+         ```
       
 * `/batch`
   * `POST` insert k bugs 
@@ -181,10 +209,14 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
       ]
       ```
       * Response: status code, json object, that may explain the status response.
-         ```JSON
+        ```JSON
          {
-            "message": "message"
+            "data": {
+               "message": "message"
+            }
          }
+         
+         ```
   * `DELETE` delete k bugs(a batch)
       ```JSON
       {
@@ -194,8 +226,12 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
       * Response: status code, json object, that may explain the status response.
          ```JSON
          {
-            "message": "message"
+            "data": {
+               "message": "message"
+            }
          }
+         
+         ```
   
 ***
 
