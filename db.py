@@ -107,10 +107,10 @@ class Database:
             rows = await conn.fetch(QueryString.FETCH.value)
             await conn.close()
             logger.info("Fetching all succeeded")
-            return [{'_id': row['_id'],
+            return [{'id': row['id'],
                     'summary': row['summary'],
                     'description': row['descr'],
-                    'batch__id': row['batch__id'],
+                    'batch__id': row['batch_id'],
                     'date': row['dateup']} for row in rows]
         except RuntimeError:
             logger.error("Fetching all failed")
