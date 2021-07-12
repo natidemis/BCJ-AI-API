@@ -1,3 +1,9 @@
+"""
+@authors: Gitcelo, natidemis
+May 2021
+
+File that executes the app and sets up the database.
+"""
 #Set up the database tables
 import logging
 from db import Database
@@ -9,7 +15,7 @@ success = db.make_table()
 #exec(open("./fetch_vectors.py").read())
 
 #Run app
-from app import app # pylint: disable=import-error
+from app import app # pylint: disable=wrong-import-position
 
 logging.basicConfig(format='%(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
     datefmt='%Y-%m-%d:%H:%M:%S',
@@ -22,4 +28,4 @@ if __name__ == '__main__':
         logger.error("Setting up the database failed, server will not run.")
     else:
         logger.info("Database initialized successfully, starting app..")
-        app.run(debug=True)
+        app.run()
