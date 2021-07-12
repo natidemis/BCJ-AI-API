@@ -48,7 +48,8 @@ class BCJAIapi:
             outputfile=OUTPUT_FILE,
             dataset=DATASET,
             commoncrawl_path=COMMONCRAWL_PATH,
-            googlenews_path=GOOGLENEWS_PATH)
+            googlenews_path=GOOGLENEWS_PATH,
+            wv_item_limit=50_000)
         prev_data = self.database.fetch_all()
         self.kdtree = self.__update_tree(prev_data)
 
