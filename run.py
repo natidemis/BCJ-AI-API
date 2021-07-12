@@ -1,16 +1,15 @@
 #Set up the database tables
+import logging
 from db import Database
 db = Database()
-db.drop_table() 
+db.drop_table()
 success = db.make_table()
 
 #Fetch vectors for the models.
 #exec(open("./fetch_vectors.py").read())
 
-
 #Run app
-from app import app
-import logging
+from app import app # pylint: disable=import-error
 
 logging.basicConfig(format='%(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
     datefmt='%Y-%m-%d:%H:%M:%S',
