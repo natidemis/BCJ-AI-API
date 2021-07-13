@@ -29,3 +29,5 @@ if __name__ == '__main__':
     else:
         logger.info("Database initialized successfully, starting app..")
         app.run()
+else:
+    gunicorn_app = app()
