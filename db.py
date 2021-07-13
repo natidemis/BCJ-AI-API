@@ -10,6 +10,7 @@ import asyncio
 import logging
 from dotenv import load_dotenv
 import asyncpg
+from typing import Union
 from helper import QueryString
 
 load_dotenv()
@@ -42,13 +43,13 @@ class Database:
         """
         with open('sql/schema.sql','r') as sql_file:
             query = sql_file.read()
-            query = query.split(';')
+            queries = query.split(';')
 
         try:
             conn = await asyncpg.connect(self.database_url)
-            await conn.execute(query[0])
-            await conn.execute(query[1])
-            await conn.execute(query[2])
+            await conn.execute(queries[0])
+            await conn.execute(queries[1])
+            await conn.execute(queries[2])
             await conn.close()
             logger.info("Table created.")
             return True
@@ -81,7 +82,7 @@ class Database:
             logger.error("Failed to insert")
             return False
 
-    async def __insert_batch(self,data) -> None:
+    async def __insert_batch(self,data) -> bool:
         try:
             conn = await asyncpg.connect(self.database_url)
             await conn.executemany(QueryString.INSERT.value,data)
@@ -93,7 +94,7 @@ class Database:
             return False
 
 
-    async def __fetch_all(self) -> list:
+    async def __fetch_all(self) -> Union[list,None]:
         """
         Async method for fetching all rows in the database
 
@@ -107,10 +108,10 @@ class Database:
             rows = await conn.fetch(QueryString.FETCH.value)
             await conn.close()
             logger.info("Fetching all succeeded")
-            return [{'_id': row['_id'],
+            return [{'id': row['id'],
                     'summary': row['summary'],
                     'description': row['descr'],
-                    'batch__id': row['batch__id'],
+                    'batch__id': row['batch_id'],
                     'date': row['dateup']} for row in rows]
         except RuntimeError:
             logger.error("Fetching all failed")
@@ -121,7 +122,7 @@ class Database:
                         date: str,
                         summary: str = None,
                         descr: str=None,
-                        batch__id: int=None) -> None:
+                        batch__id: int=None) -> bool:
         try:
             conn = await asyncpg.connect(self.database_url)
             if bool(summary) and bool(descr) and bool(batch__id):
@@ -197,7 +198,7 @@ class Database:
         except RuntimeError:
             logger.info('Deletion error occured')
             return None
-    async def __delete_batch(self,batch__id: int) -> int:
+    async def __delete_batch(self,batch__id: int) -> Union[int,None]:
         """
         Removes all rows with batch__id
 
@@ -278,7 +279,7 @@ class Database:
         loop.close()
         return result
 
-    def fetch_all(self) -> list:
+    def fetch_all(self) -> Union[list,None]:
         """
         Fetches all rows in the table
 
@@ -295,7 +296,7 @@ class Database:
             self,
             _id: int,
             date: str,
-            summary: str = None, descr: str=None, batch__id: int=None) -> None:
+            summary: str = None, descr: str=None, batch__id: int=None) -> bool:
         """
         Update values of a row by _id
 
@@ -326,7 +327,7 @@ class Database:
         loop.close()
         return result
 
-    def delete_batch(self, batch__id: int) -> None:
+    def delete_batch(self, batch__id: int) -> Union[int,None]:
         """
         Delete row by batch__id
 
