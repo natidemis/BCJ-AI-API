@@ -44,12 +44,13 @@ class BCJAIapi:
         DATASET = os.getenv('DATASET') # Dataset can either be googlenews or commoncrawl
         COMMONCRAWL_PATH = os.getenv('COMMONCRAWL_PATH')
         GOOGLENEWS_PATH = os.getenv('GOOGLENEWS_PATH')
+        WV_ITEM_LIMIT = os.getenv('WV_ITEM_LIMIT')
         self.w2v = Word2Vec(
             outputfile=OUTPUT_FILE,
             dataset=DATASET,
             commoncrawl_path=COMMONCRAWL_PATH,
             googlenews_path=GOOGLENEWS_PATH,
-            wv_item_limit=50_000)
+            wv_item_limit=WV_ITEM_LIMIT)
         prev_data = self.database.fetch_all()
         self.kdtree = self.__update_tree(prev_data)
 
