@@ -102,38 +102,17 @@ class BCJAIapi:
 
         ids = list(map(int,ids)) if k>1 else [ids]
         dists = dists.tolist() if k>1 else [float(dists)]
-        
+
         response = {
             "id": ids,
             "dist": dists
         }
         return BCJStatus.OK, response
 
-#    def get_similar_bugs_threshold(self,
-#                                summary: str=None,
-#                                description: str=None,
-#                                structured_info: dict=None,
-#                                threshold: str=0.5) -> BCJStatus and (list or str):
-#        """
-#        Return the ID of bugs at least `threshold` similar; based on given summary, desription, and
-#        structured information.
-#
-#        Returns
-#        -------
-#        status : BCJStatus
-#            OK if the requested number of bugs were found.
-#            ERROR if less than k bugs were found.
-#        idx : list
-#            A list of `min(k,N)` most similar bugs where N is the total number of bugs
-#        """
-#        if self.kdtree is None:
-#            return BCJStatus.NOT_FOUND, 'No examples available'
-#        return BCJStatus.OK, [random.randint(1,1000) for _ in range(k)]
-
     def add_bug(self,
+                structured_info: dict,
                 summary: str=None,
-                description: str=None,
-                structured_info: dict=None) -> BCJStatus:
+                description: str=None) -> BCJStatus:
         """
         Add a bug with given summary, description and structured information.
         Here it is assumed that all the data
@@ -191,9 +170,9 @@ class BCJAIapi:
         return BCJStatus.OK
 
     def update_bug(self,
+                    structured_info: dict,
                     summary: str=None,
-                    description: str=None,
-                    structured_info: str=None) -> BCJStatus:
+                    description: str=None) -> BCJStatus:
         """
         Updates a bug with the parameters given. The id of the bug should be in structured_info.
 
