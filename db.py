@@ -237,9 +237,8 @@ class Database:
         """
         Method for dropping the table
         """
-        loop = asyncio.new_event_loop()
-        result = loop.run_until_complete(self.__drop_table())
-        loop.close()
+  
+        result = asyncio.run(self.__drop_table())
         return result
 
     def make_table(self) -> bool:
@@ -251,9 +250,8 @@ class Database:
         -------
         True if table creation is successful, false otherwise
         """
-        loop = asyncio.new_event_loop()
-        result = loop.run_until_complete(self.__make_table())
-        loop.close()
+        
+        result = asyncio.run(self.__make_table())
         return result
 
     def insert(self,
@@ -269,14 +267,13 @@ class Database:
         -------
         True if insertion successful, false otherwise
         """
-        loop = asyncio.new_event_loop()
-        result = loop.run_until_complete(self.__insert(
-                                                    _id=_id,
-                                                    date=date,
-                                                    summary=summary,
-                                                    descr=descr,
-                                                    batch__id=batch__id))
-        loop.close()
+        
+        result = asyncio.run(self.__insert(
+                                        _id=_id,
+                                        date=date,
+                                        summary=summary,
+                                        descr=descr,
+                                        batch__id=batch__id))
         return result
 
     def fetch_all(self) -> Union[list,None]:
@@ -287,9 +284,8 @@ class Database:
         -------
         All rows, None if a problem occurs
         """
-        loop = asyncio.new_event_loop()
-        result = loop.run_until_complete(self.__fetch_all())
-        loop.close()
+
+        result = asyncio.run(self.__fetch_all())
         return result
 
     def update(
@@ -304,14 +300,13 @@ class Database:
         -------
         Boolean, true if successfully updated, false otherwise
         """
-        loop = asyncio.new_event_loop()
-        result = loop.run_until_complete(self.__update(
-                                                        _id=_id,
-                                                        date=date,
-                                                        summary=summary,
-                                                        descr=descr,
-                                                        batch__id=batch__id))
-        loop.close()
+    
+        result = asyncio.run(self.__update(
+                                        _id=_id,
+                                        date=date,
+                                        summary=summary,
+                                        descr=descr,
+                                        batch__id=batch__id))
         return result
 
     def delete(self, _id: int) -> None:
@@ -322,9 +317,8 @@ class Database:
         -------
         Boolean, true if successful, false otherwise
         """
-        loop = asyncio.new_event_loop()
-        result = loop.run_until_complete(self.__delete(_id=_id))
-        loop.close()
+
+        result = asyncio.run(self.__delete(_id=_id))
         return result
 
     def delete_batch(self, batch__id: int) -> Union[int,None]:
@@ -335,9 +329,8 @@ class Database:
         -------
         Boolean, true if successful, false otherwise
         """
-        loop = asyncio.new_event_loop()
-        result = loop.run_until_complete(self.__delete_batch(batch__id=batch__id))
-        loop.close()
+
+        result = asyncio.run(self.__delete_batch(batch__id=batch__id))
         return result
 
     def insert_batch(self, data) -> bool:
@@ -348,7 +341,6 @@ class Database:
         -------
         Number of inserted data
         """
-        loop = asyncio.new_event_loop()
-        result = loop.run_until_complete(self.__insert_batch(data))
-        loop.close()
+
+        result = asyncio.run(self.__insert_batch(data))
         return result
