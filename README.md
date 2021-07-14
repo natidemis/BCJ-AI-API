@@ -40,9 +40,9 @@ Artificial Intelligence API for usability problems.
 * During the installation process, postgresql will require a password for the superuser, `postgres`. A password which I will reference as `<postgres_password>`.
 
     *  Creating other users with specific roles using pgadmin4 is also an option.
-        * `Open pgadmin4 > login using password > Click 'server' > right click 'login/roles' > create login/role`  
+        * `Open pgadmin4 --> login using password --> Click 'server' --> right click 'login/roles' --> create login/role`  
 
-* The final step is then to create a database: `open pgadmin4 > login using <postgres_password> > click Servers > right click 'Databases' > Create Databases`, give it a name which will be referenced as `<Database_name>`.
+* The final step is then to create a database: `open pgadmin4 --> login using <postgres_password> --> click Servers --> right click 'Databases' --> Create Databases`, give it a name which will be referenced as `<Database_name>`.
 
 * Put the following in the `.env` file: `DATABASE_URL = "postgres://postgres:<postgres_password>@localhost/<Database_name>"`
     * The second `postgres` in the url is replacable by any user as long as that user has the approperiate role to manage the database and `<postgres_password>` can be replaced by the password given to that user. 
