@@ -47,17 +47,18 @@ Artificial Intelligence API for usability problems.
 ## Setup - linux(fedora operating system)
 ### Setting up the production enviroment
 * Blah blah blah
+
 ### Postgres
-* Check all available DNF modules for postgresql by running `sudo module list postgresql`
-* Enable the repository for postgresql for the version you want using `sudo dnf module enalbe postgresql:<version>`
-* install the modudle: `sudo dnf install postgresql-server`
-* Initialize database: `sudo postgresql-setup --initdb`
+* Check all available DNF modules for postgresql by running `sudo dnf module list postgresql`
+* Enable the repository for postgresql for the version you want using `sudo dnf module enable postgresql:<version>`
+* install the module: `sudo dnf install postgresql-server`
+* Initialize the database: `sudo postgresql-setup --initdb`
 * start the service by running `sudo systemctl enable postgresql` then `sudo systemctl start postgresql`
-* You might need a new password for the superuser `postgres` so run `sudo passwd postgres` and give the superuser a new password which I will reference as `<postgres_password>` moving forward.
-* run `su - postgres -c "psql"` to access to postgres CLI, you will need `<postgres_password>` to gain access.
-* Once you have access to the CLI, create a database using `CREATE DATABASE <Database_name>`
-* Now you have all the pieces necessary to create a connection using a url. Include the following in the `.env`file: `DATABASE_URL = "DATABASE_URL="postgres://postgres:<postgres_password>@localhost/<Database_name>"`
-* If you have some problems, checking out and following the steps provided [here](https://tecadmin.net/how-to-install-postgresql-and-pgadmin-in-fedora/) may be worth a try.
+* You might need a new password for the superuser `postgres` so run `sudo passwd postgres` and give the superuser a new password which I will reference as `<postgres_password>` in the following steps.
+* run `su - postgres -c "psql"` to access the CLI using `<postgres_password>`.
+* create a database using `CREATE DATABASE <Database_name>` once you have logged in to the CLI.
+* Now you have all the pieces necessary to create a connection using a url. Include the following in the `.env` file: `DATABASE_URL = "DATABASE_URL="postgres://postgres:<postgres_password>@localhost/<Database_name>"`
+* If other issues occur, checking out and following the steps provided [here](https://tecadmin.net/how-to-install-postgresql-and-pgadmin-in-fedora/) may be worth a try.
 
 ***
 
