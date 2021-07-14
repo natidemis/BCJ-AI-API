@@ -35,11 +35,15 @@ Artificial Intelligence API for usability problems.
 
 ### Postgres
 * Install postgresql [here](https://www.google.com/search?q=install+postgresql&oq=install+postgresql&aqs=chrome.0.69i59j35i39j0j0i20i263j0l2j69i60l2.2572j0j7&sourceid=chrome&ie=UTF-8) along with [pgadmin4](https://www.pgadmin.org/download/) in order to manage the database interactively.
+
     * CLI is also an option. A handful of tutorials should be available online.
 * During the installation process, postgresql will require a password for the superuser, `postgres`. A password which I will reference as `<postgres_password>`.
+
     *  Creating other users with specific roles using pgadmin4 is also an option.
         * `Open pgadmin4 > login using password > Click 'server' > right click 'login/roles' > create login/role`  
+
 * The final step is then to create a database: `open pgadmin4 > login using <postgres_password> > click Servers > right click 'Databases' > Create Databases`, give it a name which will be referenced as `<Database_name>`.
+
 * Put the following in the `.env` file: `DATABASE_URL = "postgres://postgres:<postgres_password>@localhost/<Database_name>"`
     * The second `postgres` in the url is replacable by any user as long as that user has the approperiate role to manage the database and `<postgres_password>` can be replaced by the password given to that user. 
 ***
