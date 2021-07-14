@@ -14,13 +14,7 @@ Artificial Intelligence API for usability problems.
 
 * Remove the drop table functionality
 * Send JSON error if id is already in table. As is we only send a 500 error with the message
-```JSON
-{
-  "data": {
-    "message": "valid input, check status for result"
-  }
-}
-```
+* Update Corpus part to incorporate CommonCrawl
 
 ***
 
