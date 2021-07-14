@@ -12,7 +12,7 @@ db = Database()
 success = db.make_table()
 
 #Fetch vectors for the models.
-#exec(open("./fetch_vectors.py").read())
+exec(open("./fetch_vectors.py").read())
 
 #Run app
 from app import app # pylint: disable=wrong-import-position
