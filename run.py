@@ -8,7 +8,7 @@ File that executes the app and sets up the database.
 import logging
 from db import Database
 db = Database()
-db.drop_table()
+#db.drop_table()
 success = db.make_table()
 
 #Fetch vectors for the models.
