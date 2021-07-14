@@ -8,9 +8,9 @@ making query to the database
 import os
 import asyncio
 import logging
+from typing import Union
 from dotenv import load_dotenv
 import asyncpg
-from typing import Union
 from helper import QueryString
 
 load_dotenv()
@@ -237,7 +237,7 @@ class Database:
         """
         Method for dropping the table
         """
-  
+
         result = asyncio.run(self.__drop_table())
         return result
 
@@ -250,7 +250,7 @@ class Database:
         -------
         True if table creation is successful, false otherwise
         """
-        
+
         result = asyncio.run(self.__make_table())
         return result
 
@@ -267,7 +267,7 @@ class Database:
         -------
         True if insertion successful, false otherwise
         """
-        
+
         result = asyncio.run(self.__insert(
                                         _id=_id,
                                         date=date,
@@ -300,7 +300,7 @@ class Database:
         -------
         Boolean, true if successfully updated, false otherwise
         """
-    
+
         result = asyncio.run(self.__update(
                                         _id=_id,
                                         date=date,
