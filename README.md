@@ -44,7 +44,6 @@ Artificial Intelligence API for usability problems.
     * The second `postgres` in the url is replacable by any username you've created as long as that user has the approperiate role to manage the database and `<postgres_password>` can be replaced by the password given to that user. 
 ***
 
-***
 ## Setup - linux(fedora operating system)
 ### Setting up the production enviroment
 * Blah blah blah
