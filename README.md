@@ -35,12 +35,12 @@ Artificial Intelligence API for usability problems.
 
 ### Postgres
 * Install postgresql [here](https://www.google.com/search?q=install+postgresql&oq=install+postgresql&aqs=chrome.0.69i59j35i39j0j0i20i263j0l2j69i60l2.2572j0j7&sourceid=chrome&ie=UTF-8) along with [pgadmin4](https://www.pgadmin.org/download/) in order to manage your database interactively.
-    * CLI is also an option, if you'd rather use that to manage postgresql, handful of tutorials available online.
+    * CLI is also an option, if you'd rather use that to manage postgresql. A handful of tutorials should be available online.
 * During the installation process, postgresql will ask you to give the superuser, `postgres` a password which I will call `<postgres_password>`
     *  You can also create other users with specific roles using pgadmin4 if you'd rather do that instead of using the superuser.
         * `Open pgadmin4 > login using password > Click 'server' > right click 'login/roles' > create login/role`  
 * The final step is then to create a database: `open pgadmin4 > login using <postgres_password> > click Servers > right click 'Databases' > Create Databases`, give it a name which I will reference as `<Database_name>`.
-* Put the following in the `.env`file: `DATABASE_URL = "DATABASE_URL="postgres://postgres:<postgres_password>@localhost/<Database_name>"`
+* Put the following in the `.env` file: `DATABASE_URL = "postgres://postgres:<postgres_password>@localhost/<Database_name>"`
     * The second `postgres` in the url is replacable by any username you've created as long as that user has the approperiate role to manage the database and `<postgres_password>` can be replaced by the password given to that user. 
 ***
 
@@ -57,7 +57,7 @@ Artificial Intelligence API for usability problems.
 * You might need a new password for the superuser `postgres` so run `sudo passwd postgres` and give the superuser a new password which I will reference as `<postgres_password>` in the following steps.
 * run `su - postgres -c "psql"` to access the CLI using `<postgres_password>`.
 * create a database using `CREATE DATABASE <Database_name>` once you have logged in to the CLI.
-* Now you have all the pieces necessary to create a connection using a url. Include the following in the `.env` file: `DATABASE_URL = "DATABASE_URL="postgres://postgres:<postgres_password>@localhost/<Database_name>"`
+* Now you have all the pieces necessary to create a connection using a url. Include the following in the `.env` file: `DATABASE_URL = "postgres://postgres:<postgres_password>@localhost/<Database_name>"`
 * If other issues occur, checking out and following the steps provided [here](https://tecadmin.net/how-to-install-postgresql-and-pgadmin-in-fedora/) may be worth a try.
 
 ***
