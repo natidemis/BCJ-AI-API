@@ -8,11 +8,11 @@ File that executes the app and sets up the database.
 import logging
 from db import Database
 db = Database()
-db.drop_table()
-success = db.make_table()
+#db.drop_table()
+table_created = db.make_table()
 
 #Fetch vectors for the models.
-#exec(open("./fetch_vectors.py").read())
+exec(open("./fetch_vectors.py").read())
 
 #Run app
 from app import app # pylint: disable=wrong-import-position
@@ -24,7 +24,7 @@ logging.basicConfig(format='%(levelname)-8s [%(filename)s:%(lineno)d] %(message)
 logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
-    if not success:
+    if not table_created:
         logger.error("Setting up the database failed, server will not run.")
     else:
         logger.info("Database initialized successfully, starting app..")
