@@ -6,5 +6,5 @@ CREATE TABLE IF NOT EXISTS Vectors(
     dateUP varchar(128)
 );
 
-CREATE INDEX vectors_id on Vectors(id);
-CREATE INDEX vectors_batch on Vectors(batch_id);
+CREATE INDEX IF NOT EXISTS vectors_id on Vectors(id);
+CREATE INDEX IF NOT EXISTS vectors_batch on Vectors(batch_id);
