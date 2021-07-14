@@ -148,7 +148,6 @@ class BCJAIapi:
                 self.kdtree.update(vec, new_id)
         return BCJStatus.OK
 
-
     def remove_bug(self, idx: int) -> BCJStatus:
         """
         Remove a bug with idx as its id.
