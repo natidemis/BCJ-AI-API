@@ -54,23 +54,23 @@ Artificial Intelligence API for usability problems.
 ### Postgres
 * Check all available DNF modules for postgresql by running `sudo dnf module list postgresql`
 
-* Enable the repository for postgresql for the version you want using `sudo dnf module enable postgresql:<version>`
+* Enable the repository for postgresql for a specific versing by using <br />`sudo dnf module enable postgresql:<version>`
 
 * Install the module: `sudo dnf install postgresql-server`
 
 * Initialize the database: `sudo postgresql-setup --initdb`
 
-* Start the service by running `sudo systemctl enable postgresql` then `sudo systemctl start postgresql`
+* Start the service by running `sudo systemctl enable postgresql` and then `sudo systemctl start postgresql`
 
-* The superuser `postgres` needs a new password so run `sudo passwd postgres` and give the superuser a new password which will be referenced as `<postgres_password>` in the following steps.
+* The superuser `postgres` needs a new password so run `sudo passwd postgres` and give the superuser a new password which will be referenced as `<postgres_password>` in the following steps
 
-* Run `su - postgres -c "psql"` to access the CLI using `<postgres_password>`.
+* Run `su - postgres -c "psql"` to access the CLI using `<postgres_password>`
 
-* Create a database using `CREATE DATABASE <Database_name>`.
+* Create a database using `CREATE DATABASE <database_name>`
 
-* All the pieces should now be there and the final step is to include the following in the `.env` file: `DATABASE_URL = "postgres://postgres:<postgres_password>@localhost/<Database_name>"`
+* All the pieces should now be there and the final step is to include the following in the `.env` file: <br /> `DATABASE_URL = "postgres://postgres:<postgres_password>@localhost/<database_name>"`
 
-* If other issues occur, the steps [here](https://tecadmin.net/how-to-install-postgresql-and-pgadmin-in-fedora/) may be worth a try.
+* If other issues occur, the steps found [here](https://tecadmin.net/how-to-install-postgresql-and-pgadmin-in-fedora/) may be worth a try
 
 ***
 
