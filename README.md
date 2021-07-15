@@ -20,7 +20,6 @@ Artificial Intelligence API for usability problems.
 
 ## Setup - locally
 
-
 ### The api itself
 - Install python 3.8.10
    *  other versions may or may not work.
