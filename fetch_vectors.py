@@ -14,27 +14,17 @@ logging.basicConfig(format='%(levelname)-8s [%(filename)s:%(lineno)d] %(message)
 
 logger = logging.getLogger(__name__)
 
-NUMPY_VECTOR = 'wordvectors.wv.vectors.npy'
+GOOGLE_NEWS = 'GoogleNews-vectors-negative300.bin'
 
-GENSIM_VECTOR = 'wordvectors.wv'
+logger.info('Looking for google news vectors..')
 
-logger.info('Looking for vectors..')
-
-if not os.path.exists(NUMPY_VECTOR):
+if not os.path.exists(GOOGLE_NEWS):
     try:
-        logger.info('Fetching numpy vectors')
-        NUMPY_URL = 'https://drive.google.com/uc?id=1Izx4in1jUvI1-tCV5S-brZrse_HRwgVj'
-        gdown.download(NUMPY_URL, NUMPY_VECTOR, quiet=False)
+        logger.info('Fetching google news vectors')
+        GOOGLE_NEWS_URL = 'https://drive.google.com/u/3/uc?id=1px8wUBO5KF7vjcO609bkQT1AMKNaF5vs&export=download'
+        gdown.download(GOOGLE_NEWS_URL, GOOGLE_NEWS, quiet=False)
     except ValueError:
-        logger.error("Failed to fetch numpy vectors.")
+        logger.error("Failed to fetch the vectors.")
 else:
-    logging.info("Numpy vectors already in path")
-if not os.path.exists(GENSIM_VECTOR):
-    try:
-        logger.info('Fetching gensim vectors')
-        GENSIM_URL = 'https://drive.google.com/uc?id=1QMwcpvnSMFq_VikgzPzK0QcZ6kqmXy2p'
-        gdown.download(GENSIM_URL,GENSIM_VECTOR, quiet=False)
-    except ValueError:
-        logger.error("Fetching gensim vectors failed.")
-else:
-    logger.info("Gensim vectors already in path.")
+    logging.info("Google news vectors file is already in path")
+
