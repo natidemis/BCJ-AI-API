@@ -5,14 +5,12 @@ May 2021
 File that executes the app and sets up the database.
 """
 #Set up the database tables
+#import fetch_vectors
 import logging
 from db import Database
 db = Database()
 #db.drop_table()
 table_created = db.make_table()
-
-#Fetch vectors for the models.
-exec(open("./fetch_vectors.py").read())
 
 #Run app
 from app import app # pylint: disable=wrong-import-position
