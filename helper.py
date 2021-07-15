@@ -5,9 +5,10 @@ June 2021
 
 Helper classes for the app
 """
+
 from datetime import datetime
 from enum import Enum
-from schema import Schema, And, Optional, SchemaError
+from schema import Schema, And, Optional
 
 class QueryString(Enum):
     """
@@ -150,7 +151,7 @@ class Validator:
             self.info_schema.validate(data['structured_info'])
             self.validate_datestring(data['structured_info']['date'])
         except Exception:
-            raise SchemaError from Exception
+            raise ValueError from Exception
 
     def validate_data(self,data: dict) -> None:
         """
@@ -172,7 +173,7 @@ class Validator:
             self.info_schema.validate(data['structured_info'])
             self.validate_datestring(data['structured_info']['date'])
         except Exception:
-            raise SchemaError from Exception
+            raise ValueError from Exception
 
     def validate_data_get(self,data: dict) -> None:
         """
@@ -196,7 +197,7 @@ class Validator:
             if 'date' in data['structured_info']:
                 self.validate_datestring(data['structured_info']['date'])
         except Exception:
-            raise SchemaError from Exception
+            raise ValueError from Exception
 
     def validate_batch_data(self,data: dict) -> None:
         """
@@ -217,7 +218,7 @@ class Validator:
             self.batch_schema.validate(data['structured_info'])
             self.validate_datestring(data['structured_info']['date'])
         except Exception:
-            raise SchemaError from Exception
+            raise ValueError from Exception
 
     def validate_id(self, data: dict) -> None:
         """
@@ -233,7 +234,7 @@ class Validator:
         try:
             schema.validate(data)
         except Exception:
-            raise SchemaError from Exception
+            raise ValueError from Exception
 
     def validate_batch_id(self, data: dict) -> None:
         """
@@ -249,4 +250,4 @@ class Validator:
         try:
             schema.validate(data)
         except Exception:
-            raise SchemaError from Exception
+            raise ValueError from Exception
