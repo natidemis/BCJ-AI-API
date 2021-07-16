@@ -98,7 +98,6 @@ class BCJAIapi:
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
         with self. __lock:
             result = self.kdtree.query(vec, k=k)
-            print(result)
             ids = result[1][0]
             dists = result[0][0]
 
@@ -115,7 +114,7 @@ class BCJAIapi:
             "id": ids,
             "dist": dists
         }
-        
+
         return BCJStatus.OK, response
 
     def add_bug(self,
