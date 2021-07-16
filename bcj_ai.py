@@ -98,16 +98,24 @@ class BCJAIapi:
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
         with self. __lock:
             result = self.kdtree.query(vec, k=k)
+            print(result)
             ids = result[1][0]
             dists = result[0][0]
 
+        #Þessi lína er óþarfi ef issue #26 er samþykkt.
         ids = list(map(int,ids)) if k>1 else [ids]
         dists = dists.tolist() if k>1 else [float(dists)]
 
+        #nota þetta komment ef issue #26 samþykkt.
+        #response = {
+        #    "id": ids.tolist(),
+        #    "dist": dists.tolist()
+        #}
         response = {
             "id": ids,
             "dist": dists
         }
+        
         return BCJStatus.OK, response
 
     def add_bug(self,
