@@ -101,15 +101,10 @@ class BCJAIapi:
             ids = result[1][0]
             dists = result[0][0]
 
-        #Þessi lína er óþarfi ef issue #26 er samþykkt.
-        ids = list(map(int,ids)) if k>1 else [ids]
+        ids = list(map(int,ids)) if k>1 else [int(ids)]
         dists = dists.tolist() if k>1 else [float(dists)]
 
-        #nota þetta komment ef issue #26 samþykkt.
-        #response = {
-        #    "id": ids.tolist(),
-        #    "dist": dists.tolist()
-        #}
+
         response = {
             "id": ids,
             "dist": dists
