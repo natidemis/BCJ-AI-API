@@ -19,7 +19,7 @@ from bcj_ai import BCJAIapi as ai, BCJStatus
 from helper import Validator, Message
 
 load_dotenv()
-SECRET_TOKEN = os.getenv('SECRET_TOKEN')
+secret_token = os.getenv('SECRET_TOKEN')
 app = Flask(__name__, instance_relative_config=True)
 api = Api(app)
 validator = Validator()
@@ -32,7 +32,7 @@ def verify_token(token):
     Authentication method for the enviroment using this service
     via SECRET_TOKEN
     """
-    if token==SECRET_TOKEN:
+    if token==secret_token:
         return token
     return None
 class Bug(Resource):
@@ -191,7 +191,7 @@ class Batch(Resource):
         except(SchemaError, ValueError):
             return make_response(jsonify({'message': Message.FAILURE.value}),400)
 
-        status, message = ai.add_batch(data)           
+        status, message = ai.add_batch(data)
         return make_response(jsonify(
                                     data={'message': message.value}), status.value)
 
