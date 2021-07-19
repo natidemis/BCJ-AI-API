@@ -1,4 +1,5 @@
 # pylint: disable=R0201
+# pylint: disable=C0301
 """
 @author natidemis
 June 2021
@@ -89,8 +90,7 @@ class Message(Enum):
     Messages for response to http requests
     """
     VALID_INPUT = 'Valid input, check status for result'
-    FAILURE = '''Data not in proper format, read the requirements in README.md
-        or on github: https://github.com/natidemis/BCJ-AI-API'''
+    FAILURE = '''Data not in proper format, read the requirement on github: https://github.com/natidemis/BCJ-AI-API'''
     UNFULFILLED_REQ = 'Either summary or description must have length > 0'
     UNAUTHORIZED = 'Unauthorized, wrong token'
     REMOVED = 'Successfully removed'
