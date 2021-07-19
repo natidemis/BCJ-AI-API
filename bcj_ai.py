@@ -12,12 +12,15 @@ Used to store bugs and classify them.
 from enum import IntEnum
 import os
 from threading import Lock
+from typing import Tuple
 import tensorflow as tf
 import numpy as np
 from dotenv import load_dotenv
 from up_utils.word2vec import Word2Vec
 from up_utils.kdtree import KDTreeUP as KDTree
 from db import Database
+from helper import Message
+
 
 class BCJStatus(IntEnum):
     """
@@ -74,7 +77,7 @@ class BCJAIapi:
                             summary: str=None,
                             description: str=None,
                             structured_info: str=None,
-                            k: int=5):
+                            k: int=5) -> Tuple[BCJStatus, dict]:
         """
         Return the ID of the k most similar bugs based on given summary, desription, and
         structured information.
@@ -115,7 +118,7 @@ class BCJAIapi:
     def add_bug(self,
                 structured_info: dict,
                 summary: str=None,
-                description: str=None) -> BCJStatus:
+                description: str=None) -> Tuple[BCJstatus, Message]:
         """
         Add a bug with given summary, description and structured information.
         Here it is assumed that all the data
@@ -143,15 +146,16 @@ class BCJAIapi:
                             summary=vec,
                             batch__id=batch_id)
             except Exception:
-                return BCJStatus.ERROR
+                return BCJStatus.ERROR, Message.INVALID_ID_OR_DATE
+
         with self.__lock:
             if self.kdtree is None:
                 self.kdtree = KDTree(data=vec, indices=[new_id])
             else:
                 self.kdtree.update(vec, new_id)
-        return BCJStatus.OK
+        return BCJStatus.OK, Message.VALID_INPUT
 
-    def remove_bug(self, idx: int) -> BCJStatus:
+    def remove_bug(self, idx: int) -> Tuple[BCJStatus,Message]:
         """
         Remove a bug with idx as its id.
 
@@ -168,13 +172,13 @@ class BCJAIapi:
                     prev_data = self.database.fetch_all()
                     self.kdtree = self.__update_tree(prev_data)
             except Exception:
-                return BCJStatus.ERROR
-        return BCJStatus.OK
+                return BCJStatus.ERROR, Message.INVALID
+        return BCJStatus.OK, Message.VALID_INPUT
 
     def update_bug(self,
                     structured_info: dict,
                     summary: str=None,
-                    description: str=None) -> BCJStatus:
+                    description: str=None) -> Tuple[BCJStatus, Message]:
         """
         Updates a bug with the parameters given. The id of the bug should be in structured_info.
 
@@ -194,9 +198,9 @@ class BCJAIapi:
                     self.database.update(_id=structured_info['id'],
                                     date=structured_info['date'],
                                     batch__id=batch_id)
-                    return BCJStatus.OK
+                    return BCJStatus.OK, Message.VALID_INPUT
                 except Exception:
-                    return BCJStatus.ERROR
+                    return BCJStatus.ERROR, Message.INVALID_ID_OR_DATE
 
         data = description if bool(description) else summary
         vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
@@ -209,10 +213,10 @@ class BCJAIapi:
                 prev_data = self.database.fetch_all()
                 self.kdtree = self.__update_tree(prev_data)
             except Exception:
-                return BCJStatus.ERROR
-        return BCJStatus.OK
+                return BCJStatus.ERROR, Message.INVALID_ID_OR_DATE
+        return BCJStatus.OK, Message.VALID_INPUT
 
-    def remove_batch(self, idx: int) -> BCJStatus:
+    def remove_batch(self, idx: int) -> Tuple[BCJstatus, Message]:
         """
         Removes a batch of bugs. The batch's id is idx.
 
@@ -230,11 +234,11 @@ class BCJAIapi:
                     prev_data = self.database.fetch_all()
                     self.kdtree = self.__update_tree(prev_data)
             except Exception:
-                return BCJStatus.ERROR
-        return BCJStatus.OK
+                return BCJStatus.ERROR, Message.INVALID
+        return BCJStatus.OK, Message.VALID_INPUT
 
 
-    def add_batch(self, batch: list) -> BCJStatus:
+    def add_batch(self, batch: list) -> Tuple[BCJStatus, Message]:
         """
         Adds a batch to the database and updates the KD-Tree
 
@@ -254,7 +258,7 @@ class BCJAIapi:
             try:
                 self.database.insert_batch(vectored_batch)
             except Exception:
-                return BCJStatus.ERROR
+                return BCJStatus.ERROR, Message.INVALID
             updated_results = self.database.fetch_all()
             self.kdtree = self.__update_tree(updated_results)
-        return BCJStatus.OK
+        return BCJStatus.OK, Message.VALID_INPUT

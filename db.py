@@ -64,7 +64,7 @@ class Database:
                         date: str,
                         summary: list = None,
                         descr: list = None,
-                        batch__id: int= None) -> bool:
+                        batch__id: int= None) -> None:
         """
         Async method for inserting into the database
 
