@@ -5,21 +5,16 @@ May 2021
 File that executes the app and sets up the database.
 """
 #Set up the database tables
-#import fetch_vectors
-import logging
-from db import Database
+import fetch_vectors #pylint: disable=W0611
+from log import logger
+logger.info('Starting server..')
+from db import Database #pylint: disable=C0413
 db = Database()
 #db.drop_table()
 table_created = db.make_table()
 
 #Run app
 from app import app # pylint: disable=wrong-import-position
-
-logging.basicConfig(format='%(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
-    datefmt='%Y-%m-%d:%H:%M:%S',
-    level=logging.DEBUG)
-
-logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
     if not table_created:

@@ -20,6 +20,7 @@ from up_utils.word2vec import Word2Vec
 from up_utils.kdtree import KDTreeUP as KDTree
 from db import Database
 from helper import Message
+from log import logger
 
 
 class BCJStatus(IntEnum):
@@ -56,10 +57,10 @@ class BCJAIapi:
             googlenews_path=GOOGLENEWS_PATH,
             wv_item_limit=WV_ITEM_LIMIT)
         prev_data = self.database.fetch_all()
-        self.kdtree = self.__update_tree(prev_data)
+        self.kdtree = self._update_tree(prev_data)
 
     @staticmethod
-    def __update_tree(prev_data: list) -> KDTree:
+    def _update_tree(prev_data: list) -> KDTree:
         """
         Private method for updating the tree.
 
@@ -72,6 +73,7 @@ class BCJAIapi:
             ids = np.array([data['id'] for data in prev_data])
             return KDTree(data=vec, indices=ids)
         return None
+
 
     def get_similar_bugs_k(self,
                             summary: str=None,
@@ -93,12 +95,17 @@ class BCJAIapi:
             return BCJStatus.NOT_FOUND, 'No examples available'
         if not(bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.NOT_FOUND, \
-                '''At least one of the parameters summary,
-                description, or structured_info must be filled'''
+                ('''At least one of the parameters summary,
+                description, or structured_info must be filled''')
         N = len(self.kdtree.indices)
         k = min(k,N)
         data = description if bool(description) else summary
-        vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
+        try:
+            vec= self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
+        except Exception:
+            logger.error('Data is invalid.')
+            return BCJStatus.NOT_FOUND, Message.INVALID
+
         with self. __lock:
             result = self.kdtree.query(vec, k=k)
             ids = result[1][0]
@@ -136,7 +143,11 @@ class BCJAIapi:
 
         data = description if bool(description) else summary
         batch_id = structured_info['batch_id'] if 'batch_id' in structured_info else None
-        vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
+        try:
+            vec= self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
+        except Exception:
+            logger.error('Data is invalid.')
+            return BCJStatus.NOT_FOUND, Message.INVALID
         new_id = structured_info['id']
 
         with self.__lock:
@@ -170,7 +181,7 @@ class BCJAIapi:
                 rows = self.database.delete(idx)
                 if rows > 0:
                     prev_data = self.database.fetch_all()
-                    self.kdtree = self.__update_tree(prev_data)
+                    self.kdtree = self._update_tree(prev_data)
             except Exception:
                 return BCJStatus.ERROR, Message.INVALID
         return BCJStatus.OK, Message.VALID_INPUT
@@ -203,7 +214,11 @@ class BCJAIapi:
                     return BCJStatus.ERROR, Message.INVALID_ID_OR_DATE
 
         data = description if bool(description) else summary
-        vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
+        try:
+            vec= self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
+        except Exception:
+            logger.error('Data is invalid.')
+            return BCJStatus.NOT_FOUND, Message.INVALID
         with self.__lock:
             try:
                 self.database.update(_id=structured_info['id'],
@@ -211,7 +226,7 @@ class BCJAIapi:
                                 summary=vec,
                                 batch__id=batch_id)
                 prev_data = self.database.fetch_all()
-                self.kdtree = self.__update_tree(prev_data)
+                self.kdtree = self._update_tree(prev_data)
             except Exception:
                 return BCJStatus.ERROR, Message.INVALID_ID_OR_DATE
         return BCJStatus.OK, Message.VALID_INPUT
@@ -232,7 +247,7 @@ class BCJAIapi:
                 num_of_deleted_rows = self.database.delete_batch(idx)
                 if num_of_deleted_rows > 0:
                     prev_data = self.database.fetch_all()
-                    self.kdtree = self.__update_tree(prev_data)
+                    self.kdtree = self._update_tree(prev_data)
             except Exception:
                 return BCJStatus.ERROR, Message.INVALID
         return BCJStatus.OK, Message.VALID_INPUT
@@ -260,5 +275,5 @@ class BCJAIapi:
             except Exception:
                 return BCJStatus.ERROR, Message.INVALID
             updated_results = self.database.fetch_all()
-            self.kdtree = self.__update_tree(updated_results)
+            self.kdtree = self._update_tree(updated_results)
         return BCJStatus.OK, Message.VALID_INPUT

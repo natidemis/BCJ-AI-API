@@ -11,6 +11,7 @@ from datetime import datetime
 from enum import Enum
 from schema import Schema, And, Optional
 
+
 class QueryString(Enum):
     """
     Query strings for the database
