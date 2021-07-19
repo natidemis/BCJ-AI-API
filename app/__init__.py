@@ -85,10 +85,12 @@ class Bug(Resource):
             return make_response(jsonify({'message': Message.FAILURE.value}),400)
 
         if len(req['summary']) > 0 or len(req['description'])>0:
-            return make_response(jsonify(data={'message': Message.VALID_INPUT.value}), ai.add_bug(
-                summary=bleach.clean(req['summary']),
-                description=bleach.clean(req['description']),
-                structured_info=req['structured_info']).value)
+            status, message = ai.add_bug(
+                                        summary=bleach.clean(req['summary']),
+                                        description=bleach.clean(req['description']),
+                                        structured_info=req['structured_info'])
+            return make_response(jsonify(data={'message': message.value}), status.value)
+
         return make_response(jsonify(data={'message': Message.UNFULFILLED_REQ.value}),400)
 
     @auth.login_required
@@ -109,10 +111,11 @@ class Bug(Resource):
 
         summary = bleach.clean(req['summary']) if 'summary' in req else None
         description = bleach.clean(req['description']) if 'description' in req else None
-        return make_response(jsonify({'message': Message.VALID_INPUT.value}), ai.update_bug(
-            summary=summary,
-            description = description,
-            structured_info = req['structured_info']).value)
+        status, message = ai.update_bug(
+                                        summary=summary,
+                                        description = description,
+                                        structured_info = req['structured_info'])
+        return make_response(jsonify({'message': message.value}), status.value)
 
     @auth.login_required
     def delete(self):
@@ -128,10 +131,8 @@ class Bug(Resource):
             validator.validate_id(req)
         except(SchemaError, ValueError):
             return make_response(jsonify({'message': Message.FAILURE.value}), 400)
-        result = ai.remove_bug(req['id'])
-        if result == BCJStatus.OK:
-            return make_response(jsonify({'message': Message.REMOVED.value}), result.value)
-        return make_response(jsonify({'message': Message.INVALID.value}), result.value)
+        status, message = ai.remove_bug(req['id'])
+        return make_response(jsonify({'message': message.value}), status.value)
 
 class Batch(Resource):
     """
@@ -153,10 +154,8 @@ class Batch(Resource):
         except(SchemaError, ValueError):
             return {'message': Message.FAILURE.value},400
 
-        result = ai.remove_batch(req['batch_id'])
-        if result == BCJStatus.OK:
-            return make_response(jsonify({'message': Message.REMOVED.value}), result.value)
-        return make_response(jsonify({'message': Message.INVALID.value}), result.value)
+        status, message = ai.remove_batch(req['batch_id'])
+        return make_response(jsonify({'message': message.value}), status.value)
 
     @auth.login_required
     def post(self):
@@ -191,9 +190,10 @@ class Batch(Resource):
                     raise ValueError('Both summary and description may not have string length of 0')
         except(SchemaError, ValueError):
             return make_response(jsonify({'message': Message.FAILURE.value}),400)
+
+        status, message = ai.add_batch(data)           
         return make_response(jsonify(
-                                    data={'message': Message.VALID_INPUT.value}),
-                                    ai.add_batch(data).value)
+                                    data={'message': message.value}), status.value)
 
 api.add_resource(Bug,'/bug')
 api.add_resource(Batch, '/batch')
