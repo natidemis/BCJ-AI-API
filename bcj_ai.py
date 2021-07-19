@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=C0103
+# pylint: disable=W0703
 """
 @authors: kra33, Gitcelo, natidemis
 May 2021
@@ -100,13 +101,15 @@ class BCJAIapi:
             ids = result[1][0]
             dists = result[0][0]
 
-        ids = list(map(int,ids)) if k>1 else [ids]
+        ids = list(map(int,ids)) if k>1 else [int(ids)]
         dists = dists.tolist() if k>1 else [float(dists)]
+
 
         response = {
             "id": ids,
             "dist": dists
         }
+
         return BCJStatus.OK, response
 
     def add_bug(self,
@@ -139,7 +142,7 @@ class BCJAIapi:
                             date=structured_info['date'],
                             summary=vec,
                             batch__id=batch_id)
-            except TypeError:
+            except Exception:
                 return BCJStatus.ERROR
         with self.__lock:
             if self.kdtree is None:
@@ -164,7 +167,7 @@ class BCJAIapi:
                 if rows > 0:
                     prev_data = self.database.fetch_all()
                     self.kdtree = self.__update_tree(prev_data)
-            except ValueError:
+            except Exception:
                 return BCJStatus.ERROR
         return BCJStatus.OK
 
@@ -192,7 +195,7 @@ class BCJAIapi:
                                     date=structured_info['date'],
                                     batch__id=batch_id)
                     return BCJStatus.OK
-                except ValueError:
+                except Exception:
                     return BCJStatus.ERROR
 
         data = description if bool(description) else summary
@@ -205,7 +208,7 @@ class BCJAIapi:
                                 batch__id=batch_id)
                 prev_data = self.database.fetch_all()
                 self.kdtree = self.__update_tree(prev_data)
-            except ValueError:
+            except Exception:
                 return BCJStatus.ERROR
         return BCJStatus.OK
 
@@ -226,7 +229,7 @@ class BCJAIapi:
                 if num_of_deleted_rows > 0:
                     prev_data = self.database.fetch_all()
                     self.kdtree = self.__update_tree(prev_data)
-            except ValueError:
+            except Exception:
                 return BCJStatus.ERROR
         return BCJStatus.OK
 
@@ -250,7 +253,7 @@ class BCJAIapi:
         with self.__lock:
             try:
                 self.database.insert_batch(vectored_batch)
-            except ValueError:
+            except Exception:
                 return BCJStatus.ERROR
             updated_results = self.database.fetch_all()
             self.kdtree = self.__update_tree(updated_results)

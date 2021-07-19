@@ -1,3 +1,4 @@
+# pylint: disable=W0703
 """
 @author nat_idemis
 June 2021
@@ -77,10 +78,9 @@ class Database:
             await conn.execute(QueryString.INSERT.value,_id,summary,descr,batch__id,date)
             await conn.close()
             logger.info("Insertion successful")
-            return True
-        except RuntimeError:
+        except Exception:
             logger.error("Failed to insert")
-            return False
+            raise ValueError from Exception
 
     async def __insert_batch(self,data) -> bool:
         try:
@@ -89,9 +89,9 @@ class Database:
             await conn.close()
             logger.info("Batch insertion successful")
             return True
-        except RuntimeError:
+        except Exception:
             logger.error("Failed to insert batch")
-            return False
+            raise ValueError from Exception
 
 
     async def __fetch_all(self) -> Union[list,None]:
@@ -113,7 +113,7 @@ class Database:
                     'description': row['descr'],
                     'batch__id': row['batch_id'],
                     'date': row['dateup']} for row in rows]
-        except RuntimeError:
+        except Exception:
             logger.error("Fetching all failed")
             return None
 
@@ -176,10 +176,9 @@ class Database:
                 raise ValueError
             await conn.close()
             logger.info("Update successful")
-            return True
-        except RuntimeError:
+        except Exception:
             logger.error("Updating failed")
-            return False
+            raise ValueError from Exception
 
     async def __delete(self, _id: int) -> None:
         """
@@ -195,7 +194,7 @@ class Database:
             await conn.close()
             logger.info("successfully deleted row")
             return result[0]['count']
-        except RuntimeError:
+        except Exception:
             logger.info('Deletion error occured')
             return None
     async def __delete_batch(self,batch__id: int) -> Union[int,None]:
@@ -212,7 +211,7 @@ class Database:
             await conn.close()
             logger.info("successfully deleted row")
             return result[0]['count']
-        except RuntimeError:
+        except Exception:
             logger.info('Deletion error occured')
             return None
 
@@ -230,7 +229,7 @@ class Database:
             await conn.execute(query_2)
             await conn.close()
             logger.info("Dropped table to avo_id unnecessary errors.")
-        except RuntimeError:
+        except Exception:
             logger.info("Error dropping table")
 
     def drop_table(self):
