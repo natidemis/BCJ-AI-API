@@ -12,7 +12,7 @@ Used to store bugs and classify them.
 from enum import IntEnum
 import os
 from threading import Lock
-from typing import Tuple
+from typing import Tuple, Union
 import tensorflow as tf
 import numpy as np
 from dotenv import load_dotenv
@@ -77,7 +77,7 @@ class BCJAIapi:
                             summary: str=None,
                             description: str=None,
                             structured_info: str=None,
-                            k: int=5) -> Tuple[BCJStatus, dict]:
+                            k: int=5) -> Tuple[BCJStatus, Union[dict,str]]:
         """
         Return the ID of the k most similar bugs based on given summary, desription, and
         structured information.
@@ -118,7 +118,7 @@ class BCJAIapi:
     def add_bug(self,
                 structured_info: dict,
                 summary: str=None,
-                description: str=None) -> Tuple[BCJstatus, Message]:
+                description: str=None) -> Tuple[BCJStatus, Message]:
         """
         Add a bug with given summary, description and structured information.
         Here it is assumed that all the data
@@ -155,7 +155,7 @@ class BCJAIapi:
                 self.kdtree.update(vec, new_id)
         return BCJStatus.OK, Message.VALID_INPUT
 
-    def remove_bug(self, idx: int) -> Tuple[BCJStatus,Message]:
+    def remove_bug(self, idx: int) -> Tuple[BCJStatus, Message]:
         """
         Remove a bug with idx as its id.
 
@@ -216,7 +216,7 @@ class BCJAIapi:
                 return BCJStatus.ERROR, Message.INVALID_ID_OR_DATE
         return BCJStatus.OK, Message.VALID_INPUT
 
-    def remove_batch(self, idx: int) -> Tuple[BCJstatus, Message]:
+    def remove_batch(self, idx: int) -> Tuple[BCJStatus, Message]:
         """
         Removes a batch of bugs. The batch's id is idx.
 
