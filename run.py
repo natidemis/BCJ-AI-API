@@ -22,7 +22,7 @@ if __name__ == '__main__':
     else:
         logger.info("Database initialized successfully, starting app in development..")
         app.run()
-else if table_created:
+elif table_created:
     logger.info('Starting gunicorn app..')
     gunicorn_app = app()
 else:
