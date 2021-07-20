@@ -12,12 +12,16 @@ Used to store bugs and classify them.
 from enum import IntEnum
 import os
 from threading import Lock
+from typing import Tuple, Union
 import tensorflow as tf
 import numpy as np
 from dotenv import load_dotenv
 from up_utils.word2vec import Word2Vec
 from up_utils.kdtree import KDTreeUP as KDTree
 from db import Database
+from helper import Message
+from log import logger
+
 
 class BCJStatus(IntEnum):
     """
@@ -53,10 +57,10 @@ class BCJAIapi:
             googlenews_path=GOOGLENEWS_PATH,
             wv_item_limit=WV_ITEM_LIMIT)
         prev_data = self.database.fetch_all()
-        self.kdtree = self.__update_tree(prev_data)
+        self.kdtree = self._update_tree(prev_data)
 
     @staticmethod
-    def __update_tree(prev_data: list) -> KDTree:
+    def _update_tree(prev_data: list) -> KDTree:
         """
         Private method for updating the tree.
 
@@ -70,11 +74,12 @@ class BCJAIapi:
             return KDTree(data=vec, indices=ids)
         return None
 
+
     def get_similar_bugs_k(self,
                             summary: str=None,
                             description: str=None,
                             structured_info: str=None,
-                            k: int=5):
+                            k: int=5) -> Tuple[BCJStatus, Union[dict,str]]:
         """
         Return the ID of the k most similar bugs based on given summary, desription, and
         structured information.
@@ -90,12 +95,17 @@ class BCJAIapi:
             return BCJStatus.NOT_FOUND, 'No examples available'
         if not(bool(summary) or bool(description) or bool(structured_info)):
             return BCJStatus.NOT_FOUND, \
-                '''At least one of the parameters summary,
-                description, or structured_info must be filled'''
+                ('''At least one of the parameters summary,
+                description, or structured_info must be filled''')
         N = len(self.kdtree.indices)
         k = min(k,N)
         data = description if bool(description) else summary
-        vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
+        try:
+            vec= self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
+        except Exception:
+            logger.error('Data is invalid.')
+            return BCJStatus.NOT_FOUND, Message.INVALID
+
         with self. __lock:
             result = self.kdtree.query(vec, k=k)
             ids = result[1][0]
@@ -115,7 +125,7 @@ class BCJAIapi:
     def add_bug(self,
                 structured_info: dict,
                 summary: str=None,
-                description: str=None) -> BCJStatus:
+                description: str=None) -> Tuple[BCJStatus, Message]:
         """
         Add a bug with given summary, description and structured information.
         Here it is assumed that all the data
@@ -133,7 +143,11 @@ class BCJAIapi:
 
         data = description if bool(description) else summary
         batch_id = structured_info['batch_id'] if 'batch_id' in structured_info else None
-        vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
+        try:
+            vec= self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
+        except Exception:
+            logger.error('Data is invalid.')
+            return BCJStatus.NOT_FOUND, Message.INVALID
         new_id = structured_info['id']
 
         with self.__lock:
@@ -143,15 +157,16 @@ class BCJAIapi:
                             summary=vec,
                             batch__id=batch_id)
             except Exception:
-                return BCJStatus.ERROR
+                return BCJStatus.ERROR, Message.INVALID_ID_OR_DATE
+
         with self.__lock:
             if self.kdtree is None:
                 self.kdtree = KDTree(data=vec, indices=[new_id])
             else:
                 self.kdtree.update(vec, new_id)
-        return BCJStatus.OK
+        return BCJStatus.OK, Message.VALID_INPUT
 
-    def remove_bug(self, idx: int) -> BCJStatus:
+    def remove_bug(self, idx: int) -> Tuple[BCJStatus, Message]:
         """
         Remove a bug with idx as its id.
 
@@ -166,15 +181,15 @@ class BCJAIapi:
                 rows = self.database.delete(idx)
                 if rows > 0:
                     prev_data = self.database.fetch_all()
-                    self.kdtree = self.__update_tree(prev_data)
+                    self.kdtree = self._update_tree(prev_data)
             except Exception:
-                return BCJStatus.ERROR
-        return BCJStatus.OK
+                return BCJStatus.ERROR, Message.INVALID
+        return BCJStatus.OK, Message.VALID_INPUT
 
     def update_bug(self,
                     structured_info: dict,
                     summary: str=None,
-                    description: str=None) -> BCJStatus:
+                    description: str=None) -> Tuple[BCJStatus, Message]:
         """
         Updates a bug with the parameters given. The id of the bug should be in structured_info.
 
@@ -194,12 +209,16 @@ class BCJAIapi:
                     self.database.update(_id=structured_info['id'],
                                     date=structured_info['date'],
                                     batch__id=batch_id)
-                    return BCJStatus.OK
+                    return BCJStatus.OK, Message.VALID_INPUT
                 except Exception:
-                    return BCJStatus.ERROR
+                    return BCJStatus.ERROR, Message.INVALID_ID_OR_DATE
 
         data = description if bool(description) else summary
-        vec = self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
+        try:
+            vec= self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
+        except Exception:
+            logger.error('Data is invalid.')
+            return BCJStatus.NOT_FOUND, Message.INVALID
         with self.__lock:
             try:
                 self.database.update(_id=structured_info['id'],
@@ -207,12 +226,12 @@ class BCJAIapi:
                                 summary=vec,
                                 batch__id=batch_id)
                 prev_data = self.database.fetch_all()
-                self.kdtree = self.__update_tree(prev_data)
+                self.kdtree = self._update_tree(prev_data)
             except Exception:
-                return BCJStatus.ERROR
-        return BCJStatus.OK
+                return BCJStatus.ERROR, Message.INVALID_ID_OR_DATE
+        return BCJStatus.OK, Message.VALID_INPUT
 
-    def remove_batch(self, idx: int) -> BCJStatus:
+    def remove_batch(self, idx: int) -> Tuple[BCJStatus, Message]:
         """
         Removes a batch of bugs. The batch's id is idx.
 
@@ -228,13 +247,13 @@ class BCJAIapi:
                 num_of_deleted_rows = self.database.delete_batch(idx)
                 if num_of_deleted_rows > 0:
                     prev_data = self.database.fetch_all()
-                    self.kdtree = self.__update_tree(prev_data)
+                    self.kdtree = self._update_tree(prev_data)
             except Exception:
-                return BCJStatus.ERROR
-        return BCJStatus.OK
+                return BCJStatus.ERROR, Message.INVALID
+        return BCJStatus.OK, Message.VALID_INPUT
 
 
-    def add_batch(self, batch: list) -> BCJStatus:
+    def add_batch(self, batch: list) -> Tuple[BCJStatus, Message]:
         """
         Adds a batch to the database and updates the KD-Tree
 
@@ -254,7 +273,7 @@ class BCJAIapi:
             try:
                 self.database.insert_batch(vectored_batch)
             except Exception:
-                return BCJStatus.ERROR
+                return BCJStatus.ERROR, Message.INVALID
             updated_results = self.database.fetch_all()
-            self.kdtree = self.__update_tree(updated_results)
-        return BCJStatus.OK
+            self.kdtree = self._update_tree(updated_results)
+        return BCJStatus.OK, Message.VALID_INPUT
