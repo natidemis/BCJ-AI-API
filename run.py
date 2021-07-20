@@ -18,9 +18,12 @@ from app import app # pylint: disable=wrong-import-position
 
 if __name__ == '__main__':
     if not table_created:
-        logger.error("Setting up the database failed, server will not run.")
+        logger.error("Setting up the database failed, app will not run in development")
     else:
-        logger.info("Database initialized successfully, starting app..")
+        logger.info("Database initialized successfully, starting app in development..")
         app.run()
-else:
+elif table_created:
+    logger.info('Starting gunicorn app..')
     gunicorn_app = app()
+else:
+    logger.error('Failed to start gunicorn app..')
