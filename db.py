@@ -49,10 +49,10 @@ class Database:
             await conn.execute(queries[1])
             await conn.execute(queries[2])
             await conn.close()
-            logger.info("Table created.")
+            logger.info("Checking and/or setting up database complete.")
             return True
         except RuntimeError:
-            logger.error("Creating table failed, re-evaluate enviroment variables.")
+            logger.error("Setting up database failed, re-evaluate enviroment variables.")
             return False
 
 
@@ -218,14 +218,14 @@ class Database:
         """
         try:
             query_ = "DROP TABLE IF EXISTS Vectors;"
-            query_1 = "DROP INDEX IF EXISTS vectors__id;"
+            query_1 = "DROP INDEX IF EXISTS vectors_id;"
             query_2 = "DROP INDEX IF EXISTS vectors_batch;"
             conn = await asyncpg.connect(self.database_url)
             await conn.execute(query_)
             await conn.execute(query_1)
             await conn.execute(query_2)
             await conn.close()
-            logger.info("Dropped table to avo_id unnecessary errors.")
+            logger.info("Dropped table to avoid unnecessary errors.")
         except Exception:
             logger.info("Error dropping table")
 
