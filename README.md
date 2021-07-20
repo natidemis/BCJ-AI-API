@@ -20,7 +20,7 @@ Artificial Intelligence API for usability problems.
 
 ## Setup - locally
 
-### The api itself
+### The API itself
 - Install python 3.8.10
    *  other versions may or may not work.
 - Install dependencies by writing ``pip install -r requirements.txt`` into terminal
@@ -47,7 +47,7 @@ Artificial Intelligence API for usability problems.
     * The second `postgres` in the url is replacable by any user as long as that user has the approperiate role to manage the database and `<postgres_password>` can be replaced by the password given to that user. 
 ***
 
-## Setup - linux(fedora operating system)
+## Setup - Linux (Fedora operating system)
 ### Setting up the production enviroment
 * Blah blah blah
 
