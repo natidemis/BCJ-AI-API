@@ -20,8 +20,7 @@ Artificial Intelligence API for usability problems.
 
 ## Setup - locally
 
-
-### The api itself
+### The API itself
 - Install python 3.8.10
    *  other versions may or may not work.
 - Install dependencies by writing ``pip install -r requirements.txt`` into terminal
@@ -48,7 +47,7 @@ Artificial Intelligence API for usability problems.
     * The second `postgres` in the url is replacable by any user as long as that user has the approperiate role to manage the database and `<postgres_password>` can be replaced by the password given to that user. 
 ***
 
-## Setup - linux(fedora operating system)
+## Setup - Linux (Fedora operating system)
 ### Setting up the production enviroment
 * Blah blah blah
 
@@ -77,9 +76,9 @@ Artificial Intelligence API for usability problems.
 
 
 ## Corpus
-The project requires a corpus. We used the **Google News** corpus which can be downloaded [here](https://github.com/mmihaltz/word2vec-GoogleNews-vectors). Once you've downloaded the file, use an archiving tool (we recommend winrar) to extract the file into the `BCJ-AI-API` folder.
+The project requires a corpus. We used the **Google News** corpus which can be found [here](https://github.com/mmihaltz/word2vec-GoogleNews-vectors). Once the file is downloaded, an archiving tool (we recommend winrar) should be used to extract the file into the `BCJ-AI-API` folder.
 
-**CommonCrawl**: https://nlp.stanford.edu/projects/glove/
+The **CommonCrawl** corpus can be used as an alternative. It can be found [here](https://nlp.stanford.edu/projects/glove/)
 
 ***
 
