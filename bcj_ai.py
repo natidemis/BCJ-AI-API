@@ -110,6 +110,9 @@ class BCJAIapi:
             result = self.kdtree.query(vec, k=k)
             ids = result[1][0]
             dists = result[0][0]
+            #ef up_utils brach(list_for_list_of_lists) verður sameinaður
+            #ids = result[1].tolist()
+            #dists = result[0].tolist()
 
         ids = list(map(int,ids)) if k>1 else [int(ids)]
         dists = dists.tolist() if k>1 else [float(dists)]
