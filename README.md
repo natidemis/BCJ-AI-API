@@ -14,7 +14,6 @@ Artificial Intelligence API for usability problems.
 
 * Remove the drop table functionality
 * Send JSON error if id is already in table. As is we only send a 500 error with the message
-* Update Corpus part to incorporate CommonCrawl
 
 ***
 
@@ -78,7 +77,7 @@ Artificial Intelligence API for usability problems.
 ## Corpus
 The project requires a corpus. We used the **Google News** corpus which can be found [here](https://github.com/mmihaltz/word2vec-GoogleNews-vectors). Once the file is downloaded, an archiving tool (we recommend winrar) should be used to extract the file into the `BCJ-AI-API` folder.
 
-The **CommonCrawl** corpus can be used as an alternative. It can be found [here](https://nlp.stanford.edu/projects/glove/)
+The **CommonCrawl** corpus can be used as an alternative. It can be found [here](https://nlp.stanford.edu/projects/glove/).
 
 ***
 

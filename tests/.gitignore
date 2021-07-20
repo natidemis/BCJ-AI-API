@@ -129,5 +129,3 @@ dmypy.json
 .pyre/
 
 *.bin
-
-test_bcj_ai.py
