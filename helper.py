@@ -11,6 +11,7 @@ from datetime import datetime
 from enum import Enum
 from schema import Schema, And, Optional
 
+
 class QueryString(Enum):
     """
     Query strings for the database
@@ -95,6 +96,8 @@ class Message(Enum):
     UNAUTHORIZED = 'Unauthorized, wrong token'
     REMOVED = 'Successfully removed'
     INVALID = 'Invalid ID'
+    INVALID_ID_OR_DATE = ("Either the id already exists or "
+                "the given date is not valid")
 
 class Validator:
     """

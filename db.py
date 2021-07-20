@@ -1,26 +1,21 @@
 # pylint: disable=W0703
 """
-@author nat_idemis
+@author natidemis
 June 2021
 
 Contains the database class used for setting up for and
 making query to the database
 """
+
 import os
 import asyncio
-import logging
 from typing import Union
 from dotenv import load_dotenv
 import asyncpg
+from log import logger
 from helper import QueryString
 
 load_dotenv()
-
-logging.basicConfig(format='%(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
-    datefmt='%Y-%m-%d:%H:%M:%S',
-    level=logging.DEBUG)
-
-logger = logging.getLogger(__name__)
 
 class Database:
     """
@@ -64,7 +59,7 @@ class Database:
                         date: str,
                         summary: list = None,
                         descr: list = None,
-                        batch__id: int= None) -> bool:
+                        batch__id: int= None) -> None:
         """
         Async method for inserting into the database
 
@@ -122,7 +117,7 @@ class Database:
                         date: str,
                         summary: str = None,
                         descr: str=None,
-                        batch__id: int=None) -> bool:
+                        batch__id: int=None) -> None:
         try:
             conn = await asyncpg.connect(self.database_url)
             if bool(summary) and bool(descr) and bool(batch__id):
@@ -258,7 +253,7 @@ class Database:
                 date: str,
                 batch__id: int=None,
                 summary: list = None,
-                descr: list=None) -> bool:
+                descr: list=None) -> None:
         """
         Method for inserting into the database
 
@@ -267,13 +262,12 @@ class Database:
         True if insertion successful, false otherwise
         """
 
-        result = asyncio.run(self.__insert(
-                                        _id=_id,
-                                        date=date,
-                                        summary=summary,
-                                        descr=descr,
-                                        batch__id=batch__id))
-        return result
+        asyncio.run(self.__insert(
+                                _id=_id,
+                                date=date,
+                                summary=summary,
+                                descr=descr,
+                                batch__id=batch__id))
 
     def fetch_all(self) -> Union[list,None]:
         """
@@ -291,7 +285,7 @@ class Database:
             self,
             _id: int,
             date: str,
-            summary: str = None, descr: str=None, batch__id: int=None) -> bool:
+            summary: str = None, descr: str=None, batch__id: int=None) -> None:
         """
         Update values of a row by _id
 
@@ -300,13 +294,13 @@ class Database:
         Boolean, true if successfully updated, false otherwise
         """
 
-        result = asyncio.run(self.__update(
-                                        _id=_id,
-                                        date=date,
-                                        summary=summary,
-                                        descr=descr,
-                                        batch__id=batch__id))
-        return result
+        asyncio.run(self.__update(
+                                _id=_id,
+                                date=date,
+                                summary=summary,
+                                descr=descr,
+                                batch__id=batch__id))
+
 
     def delete(self, _id: int) -> None:
         """
