@@ -19,7 +19,11 @@ class QueryString(Enum):
     INSERT = """
     INSERT INTO Vectors(id,userId,embeddings,batch_id)
     VALUES($1,$2,$3,$4);"""
+    INSERT_USER = """
+    INSERT INTO Users(user_id) VALUES($1);
+    """
     FETCH = "SELECT id,embeddings,batch_id FROM Vectors WHERE user_id = $1;"
+    FETCH_USERS = "SELECT user_id from Users;"
     DELETE = """
     WITH deleted AS (
         DELETE FROM Vectors 

@@ -44,6 +44,8 @@ class BCJAIapi:
         self.__lock = Lock()
         self.database = Database()
         self.model = tf.keras.models.load_model('Models', compile=False)
+        self.kdtree = None
+        self.current_user = None
         load_dotenv()
         OUTPUT_FILE = os.getenv('OUTPUT_FILE')
         DATASET = os.getenv('DATASET') # Dataset can either be googlenews or commoncrawl
@@ -73,6 +75,28 @@ class BCJAIapi:
             return KDTree(data=vec, indices=ids)
         return None
 
+    def get_current_user(self) -> int:
+        """
+        Private get method
+
+        Returns
+        -------
+        current user of the AI
+        """
+        return self.current_user
+    
+    def update_tree_for_user(self, user_id: int) -> None:
+        """
+        Update the kdtree with the data provided by `user_id`
+
+        Returns
+        -------
+        None
+        """
+
+        data = self.database.fetch_all(user_id)
+        self.kdtree = self._restructure_tree(data)
+        self.current_user = user_id
 
     def get_similar_bugs_k(self,
                             summary: str=None,
