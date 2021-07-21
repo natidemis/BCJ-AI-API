@@ -60,7 +60,7 @@ class Database:
     async def __insert(self,
                         _id: int,
                         user_id: str,
-                        embeddings: List[Union[int,float]] = None,
+                        embeddings: List[Union[int,float]],
                         batch_id: int= None) -> None:
         """
         Async method for inserting into the database
@@ -91,7 +91,7 @@ class Database:
             raise ValueError from Exception
 
 
-    async def __fetch_all(self) -> Union[list,None]:
+    async def __fetch_all(self, user_id: str) -> Union[list,None]:
         """
         Async method for fetching all rows in the database
 
@@ -102,82 +102,52 @@ class Database:
 
         try:
             conn = await asyncpg.connect(self.database_url)
-            rows = await conn.fetch(QueryString.FETCH.value)
+            rows = await conn.fetch(QueryString.FETCH.value,user_id)
             await conn.close()
             logger.info("Fetching all succeeded")
             return [{'id': row['id'],
-                    'summary': row['summary'],
-                    'description': row['descr'],
-                    'batch__id': row['batch_id'],
-                    'date': row['dateup']} for row in rows]
+                    'embeddings': row['embeddings'],
+                    'batch__id': row['batch_id']} for row in rows]
         except Exception:
             logger.error("Fetching all failed")
             return None
 
     async def __update(self,
                         _id: int,
-                        date: str,
-                        summary: str = None,
-                        descr: str=None,
-                        batch__id: int=None) -> None:
+                        user_id: int,
+                        embeddings: List[Union[int,float]] = None,
+                        batch_id: int=None) -> None:
         try:
             conn = await asyncpg.connect(self.database_url)
-            if bool(summary) and bool(descr) and bool(batch__id):
+            if bool(batch_id) and bool(embeddings):
                 await conn.execute(
-                    QueryString.UPDATE_SUMM_AND_DESCR_W_BATCH.value,
-                    summary,
-                    descr,
-                    batch__id,
-                    date,
-                    _id)
-            elif bool(summary) and bool(descr) and not bool(batch__id):
+                    QueryString.UPDATE_EMBS_W_BATCH.value,
+                    embeddings,
+                    batch_id,
+                    _id,
+                    user_id
+                    )
+            elif bool(batch_id) and not bool(embeddings):
                 await conn.execute(
-                    QueryString.UPDATE_SUMM_AND_DESCR_NO_BATCH.value,
-                    summary,
-                    descr,
-                    date,
-                    _id)
-            elif bool(summary) and not bool(descr) and bool(batch__id):
+                    QueryString.UPDATE_NO_BATCH.value,
+                    batch_id,
+                    _id,
+                    user_id
+                    )
+            elif not bool(batch_id) and bool(embeddings):
                 await conn.execute(
-                    QueryString.UPDATE_SUMM_W_BATCH.value,
-                    summary,
-                    batch__id,
-                    date,
-                    _id)
-            elif bool(summary) and not bool(descr) and not bool(batch__id):
-                await conn.execute(
-                    QueryString.UPDATE_SUMM_NO_BATCH.value,
-                    summary,
-                    date,
-                    _id)
-            elif not bool(summary) and bool(descr) and bool(batch__id):
-                await conn.execute(
-                    QueryString.UPDATE_DESCR_W_BATCH.value,
-                    descr,
-                    batch__id,
-                    date,
-                    _id)
-            elif not bool(summary) and bool(descr) and not bool(batch__id):
-                await conn.execute(
-                    QueryString.UPDATE_DESCR_NO_BATCH.value,
-                    descr,
-                    date,
-                    _id)
-            elif bool(batch__id) and not bool(descr) and not bool(summary):
-                await conn.execute(
-                    QueryString.UPDATE_BATCH_ONLY.value,
-                    batch__id,
-                    date,
-                    _id)
-            else:
-                raise ValueError
+                    QueryString.UPDATE_NO_BATCH_W_EMBS.value,
+                    embeddings,
+                    _id,
+                    user_id
+                    )
             await conn.close()
             logger.info("Update successful")
         except Exception:
             logger.error("Updating failed")
-            raise ValueError from Exception
+            raise ValueError('Updating failed.') from Exception
 
-    async def __delete(self, _id: int) -> None:
+    async def __delete(self, _id: int, user_id: int) -> None:
         """
         Removes a row from the database by _ID
 
@@ -187,16 +157,16 @@ class Database:
         """
         try:
             conn = await asyncpg.connect(self.database_url)
-            result = await conn.fetch(QueryString.DELETE.value,_id)
+            result = await conn.fetch(QueryString.DELETE.value,_id,user_id)
             await conn.close()
             logger.info("successfully deleted row")
             return result[0]['count']
         except Exception:
             logger.info('Deletion error occured')
             return None
-    async def __delete_batch(self,batch__id: int) -> Union[int,None]:
+    async def __delete_batch(self,batch_id: int,user_id: int) -> Union[int,None]:
         """
-        Removes all rows with batch__id
+        Removes all rows with batch_id
 
         Returns
         -------
@@ -204,7 +174,7 @@ class Database:
         """
         try:
             conn = await asyncpg.connect(self.database_url)
-            result = await conn.fetch(QueryString.DELETE_BATCH.value,batch__id)
+            result = await conn.fetch(QueryString.DELETE_BATCH.value,batch_id,user_id)
             await conn.close()
             logger.info("successfully deleted row")
             return result[0]['count']

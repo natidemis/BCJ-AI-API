@@ -112,6 +112,7 @@ class Bug(Resource):
         summary = bleach.clean(req['summary']) if 'summary' in req else None
         description = bleach.clean(req['description']) if 'description' in req else None
         status, message = ai.update_bug(
+                                        user_id = req['user_id'],
                                         summary=summary,
                                         description = description,
                                         structured_info = req['structured_info'])
@@ -131,7 +132,7 @@ class Bug(Resource):
             validator.validate_id(req)
         except(SchemaError, ValueError):
             return make_response(jsonify({'message': Message.FAILURE.value}), 400)
-        status, message = ai.remove_bug(req['id'])
+        status, message = ai.remove_bug(req['id'],req['user_id'])
         return make_response(jsonify({'message': message.value}), status.value)
 
 class Batch(Resource):
@@ -181,6 +182,7 @@ class Batch(Resource):
                 if len(item['summary']) > 0 or len(item['description'])>0:
                     data.append({
                         "id": item['structured_info']['id'],
+                        "user_id": item['user_id'],
                         "summary": bleach.clean(item['summary']),
                         "description": bleach.clean(item['description']),
                         "batch_id": item['structured_info']['batch_id'],
