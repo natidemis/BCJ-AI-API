@@ -9,13 +9,14 @@ making query to the database
 
 import os
 import asyncio
-from typing import Union
+from typing import Union, List
 from dotenv import load_dotenv
 import asyncpg
 from log import logger
 from helper import QueryString
 
 load_dotenv()
+
 
 asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
@@ -58,10 +59,9 @@ class Database:
 
     async def __insert(self,
                         _id: int,
-                        date: str,
-                        summary: list = None,
-                        descr: list = None,
-                        batch__id: int= None) -> None:
+                        user_id: str,
+                        embeddings: List[Union[int,float]] = None,
+                        batch_id: int= None) -> None:
         """
         Async method for inserting into the database
 
@@ -72,7 +72,7 @@ class Database:
 
         try:
             conn = await asyncpg.connect(self.database_url)
-            await conn.execute(QueryString.INSERT.value,_id,summary,descr,batch__id,date)
+            await conn.execute(QueryString.INSERT.value,_id,user_id,embeddings,batch_id)
             await conn.close()
             logger.info("Insertion successful")
         except Exception:
