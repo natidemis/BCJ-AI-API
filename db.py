@@ -32,7 +32,7 @@ class Database:
 
 
 
-    async def __make_table(self) -> bool:
+    async def _make_table(self) -> bool:
         """
         Asyncronous function to create the table
 
@@ -46,9 +46,8 @@ class Database:
 
         try:
             conn = await asyncpg.connect(self.database_url)
-            await conn.execute(queries[0])
-            await conn.execute(queries[1])
-            await conn.execute(queries[2])
+            for q in queries:
+                await conn.execute(q)
             await conn.close()
             logger.info("Checking and/or setting up database complete.")
             return True
@@ -57,7 +56,7 @@ class Database:
             return False
 
 
-    async def __insert(self,
+    async def _insert(self,
                         _id: int,
                         user_id: str,
                         embeddings: List[Union[int,float]],
@@ -74,12 +73,30 @@ class Database:
             conn = await asyncpg.connect(self.database_url)
             await conn.execute(QueryString.INSERT.value,_id,user_id,embeddings,batch_id)
             await conn.close()
-            logger.info("Insertion successful")
+            logger.info("Insertng data successful")
         except Exception:
-            logger.error("Failed to insert")
+            logger.error("Failed to insert data")
             raise ValueError from Exception
 
-    async def __insert_batch(self,data) -> bool:
+    async def _insert_user(self, user_id: int) -> None:
+        """
+        Async method for inserting a user into the database
+
+        Returns
+        -------
+        True if insertion is successful, false otherwise
+        """
+
+        try:
+            conn = await asyncpg.connect(self.database_url)
+            await conn.execute(QueryString.INSERT_USER.value,user_id)
+            await conn.close()
+            logger.info("Inserting user successful")
+        except Exception:
+            logger.error("Failed to insert user")
+            raise ValueError from Exception
+
+    async def _insert_batch(self,data) -> bool:
         try:
             conn = await asyncpg.connect(self.database_url)
             await conn.executemany(QueryString.INSERT.value,data)
@@ -91,7 +108,7 @@ class Database:
             raise ValueError from Exception
 
 
-    async def __fetch_all(self, user_id: str) -> Union[list,None]:
+    async def _fetch_all(self, user_id: str) -> Union[list,None]:
         """
         Async method for fetching all rows in the database
 
@@ -107,12 +124,12 @@ class Database:
             logger.info("Fetching all succeeded")
             return [{'id': row['id'],
                     'embeddings': row['embeddings'],
-                    'batch__id': row['batch_id']} for row in rows]
+                    'batch_id': row['batch_id']} for row in rows]
         except Exception:
             logger.error("Fetching all failed")
             return None
 
-    async def __update(self,
+    async def _update(self,
                         _id: int,
                         user_id: int,
                         embeddings: List[Union[int,float]] = None,
@@ -147,7 +164,7 @@ class Database:
             logger.error("Updating failed")
             raise ValueError('Updating failed.') from Exception
 
-    async def __delete(self, _id: int, user_id: int) -> None:
+    async def _delete(self, _id: int, user_id: int) -> None:
         """
         Removes a row from the database by _ID
 
@@ -164,7 +181,7 @@ class Database:
         except Exception:
             logger.info('Deletion error occured')
             return None
-    async def __delete_batch(self,batch_id: int,user_id: int) -> Union[int,None]:
+    async def _delete_batch(self,batch_id: int,user_id: int) -> Union[int,None]:
         """
         Removes all rows with batch_id
 
@@ -182,7 +199,7 @@ class Database:
             logger.info('Deletion error occured')
             return None
 
-    async def __drop_table(self):
+    async def _drop_table(self):
         """
         Method for dropping table for each setup of the server in development mode.
         """
@@ -199,12 +216,31 @@ class Database:
         except Exception:
             logger.info("Error dropping table")
 
+    async def _fetch_users(self) -> List[int]:
+        """
+        Async method for fetching all users in the database
+
+        Returns
+        -------
+        a list of dict
+        """
+
+        try:
+            conn = await asyncpg.connect(self.database_url)
+            rows = await conn.fetch(QueryString.FETCH_USERS.value)
+            await conn.close()
+            logger.info("Fetching all succeeded")
+            return [row['user_id'] for row in rows]
+        except Exception:
+            logger.error("Fetching all failed")
+            return None
+
     def drop_table(self):
         """
         Method for dropping the table
         """
 
-        result = asyncio.run(self.__drop_table())
+        result = asyncio.run(self._drop_table())
         return result
 
     def make_table(self) -> bool:
@@ -217,15 +253,14 @@ class Database:
         True if table creation is successful, false otherwise
         """
 
-        result = asyncio.run(self.__make_table())
+        result = asyncio.run(self._make_table())
         return result
 
     def insert(self,
                 _id: int,
-                date: str,
-                batch__id: int=None,
-                summary: list = None,
-                descr: list=None) -> None:
+                user_id: str,
+                embeddings: List[Union[int,float]],
+                batch_id: int= None) -> None:
         """
         Method for inserting into the database
 
@@ -234,14 +269,24 @@ class Database:
         True if insertion successful, false otherwise
         """
 
-        asyncio.run(self.__insert(
+        asyncio.run(self._insert(
                                 _id=_id,
-                                date=date,
-                                summary=summary,
-                                descr=descr,
-                                batch__id=batch__id))
+                                user_id = user_id
+                                embeddings=embeddings,
+                                batch_id=batch_id))
 
-    def fetch_all(self) -> Union[list,None]:
+    def insert(self,user_id: int) -> None:
+        """
+        Method for inserting user into database
+
+        Returns
+        -------
+        True if insertion successful, false otherwise
+        """
+
+        asyncio.run(self._insert_user(user_id=user_id))
+
+    def fetch_all(self,user_id) -> Union[list,None]:
         """
         Fetches all rows in the table
 
@@ -250,14 +295,14 @@ class Database:
         All rows, None if a problem occurs
         """
 
-        result = asyncio.run(self.__fetch_all())
+        result = asyncio.run(self._fetch_all(user_id=user_id))
         return result
 
-    def update(
-            self,
-            _id: int,
-            date: str,
-            summary: str = None, descr: str=None, batch__id: int=None) -> None:
+    def update(self,
+                _id: int,
+                user_id: int,
+                embeddings: List[Union[int,float]] = None,
+                batch_id: int=None) -> None:
         """
         Update values of a row by _id
 
@@ -266,15 +311,15 @@ class Database:
         Boolean, true if successfully updated, false otherwise
         """
 
-        asyncio.run(self.__update(
+        asyncio.run(self._update(
                                 _id=_id,
                                 date=date,
                                 summary=summary,
                                 descr=descr,
-                                batch__id=batch__id))
+                                batch_id=batch_id))
 
 
-    def delete(self, _id: int) -> None:
+    def delete(self, _id: int, user_id: int) -> None:
         """
         Delete row by _id
 
@@ -283,22 +328,22 @@ class Database:
         Boolean, true if successful, false otherwise
         """
 
-        result = asyncio.run(self.__delete(_id=_id))
+        result = asyncio.run(self._delete(_id=_id,user_id=user_id))
         return result
 
-    def delete_batch(self, batch__id: int) -> Union[int,None]:
+    def delete_batch(self, batch_id: int,user_id) -> Union[int,None]:
         """
-        Delete row by batch__id
+        Delete row by batch_id
 
         Returns
         -------
         Boolean, true if successful, false otherwise
         """
 
-        result = asyncio.run(self.__delete_batch(batch__id=batch__id))
+        result = asyncio.run(self._delete_batch(batch_id=batch_id,user_id))
         return result
 
-    def insert_batch(self, data) -> bool:
+    def insert_batch(self, data: List[tuple]) -> bool:
         """
         Method for inserting a batch of data
 
@@ -307,5 +352,17 @@ class Database:
         Number of inserted data
         """
 
-        result = asyncio.run(self.__insert_batch(data))
+        result = asyncio.run(self._insert_batch(data))
         return result
+
+    def fetch_users() -> List[int]:
+        """
+        Fetch all users in the database
+
+        Returns
+        -------
+        a list of user ids
+        """
+
+        return asyncio.run(self._fetch_users())
+  
