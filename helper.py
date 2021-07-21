@@ -19,64 +19,35 @@ class QueryString(Enum):
     INSERT = """
     INSERT INTO Vectors(id,userId,embeddings,batch_id)
     VALUES($1,$2,$3,$4);"""
-    FETCH = "SELECT * FROM Vectors;"
+    FETCH = "SELECT id,embeddings,batch_id FROM Vectors WHERE user_id = $1;"
     DELETE = """
     WITH deleted AS (
         DELETE FROM Vectors 
-        WHERE id = $1 RETURNING *
+        WHERE id = $1 AND user_id = $2 RETURNING *
         )
     SELECT count(*) 
     FROM deleted;"""
-    UPDATE_DESCR_NO_BATCH = """
-    UPDATE Vectors 
-    SET descr = $1,
-    dateUP = $2
-    WHERE id = $3;"""
-    UPDATE_DESCR_W_BATCH = """
+    UPDATE_EMBS_W_BATCH = """
     UPDATE Vectors
-    SET descr = $1,
-    batch_id = $2,
-    dateUP = $3
-    WHERE id = $4;"""
-
-    UPDATE_SUMM_NO_BATCH = """
-    UPDATE Vectors
-    SET summary = $1,
-    dateUP = $2
-    WHERE id = $3; """
-
-    UPDATE_SUMM_W_BATCH ="""
-    UPDATE Vectors
-    SET summary = $1,
-    batch_id = $2,
-    dateUP = $3
-    WHERE id = $4; """
-
-    UPDATE_SUMM_AND_DESCR_NO_BATCH = """
-    UPDATE Vectors
-    SET summary = $1,
-    descr = $2,
-    dateUP = $3
-    WHERE id = $4; """
-
-    UPDATE_SUMM_AND_DESCR_W_BATCH = """
-    UPDATE Vectors
-    SET summary = $1,
-    descr = $2,
-    batch_id = $3,
-    dateUP = $4
-    WHERE id = $5; """
-
-    UPDATE_BATCH_ONLY = """
+    SET embeddings = $1,
+    batch_id = $2
+    WHERE id = $3 AND user_id = $4;
+    """
+    UPDATE_BATCH_NO_EMBS = """
     UPDATE Vectors
     SET batch_id = $1,
-    dateUP = $2
-    WHERE id = $3; """
+    WHERE id = $2 AND user_id = $3;
+    """
+    UPDATE_NO_BATCH_W_EMBS = """
+    UPDATE Vectors
+    SET embeddings = $1
+    WHERE id = $2 AND user_id = $3;
+    """
 
     DELETE_BATCH = """
     WITH deleted AS (
         DELETE FROM Vectors 
-        WHERE batch_id = $1 RETURNING *
+        WHERE batch_id = $1 AND user_id = $2 RETURNING *
         )
     SELECT count(*) 
     FROM deleted;"""
@@ -103,6 +74,7 @@ class Validator:
     """
     Miscellaneous class for all things validation for the app.
     """
+
     def __init__(self):
         """
         A class containing validation functions for the app
@@ -120,6 +92,7 @@ class Validator:
         self.info_schema_get = Schema({
             'date': str,
         })
+
 
     @staticmethod
     def validate_datestring( date: str) -> None:
@@ -144,6 +117,7 @@ class Validator:
         None, raises SchemaError if data is not in proper format
         """
         schema = Schema({
+            "user_id": int,
             Optional("summary"): str,
             Optional("description"): str,
             'structured_info': dict
@@ -165,6 +139,7 @@ class Validator:
         None, raises SchemaError if data is not in proper format
         """
         schema = Schema({
+                "user_id"
                 "summary": str,
                 "description": str,
                 "structured_info": dict,
@@ -188,6 +163,7 @@ class Validator:
         None, raises SchemaError if data is not in proper format
         """
         schema = Schema({
+                "user_id"
                 "summary": str,
                 "description": str,
                 'structured_info': dict,
@@ -211,6 +187,7 @@ class Validator:
         None, raises SchemaError if data is not in proper format
         """
         schema = Schema({
+                "user_id"
                 "summary": str,
                 "description": str,
                 "structured_info": dict,
@@ -226,12 +203,13 @@ class Validator:
     def validate_id(self, data: dict) -> None:
         """
         Validate whether `data` is in the enforced format.
-
+        Helper function for 'delete' og '/bug'
         Returns
         -------
         None, raises SchemaError if `data` invalid
         """
         schema = Schema({
+            "user_id": int,
             "id": int #Bug id's are strings while batch id's are integers
         })
         try:
@@ -248,6 +226,7 @@ class Validator:
         None, raises SchemaError if `data` invalid
         """
         schema = Schema({
+            "user_id": int,
             "batch_id": int #Bug id's are strings while batch id's are integers
         })
         try:

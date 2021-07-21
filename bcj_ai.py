@@ -56,11 +56,10 @@ class BCJAIapi:
             commoncrawl_path=COMMONCRAWL_PATH,
             googlenews_path=GOOGLENEWS_PATH,
             wv_item_limit=WV_ITEM_LIMIT)
-        prev_data = self.database.fetch_all()
-        self.kdtree = self._update_tree(prev_data)
+
 
     @staticmethod
-    def _update_tree(prev_data: list) -> KDTree:
+    def _restructure_tree(new_data: list) -> KDTree:
         """
         Private method for updating the tree.
 
@@ -68,9 +67,9 @@ class BCJAIapi:
         -------
         KDTreeUP(KDTree)
         """
-        if prev_data:
-            vec = np.vstack([data['summary'] for data in prev_data])
-            ids = np.array([data['id'] for data in prev_data])
+        if new_data:
+            vec = np.vstack([data['summary'] for data in new_data])
+            ids = np.array([data['id'] for data in new_data])
             return KDTree(data=vec, indices=ids)
         return None
 
@@ -169,7 +168,7 @@ class BCJAIapi:
                 self.kdtree.update(vec, new_id)
         return BCJStatus.OK, Message.VALID_INPUT
 
-    def remove_bug(self, idx: int) -> Tuple[BCJStatus, Message]:
+    def remove_bug(self, _id: int, user_id) -> Tuple[BCJStatus, Message]:
         """
         Remove a bug with idx as its id.
 
@@ -181,15 +180,16 @@ class BCJAIapi:
         """
         with self.__lock:
             try:
-                rows = self.database.delete(idx)
+                rows = self.database.delete(_id,user_id)
                 if rows > 0:
-                    prev_data = self.database.fetch_all()
-                    self.kdtree = self._update_tree(prev_data)
+                    new_data = self.database.fetch_all(user_id)
+                    self.kdtree = self._restructure_tree(new_data)
             except Exception:
                 return BCJStatus.ERROR, Message.INVALID
         return BCJStatus.OK, Message.VALID_INPUT
 
     def update_bug(self,
+                    user_id: int,
                     structured_info: dict,
                     summary: str=None,
                     description: str=None) -> Tuple[BCJStatus, Message]:
@@ -210,31 +210,31 @@ class BCJAIapi:
                     batch_id = structured_info['batch_id'] if \
                         'batch_id' in structured_info else None
                     self.database.update(_id=structured_info['id'],
-                                    date=structured_info['date'],
-                                    batch__id=batch_id)
+                                    user_id=user_id,
+                                    batch_id=structured_info['batch_id'])
                     return BCJStatus.OK, Message.VALID_INPUT
                 except Exception:
                     return BCJStatus.ERROR, Message.INVALID_ID_OR_DATE
 
         data = description if bool(description) else summary
         try:
-            vec= self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
+            embeddings= self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
         except Exception:
             logger.error('Data is invalid.')
             return BCJStatus.NOT_FOUND, Message.INVALID
         with self.__lock:
             try:
                 self.database.update(_id=structured_info['id'],
-                                date=structured_info['date'],
-                                summary=vec,
-                                batch__id=batch_id)
-                prev_data = self.database.fetch_all()
-                self.kdtree = self._update_tree(prev_data)
+                                user_id=user_id,
+                                embeddings=embeddings,
+                                batch_id=batch_id)
+                new_data = self.database.fetch_all(user_id)
+                self.kdtree = self._restructure_tree(new_data)
             except Exception:
                 return BCJStatus.ERROR, Message.INVALID_ID_OR_DATE
         return BCJStatus.OK, Message.VALID_INPUT
 
-    def remove_batch(self, idx: int) -> Tuple[BCJStatus, Message]:
+    def remove_batch(self, batch_id: int, user_id: int) -> Tuple[BCJStatus, Message]:
         """
         Removes a batch of bugs. The batch's id is idx.
 
@@ -247,10 +247,10 @@ class BCJAIapi:
         with self.__lock:
             try:
                 #vitum ekki hvort við fjarlægðum úr gagnagrunninum
-                num_of_deleted_rows = self.database.delete_batch(idx)
+                num_of_deleted_rows = self.database.delete_batch(batch_id,user_id)
                 if num_of_deleted_rows > 0:
-                    prev_data = self.database.fetch_all()
-                    self.kdtree = self._update_tree(prev_data)
+                    new_data = self.database.fetch_all(user_id)
+                    self.kdtree = self._restructure_tree(new_data)
             except Exception:
                 return BCJStatus.ERROR, Message.INVALID
         return BCJStatus.OK, Message.VALID_INPUT
@@ -269,14 +269,14 @@ class BCJAIapi:
         for bug in batch:
             sentence = bug['description'] if bool(bug['description']) else bug['summary']
             sentences.append(sentence)
-        vectorized_sentences = self.model.predict(np.array(self.w2v.get_sentence_matrix(sentences)))
-        vectored_batch = [(bug['id'],vec,None,bug['batch_id'],bug['date'])
-                            for bug, vec in zip(batch, vectorized_sentences)]
+        embeddings = self.model.predict(np.array(self.w2v.get_sentence_matrix(sentences)))
+        batch_data = [(bug['id'],bug['user_id'],embedding,bug['batch_id'])
+                            for bug, embedding in zip(batch, embeddings)]
         with self.__lock:
             try:
-                self.database.insert_batch(vectored_batch)
+                self.database.insert_batch(batch_data)
             except Exception:
                 return BCJStatus.ERROR, Message.INVALID
             updated_results = self.database.fetch_all()
-            self.kdtree = self._update_tree(updated_results)
+            self.kdtree = self._restructure_tree(updated_results)
         return BCJStatus.OK, Message.VALID_INPUT
