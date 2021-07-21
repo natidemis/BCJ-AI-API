@@ -17,8 +17,8 @@ class QueryString(Enum):
     Query strings for the database
     """
     INSERT = """
-    INSERT INTO Vectors(id,summary,descr,batch_id,dateup)
-    VALUES($1,$2,$3,$4,$5);"""
+    INSERT INTO Vectors(id,userId,embeddings,batch_id)
+    VALUES($1,$2,$3,$4);"""
     FETCH = "SELECT * FROM Vectors;"
     DELETE = """
     WITH deleted AS (
