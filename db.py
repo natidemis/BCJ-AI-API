@@ -42,12 +42,10 @@ class Database:
         """
         with open('sql/schema.sql','r') as sql_file:
             query = sql_file.read()
-            queries = query.split(';')
 
         try:
             conn = await asyncpg.connect(self.database_url)
-            for q in queries:
-                await conn.execute(q)
+            await conn.execute(query)
             await conn.close()
             logger.info("Checking and/or setting up database complete.")
             return True
@@ -271,7 +269,7 @@ class Database:
 
         asyncio.run(self._insert(
                                 _id=_id,
-                                user_id = user_id
+                                user_id = user_id,
                                 embeddings=embeddings,
                                 batch_id=batch_id))
 
@@ -340,7 +338,7 @@ class Database:
         Boolean, true if successful, false otherwise
         """
 
-        result = asyncio.run(self._delete_batch(batch_id=batch_id,user_id))
+        result = asyncio.run(self._delete_batch(batch_id=batch_id,user_id=user_id))
         return result
 
     def insert_batch(self, data: List[tuple]) -> bool:

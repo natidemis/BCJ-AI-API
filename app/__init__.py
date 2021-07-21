@@ -17,6 +17,8 @@ import dotenv
 from dotenv import load_dotenv
 from bcj_ai import BCJAIapi as ai, BCJStatus
 from helper import Validator, Message
+from db import Database
+from decorators import variables
 
 load_dotenv()
 secret_token = os.getenv('SECRET_TOKEN')
@@ -24,7 +26,10 @@ app = Flask(__name__, instance_relative_config=True)
 api = Api(app)
 validator = Validator()
 ai = ai()
+#database = Database()
 auth = HTTPTokenAuth(scheme="Bearer")
+#users = database.fetch_users()
+
 
 
 
@@ -51,24 +56,29 @@ class Bug(Resource):
         ID's of the k most similar UPs if everything went well, else an error message
         Status code
         """
-        req = request.json #Retrieve JSON
-        try:
-            validator.validate_data_get(req) #Validate the JSON
-        except(SchemaError, ValueError):
-            return make_response(jsonify({"message": Message.FAILURE.value}), 400)
+        @variables
+        def fetch(*args, **kwargs):
+            req = request.json #Retrieve JSON
+            try:
+                validator.validate_data_get(req) #Validate the JSON
+            except(SchemaError, ValueError):
+                return make_response(jsonify({"message": Message.FAILURE.value}), 400)
 
-        summary = bleach.clean(req['summary'])
-        description = bleach.clean(req['description'])
-        if summary == "" and description == "":
-            return make_response(jsonify({'message': Message.UNFULFILLED_REQ.value}), 400)
-        k= req['k'] if 'k' in req else 5
-        structured_info = req['structured_info']
-        bugs = ai.get_similar_bugs_k(summary,
-                                     description,
-                                     structured_info,
-                                     k)
-        return make_response(jsonify(data=bugs[1]),bugs[0].value)
+            summary = bleach.clean(req['summary'])
+            description = bleach.clean(req['description'])
+            if summary == "" and description == "":
+                return make_response(jsonify({'message': Message.UNFULFILLED_REQ.value}), 400)
+            k= req['k'] if 'k' in req else 5
+            structured_info = req['structured_info']
+            bugs = ai.get_similar_bugs_k(summary,
+                                        description,
+                                        structured_info,
+                                        k)
+            return make_response(jsonify(data=bugs[1]),bugs[0].value)
 
+        res = fetch()
+        print(fetch.locals)
+        return res
     @auth.login_required
     def post(self):
         """
