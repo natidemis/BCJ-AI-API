@@ -1,0 +1,3 @@
+""" Global fixtures """
+
+import pytest
