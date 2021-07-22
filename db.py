@@ -201,14 +201,11 @@ class Database:
         """
         Method for dropping table for each setup of the server in development mode.
         """
+        with open('sql/drop.sql','r') as sql_file:
+            query = sql_file.read()
         try:
-            query_ = "DROP TABLE IF EXISTS Vectors;"
-            query_1 = "DROP INDEX IF EXISTS vectors_id;"
-            query_2 = "DROP INDEX IF EXISTS vectors_batch;"
             conn = await asyncpg.connect(self.database_url)
-            await conn.execute(query_)
-            await conn.execute(query_1)
-            await conn.execute(query_2)
+            await conn.execute(query)
             await conn.close()
             logger.info("Dropped table to avoid unnecessary errors.")
         except Exception:
@@ -353,7 +350,7 @@ class Database:
         result = asyncio.run(self._insert_batch(data))
         return result
 
-    def fetch_users() -> List[int]:
+    def fetch_users(self) -> List[int]:
         """
         Fetch all users in the database
 

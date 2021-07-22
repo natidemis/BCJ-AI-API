@@ -57,7 +57,7 @@ class Bug(Resource):
         Status code
         """
         @variables
-        def fetch(*args, **kwargs):
+        def fetch(get=True,*args, **kwargs):
             req = request.json #Retrieve JSON
             try:
                 validator.validate_data_get(req) #Validate the JSON
