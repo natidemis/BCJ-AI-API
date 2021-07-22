@@ -119,13 +119,16 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
 ## Web service
 * `/bug`
   * `GET` query the **k** most similar bugs
+      * given a value `k`, return the 'k' most similar from the database, dault is 5. 
       *  Summary and description are required. date, string in the form `YYYY-MM-DD`.
       ```JSON
       {
-         "summary": "summary",
-         "description": "description,
+         "user_id": int,
+         "summary": "string",
+         "description": "string",
          "structured_info": {
-                "date": "YYYY-MM-DDD"
+                "date": "YYYY-MM-DDD",
+                "k"(optional): int
          }
       }
       ``` 
@@ -151,6 +154,7 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
          ```
   * `POST` insert a bug 
     * Data requirement for request in JSON format:
+      * `user_id` must be an int, an indentification of a specific user, to access or initiate the given users database. 
       * summary and description must be string values, either summary or description may be empty but not both.
       * Structured_info must be valid for insertion and must contain the following:
          *  id, an integer and unique in the database.
@@ -158,12 +162,13 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
          *  batch_id(optional, not required), an integer for the purposes of grouping a set of bugs together, most useful for deleting a group of bugs at once.
       ```JSON
       {
-        "summary": "summary",
-        "description": "description",
+        "user_id": int,
+        "summary": "string",
+        "description": "string",
         "structured_info": {
-          "id": 1,
+          "id": int,
           "date": "YYYY-MM-DD",
-          "batch_id"(optional): 1
+          "batch_id"(optional): int
           }
         }
         ```
@@ -181,7 +186,8 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
      * valid id in the format: 
      ```JSON
      {
-          "id": 1 
+          "user_id": int,
+          "id": int
      }
      ```
      * Response: status code, json object, that may explain the status response.
@@ -197,12 +203,12 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
       * summary and description are optional, structured info, mainly id and date are required.
       ```JSON
       {
-        "summary"(optional): "summary",
-        "description"(optional): "description",
+        "summary"(optional): "string",
+        "description"(optional): "string",
         "structured_info": {
-          "id": 1,
+          "id": int,
           "date": "YYYY-MM-DD",
-          "batch_id"(optional): 1
+          "batch_id"(optional): int
           }
        }
       ```
@@ -220,28 +226,32 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
   * `POST` insert k bugs 
       * Most similar to the `post` on `/bug`
       * for each bug, the json oject passed must be in the same format as specified for `post` on `/bug`
-      * All k bugs must have the same `batch_id`, batch_id is a requirement.
+      * All k bugs must have the same `batch_id`, batch_id is a requirement. `**` implies they must be the same.
+      * `^` implies that those values must be unique. In this case, all given ids must be unique for each data for a given particular user.
       ```JSON
-      [
-         {
-        "summary": "summary",
-        "description": "description",
-        "structured_info": {
-          "id": 1,
-          "date": "YYYY-MM-DD",
-          "batch_id"(required): 1
-          }
-        },
-        {
-        "summary": "summary",
-        "description": "description",
-        "structured_info": {
-          "id": 2,
-          "date": "YYYY-MM-DD",
-          "batch_id"(required): 1
-          }
-        }
-      ]
+      {
+        "user_id": int,
+        "data": [
+            {
+                "summary": "string",
+                "description": "string",
+                "structured_info": {
+                    "id": int^,
+                    "date": "YYYY-MM-DD",
+                    "batch_id"(required): int**
+                }
+            },
+            {
+            	  "summary": "string",
+                "description": "string",
+              "structured_info": {
+                  "id": int^,
+                   "date": "YYYY-MM-DD",
+                   "batch_id"(required): int**
+                 }
+            }
+        ]
+      }
       ```
       * Response: status code, json object, that may explain the status response.
         ```JSON
@@ -255,7 +265,8 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
   * `DELETE` delete k bugs(a batch)
       ```JSON
       {
-         "batch_id": 1
+         "user_id": int
+         "batch_id": int
       }
       ```
       * Response: status code, json object, that may explain the status response.
