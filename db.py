@@ -56,7 +56,7 @@ class Database:
 
     async def _insert(self,
                         _id: int,
-                        user_id: str,
+                        user_id: int,
                         embeddings: List[Union[int,float]],
                         batch_id: int= None) -> None:
         """
@@ -87,7 +87,7 @@ class Database:
 
         try:
             conn = await asyncpg.connect(self.database_url)
-            await conn.execute(QueryString.INSERT_USER.value,user_id)
+            await conn.fetch(QueryString.INSERT_USER.value,user_id)
             await conn.close()
             logger.info("Inserting user successful")
         except Exception:
@@ -106,7 +106,7 @@ class Database:
             raise ValueError from Exception
 
 
-    async def _fetch_all(self, user_id: str) -> Union[list,None]:
+    async def _fetch_all(self, user_id: int) -> Union[list,None]:
         """
         Async method for fetching all rows in the database
 
@@ -114,7 +114,6 @@ class Database:
         -------
         a list of dict
         """
-
         try:
             conn = await asyncpg.connect(self.database_url)
             rows = await conn.fetch(QueryString.FETCH.value,user_id)
@@ -132,9 +131,11 @@ class Database:
                         user_id: int,
                         embeddings: List[Union[int,float]] = None,
                         batch_id: int=None) -> None:
+
         try:
             conn = await asyncpg.connect(self.database_url)
-            if bool(batch_id) and bool(embeddings):
+
+            if batch_id is not None and embeddings is not None:
                 await conn.execute(
                     QueryString.UPDATE_EMBS_W_BATCH.value,
                     embeddings,
@@ -142,20 +143,28 @@ class Database:
                     _id,
                     user_id
                     )
-            elif bool(batch_id) and not bool(embeddings):
+            elif batch_id is not None and embeddings is None:
                 await conn.execute(
-                    QueryString.UPDATE_NO_BATCH.value,
+                    QueryString.UPDATE_BATCH_NO_EMBS.value,
                     batch_id,
                     _id,
                     user_id
                     )
-            elif not bool(batch_id) and bool(embeddings):
+            elif batch_id is None and embeddings is not None:
                 await conn.execute(
                     QueryString.UPDATE_NO_BATCH_W_EMBS.value,
                     embeddings,
                     _id,
                     user_id
                     )
+            else:
+                await conn.execute(
+                    QueryString.UPDATE_BATCH_NO_EMBS.value,
+                    None,
+                    _id,
+                    user_id
+                    )
+
             await conn.close()
             logger.info("Update successful")
         except Exception:
@@ -211,7 +220,7 @@ class Database:
         except Exception:
             logger.info("Error dropping table")
 
-    async def _fetch_users(self) -> List[int]:
+    async def _fetch_users(self) -> Union[List[int],None]:
         """
         Async method for fetching all users in the database
 
@@ -253,7 +262,7 @@ class Database:
 
     def insert(self,
                 _id: int,
-                user_id: str,
+                user_id: int,
                 embeddings: List[Union[int,float]],
                 batch_id: int= None) -> None:
         """
@@ -270,7 +279,7 @@ class Database:
                                 embeddings=embeddings,
                                 batch_id=batch_id))
 
-    def insert(self,user_id: int) -> None:
+    def insert_user(self,user_id: int) -> None:
         """
         Method for inserting user into database
 
@@ -281,7 +290,7 @@ class Database:
 
         asyncio.run(self._insert_user(user_id=user_id))
 
-    def fetch_all(self,user_id) -> Union[list,None]:
+    def fetch_all(self,user_id: int) -> Union[list,None]:
         """
         Fetches all rows in the table
 
@@ -289,7 +298,6 @@ class Database:
         -------
         All rows, None if a problem occurs
         """
-
         result = asyncio.run(self._fetch_all(user_id=user_id))
         return result
 
@@ -305,12 +313,10 @@ class Database:
         -------
         Boolean, true if successfully updated, false otherwise
         """
-
         asyncio.run(self._update(
                                 _id=_id,
-                                date=date,
-                                summary=summary,
-                                descr=descr,
+                                user_id=user_id,
+                                embeddings=embeddings,
                                 batch_id=batch_id))
 
 
@@ -350,7 +356,7 @@ class Database:
         result = asyncio.run(self._insert_batch(data))
         return result
 
-    def fetch_users(self) -> List[int]:
+    def fetch_users(self) -> Union[List[int],None]:
         """
         Fetch all users in the database
 

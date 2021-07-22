@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=C0103
 # pylint: disable=W0703
+# pylint: disable=W0613
 """
 @authors: kra33, Gitcelo, natidemis
 May 2021
@@ -21,7 +22,7 @@ from up_utils.kdtree import KDTreeUP as KDTree
 from db import Database
 from helper import Message
 from log import logger
-
+from users import authenticate_user, get_or_create_user
 
 class BCJStatus(IntEnum):
     """
@@ -36,6 +37,7 @@ class BCJAIapi:
     API class for AI
     """
 
+
     def __init__(self):
         """
         Initialize the AI model from disk; read embedding vectors from disk;
@@ -44,6 +46,7 @@ class BCJAIapi:
         self.__lock = Lock()
         self.database = Database()
         self.model = tf.keras.models.load_model('Models', compile=False)
+        self.users = set(self.database.fetch_users())
         self.kdtree = None
         self.current_user = None
         load_dotenv()
@@ -70,21 +73,12 @@ class BCJAIapi:
         KDTreeUP(KDTree)
         """
         if new_data:
-            vec = np.vstack([data['summary'] for data in new_data])
+            embeddings = np.vstack([data['embeddings'] for data in new_data])
             ids = np.array([data['id'] for data in new_data])
-            return KDTree(data=vec, indices=ids)
+            return KDTree(data=embeddings, indices=ids)
         return None
 
-    def get_current_user(self) -> int:
-        """
-        Private get method
 
-        Returns
-        -------
-        current user of the AI
-        """
-        return self.current_user
-    
     def update_tree_for_user(self, user_id: int) -> None:
         """
         Update the kdtree with the data provided by `user_id`
@@ -98,9 +92,10 @@ class BCJAIapi:
         self.kdtree = self._restructure_tree(data)
         self.current_user = user_id
 
+    @authenticate_user
     def get_similar_bugs_k(self,
-                            summary: str=None,
-                            description: str=None,
+                            user_id: int,
+                            data: str,
                             structured_info: str=None,
                             k: int=5) -> Tuple[BCJStatus, Union[dict,str]]:
         """
@@ -116,18 +111,15 @@ class BCJAIapi:
         """
         if self.kdtree is None:
             return BCJStatus.NOT_FOUND, 'No examples available'
-        if not(bool(summary) or bool(description) or bool(structured_info)):
-            return BCJStatus.NOT_FOUND, \
-                ('''At least one of the parameters summary,
-                description, or structured_info must be filled''')
+
         N = len(self.kdtree.indices)
         k = min(k,N)
-        data = description if bool(description) else summary
+
         try:
             vec= self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
         except Exception:
             logger.error('Data is invalid.')
-            return BCJStatus.NOT_FOUND, Message.INVALID
+            return BCJStatus.NOT_FOUND, Message.INVALID.value
 
         with self. __lock:
             result = self.kdtree.query(vec, k=k)
@@ -148,7 +140,9 @@ class BCJAIapi:
 
         return BCJStatus.OK, response
 
+    @get_or_create_user
     def add_bug(self,
+                user_id: int,
                 structured_info: dict,
                 summary: str=None,
                 description: str=None) -> Tuple[BCJStatus, Message]:
@@ -166,33 +160,32 @@ class BCJAIapi:
             ERROR if the bug insertion is unsuccessful
         """
 
-
         data = description if bool(description) else summary
         batch_id = structured_info['batch_id'] if 'batch_id' in structured_info else None
         try:
-            vec= self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
+            embeddings= self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
         except Exception:
             logger.error('Data is invalid.')
             return BCJStatus.NOT_FOUND, Message.INVALID
-        new_id = structured_info['id']
 
         with self.__lock:
             try:
-                self.database.insert(_id=new_id,
-                            date=structured_info['date'],
-                            summary=vec,
-                            batch__id=batch_id)
+                self.database.insert(_id=structured_info['id'],
+                            user_id=user_id,
+                            embeddings=embeddings,
+                            batch_id=batch_id)
             except Exception:
                 return BCJStatus.ERROR, Message.INVALID_ID_OR_DATE
 
         with self.__lock:
             if self.kdtree is None:
-                self.kdtree = KDTree(data=vec, indices=[new_id])
+                self.kdtree = KDTree(data=embeddings, indices=[structured_info['id']])
             else:
-                self.kdtree.update(vec, new_id)
+                self.kdtree.update(embeddings, structured_info['id'])
         return BCJStatus.OK, Message.VALID_INPUT
 
-    def remove_bug(self, _id: int, user_id) -> Tuple[BCJStatus, Message]:
+    @authenticate_user
+    def remove_bug(self, _id: int, user_id: int) -> Tuple[BCJStatus, Message]:
         """
         Remove a bug with idx as its id.
 
@@ -209,9 +202,10 @@ class BCJAIapi:
                     new_data = self.database.fetch_all(user_id)
                     self.kdtree = self._restructure_tree(new_data)
             except Exception:
-                return BCJStatus.ERROR, Message.INVALID
+                return BCJStatus.NOT_FOUND, Message.INVALID
         return BCJStatus.OK, Message.VALID_INPUT
 
+    @authenticate_user
     def update_bug(self,
                     user_id: int,
                     structured_info: dict,
@@ -228,17 +222,18 @@ class BCJAIapi:
         """
 
         #Gætum þurft að breyta ef 'DATE' þarf að fara í gervigreindina
+        batch_id = structured_info['batch_id'] if \
+                        'batch_id' in structured_info else None
+
         if not(bool(summary) and bool(description)):
             with self.__lock:
                 try:
-                    batch_id = structured_info['batch_id'] if \
-                        'batch_id' in structured_info else None
                     self.database.update(_id=structured_info['id'],
                                     user_id=user_id,
-                                    batch_id=structured_info['batch_id'])
+                                    batch_id=batch_id)
                     return BCJStatus.OK, Message.VALID_INPUT
                 except Exception:
-                    return BCJStatus.ERROR, Message.INVALID_ID_OR_DATE
+                    return BCJStatus.NOT_FOUND, Message.INVALID_ID_OR_DATE
 
         data = description if bool(description) else summary
         try:
@@ -246,6 +241,7 @@ class BCJAIapi:
         except Exception:
             logger.error('Data is invalid.')
             return BCJStatus.NOT_FOUND, Message.INVALID
+
         with self.__lock:
             try:
                 self.database.update(_id=structured_info['id'],
@@ -255,9 +251,10 @@ class BCJAIapi:
                 new_data = self.database.fetch_all(user_id)
                 self.kdtree = self._restructure_tree(new_data)
             except Exception:
-                return BCJStatus.ERROR, Message.INVALID_ID_OR_DATE
+                return BCJStatus.NOT_FOUND, Message.INVALID_ID_OR_DATE
         return BCJStatus.OK, Message.VALID_INPUT
 
+    @authenticate_user
     def remove_batch(self, batch_id: int, user_id: int) -> Tuple[BCJStatus, Message]:
         """
         Removes a batch of bugs. The batch's id is idx.
@@ -279,8 +276,8 @@ class BCJAIapi:
                 return BCJStatus.ERROR, Message.INVALID
         return BCJStatus.OK, Message.VALID_INPUT
 
-
-    def add_batch(self, batch: list) -> Tuple[BCJStatus, Message]:
+    @get_or_create_user
+    def add_batch(self, batch: list, user_id: int) -> Tuple[BCJStatus, Message]:
         """
         Adds a batch to the database and updates the KD-Tree
 
@@ -294,13 +291,13 @@ class BCJAIapi:
             sentence = bug['description'] if bool(bug['description']) else bug['summary']
             sentences.append(sentence)
         embeddings = self.model.predict(np.array(self.w2v.get_sentence_matrix(sentences)))
-        batch_data = [(bug['id'],bug['user_id'],embedding,bug['batch_id'])
+        batch_data = [(bug['id'],user_id,embedding,bug['batch_id'])
                             for bug, embedding in zip(batch, embeddings)]
         with self.__lock:
             try:
                 self.database.insert_batch(batch_data)
             except Exception:
                 return BCJStatus.ERROR, Message.INVALID
-            updated_results = self.database.fetch_all()
+            updated_results = self.database.fetch_all(user_id)
             self.kdtree = self._restructure_tree(updated_results)
         return BCJStatus.OK, Message.VALID_INPUT
