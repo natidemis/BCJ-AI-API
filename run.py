@@ -11,7 +11,6 @@ logger.info('Starting server..')
 from db import Database #pylint: disable=C0413
 db = Database()
 db.drop_table()
-db.fetch_users()
 table_created = db.make_table()
 
 #Run app

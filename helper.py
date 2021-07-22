@@ -17,10 +17,10 @@ class QueryString(Enum):
     Query strings for the database
     """
     INSERT = """
-    INSERT INTO Vectors(id,userId,embeddings,batch_id)
+    INSERT INTO Vectors(id,user_id,embeddings,batch_id)
     VALUES($1,$2,$3,$4);"""
     INSERT_USER = """
-    INSERT INTO Users(user_id) VALUES($1);
+    INSERT INTO Users(user_id) VALUES($1) RETURNING *;
     """
     FETCH = "SELECT id,embeddings,batch_id FROM Vectors WHERE user_id = $1;"
     FETCH_USERS = "SELECT user_id from Users;"
@@ -73,7 +73,7 @@ class Message(Enum):
     INVALID = 'Invalid ID'
     INVALID_ID_OR_DATE = ("Either the id already exists or "
                 "the given date is not valid")
-
+    NO_USER = "User not available."
 class Validator:
     """
     Miscellaneous class for all things validation for the app.
@@ -143,7 +143,7 @@ class Validator:
         None, raises SchemaError if data is not in proper format
         """
         schema = Schema({
-                "user_id"
+                "user_id": int,
                 "summary": str,
                 "description": str,
                 "structured_info": dict,
@@ -167,7 +167,7 @@ class Validator:
         None, raises SchemaError if data is not in proper format
         """
         schema = Schema({
-                "user_id"
+                "user_id": int,
                 "summary": str,
                 "description": str,
                 'structured_info': dict,
@@ -190,12 +190,13 @@ class Validator:
         -------
         None, raises SchemaError if data is not in proper format
         """
-        schema = Schema({
-                "user_id"
+        schema = Schema(
+            {
                 "summary": str,
                 "description": str,
                 "structured_info": dict,
-            })
+            }
+        )
 
         try:
             schema.validate(data)

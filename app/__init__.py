@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 from bcj_ai import BCJAIapi as ai, BCJStatus
 from helper import Validator, Message
 from db import Database
-from decorators import variables
+
 
 load_dotenv()
 secret_token = os.getenv('SECRET_TOKEN')
@@ -26,10 +26,7 @@ app = Flask(__name__, instance_relative_config=True)
 api = Api(app)
 validator = Validator()
 ai = ai()
-#database = Database()
 auth = HTTPTokenAuth(scheme="Bearer")
-#users = database.fetch_users()
-
 
 
 
@@ -56,29 +53,33 @@ class Bug(Resource):
         ID's of the k most similar UPs if everything went well, else an error message
         Status code
         """
-        @variables
-        def fetch(get=True,*args, **kwargs):
-            req = request.json #Retrieve JSON
-            try:
-                validator.validate_data_get(req) #Validate the JSON
-            except(SchemaError, ValueError):
-                return make_response(jsonify({"message": Message.FAILURE.value}), 400)
 
-            summary = bleach.clean(req['summary'])
-            description = bleach.clean(req['description'])
-            if summary == "" and description == "":
-                return make_response(jsonify({'message': Message.UNFULFILLED_REQ.value}), 400)
-            k= req['k'] if 'k' in req else 5
-            structured_info = req['structured_info']
-            bugs = ai.get_similar_bugs_k(summary,
-                                        description,
-                                        structured_info,
-                                        k)
-            return make_response(jsonify(data=bugs[1]),bugs[0].value)
 
-        res = fetch()
-        print(fetch.locals)
-        return res
+        req = request.json #Retrieve JSON
+        try:
+            validator.validate_data_get(req) #Validate the JSON
+        except(SchemaError, ValueError):
+            return make_response(jsonify({"message": Message.FAILURE.value}), 400)
+
+        if req['summary'] == "" and req['description'] == "":
+            return make_response(jsonify({'message': Message.UNFULFILLED_REQ.value}), 400)
+
+        data = bleach.clean(req['description']) if bool(req['description']) \
+            else bleach.clean(req['summary'])
+        k= req['k'] if 'k' in req else 5
+        structured_info = req['structured_info']
+
+        try:
+            bugs = ai.get_similar_bugs_k(
+                                        user_id=req['user_id'],
+                                        data=data,
+                                        structured_info=structured_info,
+                                        k=k)
+        except ValueError:
+            return make_response(jsonify({'message': Message.NO_USER.value}),404)
+
+        return make_response(jsonify(data=bugs[1]),bugs[0].value)
+
     @auth.login_required
     def post(self):
         """
@@ -96,11 +97,15 @@ class Bug(Resource):
         except(SchemaError, ValueError):
             return make_response(jsonify({'message': Message.FAILURE.value}),400)
 
-        if len(req['summary']) > 0 or len(req['description'])>0:
-            status, message = ai.add_bug(
-                                        summary=bleach.clean(req['summary']),
-                                        description=bleach.clean(req['description']),
-                                        structured_info=req['structured_info'])
+        if bool(req['summary']) or bool(req['description']):
+            try:
+                status, message = ai.add_bug(
+                                            user_id=req['user_id'],
+                                            structured_info=req['structured_info'],
+                                            summary=bleach.clean(req['summary']),
+                                            description=bleach.clean(req['description']))
+            except ValueError:
+                return make_response(jsonify({'message': Message.NO_USER.value}),404)
             return make_response(jsonify(data={'message': message.value}), status.value)
 
         return make_response(jsonify(data={'message': Message.UNFULFILLED_REQ.value}),400)
@@ -123,11 +128,16 @@ class Bug(Resource):
 
         summary = bleach.clean(req['summary']) if 'summary' in req else None
         description = bleach.clean(req['description']) if 'description' in req else None
-        status, message = ai.update_bug(
-                                        user_id = req['user_id'],
-                                        summary=summary,
-                                        description = description,
-                                        structured_info = req['structured_info'])
+
+        try:
+            status, message = ai.update_bug(
+                                            user_id = req['user_id'],
+                                            summary=summary,
+                                            description = description,
+                                            structured_info = req['structured_info'])
+        except ValueError:
+            return make_response(jsonify({'message': Message.NO_USER.value}),404)
+
         return make_response(jsonify({'message': message.value}), status.value)
 
     @auth.login_required
@@ -144,7 +154,12 @@ class Bug(Resource):
             validator.validate_id(req)
         except(SchemaError, ValueError):
             return make_response(jsonify({'message': Message.FAILURE.value}), 400)
-        status, message = ai.remove_bug(req['id'],req['user_id'])
+
+        try:
+            status, message = ai.remove_bug(_id=req['id'],user_id=req['user_id'])
+        except ValueError:
+            return make_response(jsonify({'message': Message.NO_USER.value}),404)
+
         return make_response(jsonify({'message': message.value}), status.value)
 
 class Batch(Resource):
@@ -167,7 +182,11 @@ class Batch(Resource):
         except(SchemaError, ValueError):
             return {'message': Message.FAILURE.value},400
 
-        status, message = ai.remove_batch(req['batch_id'])
+        try:
+            status, message = ai.remove_batch(batch_id=req['batch_id'],user_id=req['user_id'])
+        except ValueError:
+            return make_response(jsonify({'message': Message.NO_USER.value}),404)
+
         return make_response(jsonify({'message': message.value}), status.value)
 
     @auth.login_required
@@ -180,21 +199,25 @@ class Batch(Resource):
         -------
         Message with brief explanation and status code
         """
-        req = request.json
+        req = request.list_of_json
+        user_id = req['user_id'] if 'user_id' in req else None
+        list_of_json = req['data'] if 'data' in req else None
+        if not user_id or not list_of_json:
+            raise ValueError('User_id and data required')
         data = []
+
         try:
-            if not isinstance(req,list):
+            if not isinstance(list_of_json,list):
                 raise ValueError
-            validator.validate_batch_data(req[0])
-            batch_id = req[0]['structured_info']['batch_id']
-            for item in req:
+            validator.validate_batch_data(list_of_json[0])
+            batch_id = list_of_json[0]['structured_info']['batch_id']
+            for item in list_of_json:
                 validator.validate_batch_data(item)
                 if batch_id != item['structured_info']['batch_id']:
                     raise ValueError('All batch_id must be the same')
                 if len(item['summary']) > 0 or len(item['description'])>0:
                     data.append({
                         "id": item['structured_info']['id'],
-                        "user_id": item['user_id'],
                         "summary": bleach.clean(item['summary']),
                         "description": bleach.clean(item['description']),
                         "batch_id": item['structured_info']['batch_id'],
@@ -205,7 +228,11 @@ class Batch(Resource):
         except(SchemaError, ValueError):
             return make_response(jsonify({'message': Message.FAILURE.value}),400)
 
-        status, message = ai.add_batch(data)
+        try:
+            status, message = ai.add_batch(batch=data,user_id=user_id)
+        except ValueError:
+            return make_response(jsonify({'message': Message.NO_USER.value}),404)
+
         return make_response(jsonify(
                                     data={'message': message.value}), status.value)
 
