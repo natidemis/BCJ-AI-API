@@ -9,7 +9,7 @@ Helper classes for the app
 
 from datetime import datetime
 from enum import Enum
-from schema import Schema, And, Optional
+from schema import Schema, And, Optional, Or
 
 
 class QueryString(Enum):
@@ -96,6 +96,11 @@ class Validator:
         self.info_schema_get = Schema({
             'date': str,
         })
+        self.info_schema_update = Schema({
+            'id': int,
+            'date': str,
+            Optional("batch_id"): Or(int,None)
+        })
 
 
     @staticmethod
@@ -109,7 +114,7 @@ class Validator:
         """
         try:
             datetime.strptime(date, '%Y-%m-%d')
-        except Exception:
+        except:
             raise ValueError from Exception
 
     def validate_update_data(self, data: dict) -> None:
@@ -129,9 +134,9 @@ class Validator:
 
         try:
             schema.validate(data)
-            self.info_schema.validate(data['structured_info'])
+            self.info_schema_update.validate(data['structured_info'])
             self.validate_datestring(data['structured_info']['date'])
-        except Exception:
+        except:
             raise ValueError from Exception
 
     def validate_data(self,data: dict) -> None:
@@ -154,7 +159,7 @@ class Validator:
             schema.validate(data)
             self.info_schema.validate(data['structured_info'])
             self.validate_datestring(data['structured_info']['date'])
-        except Exception:
+        except:
             raise ValueError from Exception
 
     def validate_data_get(self,data: dict) -> None:
@@ -177,9 +182,8 @@ class Validator:
         try:
             schema.validate(data)
             self.info_schema_get.validate(data['structured_info'])
-            if 'date' in data['structured_info']:
-                self.validate_datestring(data['structured_info']['date'])
-        except Exception:
+            self.validate_datestring(data['structured_info']['date'])
+        except:
             raise ValueError from Exception
 
     def validate_batch_data(self,data: dict) -> None:
@@ -202,7 +206,7 @@ class Validator:
             schema.validate(data)
             self.batch_schema.validate(data['structured_info'])
             self.validate_datestring(data['structured_info']['date'])
-        except Exception:
+        except:
             raise ValueError from Exception
 
     def validate_id(self, data: dict) -> None:
@@ -219,7 +223,7 @@ class Validator:
         })
         try:
             schema.validate(data)
-        except Exception:
+        except:
             raise ValueError from Exception
 
     def validate_batch_id(self, data: dict) -> None:
@@ -236,5 +240,5 @@ class Validator:
         })
         try:
             schema.validate(data)
-        except Exception:
+        except:
             raise ValueError from Exception

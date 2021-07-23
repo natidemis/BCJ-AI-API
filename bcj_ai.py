@@ -234,9 +234,10 @@ class BCJAIapi:
         if not(bool(summary) and bool(description)):
             with self.__lock:
                 try:
-                    self.database.update(_id=structured_info['id'],
-                                    user_id=user_id,
-                                    batch_id=batch_id)
+                    if 'batch_id' in structured_info
+                        self.database.update(_id=structured_info['id'],
+                                        user_id=user_id,
+                                        batch_id=batch_id)
                     return BCJStatus.OK, Message.VALID_INPUT
                 except (TypeError, NoUpdatesError):
                     return BCJStatus.NOT_FOUND, Message.INVALID_ID_OR_DATE
