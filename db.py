@@ -1,4 +1,5 @@
 # pylint: disable=W0703
+# pylint: disable=C0103
 """
 @author natidemis
 June 2021
@@ -21,22 +22,37 @@ load_dotenv()
 asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 class NotFoundError(Exception):
-    pass
+    """
+    Database error when return value is empty.
+    """
+
 
 class DuplicateKeyError(Exception):
-    pass
+    """
+    Database error to raise when the key inserted already exists.
+    """
+
 
 class MissingArgumentError(Exception):
-    pass
+    """
+    Database error when variables don't match the required columns.
+    """
+
 class NoUpdatesError(Exception):
-    pass
+    """
+    Database error when a query makes no changes to the database.
+    """
+
 
 
 class AsyncpgSQL():
+    """
+    Context manager for asyncpg
+    """
     def __init__(self, url):
         self._url = url
         self._conn = None
-    
+
     async def __aenter__(self):
         self._conn = await asyncpg.connect(self._url)
         return self._conn
@@ -96,16 +112,17 @@ class Database:
             async with AsyncpgSQL(self.database_url) as conn:
                 await conn.execute(QueryString.INSERT.value,_id,user_id,embeddings,batch_id)
             logger.info("Inserting data successful")
-    
+
         except asyncpg.exceptions.UniqueViolationError as e:
             logger.error("Duplicate key error: %s for user_id: %s and id: %s",e,user_id,_id)
-            raise DuplicateKeyError from e
+            raise DuplicateKeyError('Duplicate key error: %s' % e) from e
         except asyncpg.exceptions.ForeignKeyViolationError as e:
-            logger.error('User_id does not exist in the Users database: %s, exception: %s',user_id,e)
-            raise NotFoundError('User not in database')
+            logger.error('User_id does not exist in the Users database: %s,'
+             'exception: %s',user_id,e)
+            raise NotFoundError('User not in database: %s' % e) from e
         except asyncpg.exceptions.DataError as e:
             logger.error("Incorrect type inserted: %s",e)
-        except (asyncpg.exceptions._base.InterfaceError, asyncpg.exceptions.PostgresSyntaxError) as e:
+        except asyncpg.exceptions.PostgresSyntaxError as e:
             logger.error("Missing argument exception: %s",e)
 
 
@@ -124,11 +141,11 @@ class Database:
             logger.info("Inserting user successful")
 
         except asyncpg.exceptions.UniqueViolationError as e:
-            logger.error("Duplicate key error: %s",e)
-            raise DuplicateKeyError('Duplicate key for %s', user_id) from e
+            logger.error("Duplicate key error: %s", e)
+            raise DuplicateKeyError('Duplicate key for %s' % user_id) from e
         except asyncpg.exceptions.DataError as e:
             logger.error("incorrect type inserted: %s",e)
-            raise TypeError('Incorrect type inserted') from e
+            raise TypeError('Incorrect type inserted' % e) from e
 
 
     async def _insert_batch(self,data) -> None:
@@ -137,16 +154,16 @@ class Database:
                 await conn.executemany(QueryString.INSERT.value,data)
             logger.info("Batch insertion successful")
 
-        except (asyncpg.exceptions._base.InterfaceError, asyncpg.exceptions.PostgresSyntaxError) as e:
+        except asyncpg.exceptions.PostgresSyntaxError as e:
             logger.error("Missing argument exception: %s",e)
         except asyncpg.exceptions.ForeignKeyViolationError as e:
             logger.error('User does not exist in database: %s',e)
-            raise NotFoundError('User not in database')
+            raise NotFoundError('User not in database') from e
         except asyncpg.exceptions.DataError as e:
             logger.error("Incorrect type inserted: %s",e)
         except asyncpg.exceptions.UniqueViolationError as e:
             logger.error("Duplicate key error: %s",e)
-            raise DuplicateKeyError('Duplicate key error, %s', e) from e
+            raise DuplicateKeyError('Duplicate key error, %s' % e) from e
 
 
 
@@ -180,7 +197,7 @@ class Database:
         try:
             async with AsyncpgSQL(self.database_url) as conn:
                 if batch_id is not None and embeddings is not None:
-                    result = await conn.execute(
+                    await conn.execute(
                         QueryString.UPDATE_EMBS_W_BATCH.value,
                         embeddings,
                         batch_id,
@@ -188,21 +205,21 @@ class Database:
                         user_id
                         )
                 elif batch_id is not None and embeddings is None:
-                    result =await conn.execute(
+                    await conn.execute(
                         QueryString.UPDATE_BATCH_NO_EMBS.value,
                         batch_id,
                         _id,
                         user_id
                         )
                 elif batch_id is None and embeddings is not None:
-                    result = await conn.execute(
+                    await conn.execute(
                         QueryString.UPDATE_NO_BATCH_W_EMBS.value,
                         embeddings,
                         _id,
                         user_id
                         )
                 else:
-                    result = await conn.execute(
+                    await conn.execute(
                         QueryString.UPDATE_BATCH_NO_EMBS.value,
                         None,
                         _id,
@@ -210,15 +227,14 @@ class Database:
                         )
             logger.info("Update successful")
 
-        except (asyncpg.exceptions._base.InterfaceError, asyncpg.exceptions.PostgresSyntaxError) as e:
+        except asyncpg.exceptions.PostgresSyntaxError as e:
             logger.error("Missing argument exception: %s",e)
-            raise MissingArgumentError from e
         except asyncpg.exceptions.ForeignKeyViolationError as e:
             logger.error('User does not exist in database: %s',e)
-            raise NotFoundError('User not in database')
+            raise NotFoundError('User not in database') from e
         except asyncpg.exceptions.DataError as e:
-            logger.error("Incorrect type inserted: %s",e)
-            raise TypeError('Incorrect type inserted: %s',e) from e
+            logger.error("Incorrect type inserted: %s", e)
+            raise TypeError('Incorrect type inserted: %s' % e) from e
 
 
     async def _delete(self, _id: int, user_id: int) -> None:
@@ -229,7 +245,7 @@ class Database:
         -------
         None
         """
-        
+
         async with AsyncpgSQL(self.database_url) as conn:
             result = await conn.fetch(QueryString.DELETE.value,_id,user_id)
         if result[0]['count'] == 0:
@@ -245,7 +261,7 @@ class Database:
         -------
         None
         """
-        
+
         async with AsyncpgSQL(self.database_url) as conn:
             result = await conn.fetch(QueryString.DELETE_BATCH.value,batch_id,user_id)
         if result[0]['count'] == 0:

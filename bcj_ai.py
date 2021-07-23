@@ -90,13 +90,14 @@ class BCJAIapi:
         -------
         None
         """
-        try:
-            data = self.database.fetch_all(user_id)
-            self.kdtree = self._restructure_tree(data)
-        except NotFoundError:
-            self.kdtree = None
-        finally:
-            self.current_user = user_id
+        with self.__lock:
+            try:
+                data = self.database.fetch_all(user_id)
+                self.kdtree = self._restructure_tree(data)
+            except NotFoundError:
+                self.kdtree = None
+            finally:
+                self.current_user = user_id
 
 
     @authenticate_user
@@ -207,7 +208,7 @@ class BCJAIapi:
                 self.database.delete(_id,user_id)
             except NoUpdatesError:
                 return BCJStatus.NOT_FOUND, Message.VALID_INPUT
-            self.update_tree_for_user(user_id)
+        self.update_tree_for_user(user_id)
         return BCJStatus.OK, Message.VALID_INPUT
 
     @authenticate_user
@@ -237,7 +238,7 @@ class BCJAIapi:
                                     user_id=user_id,
                                     batch_id=batch_id)
                     return BCJStatus.OK, Message.VALID_INPUT
-                except Exception:
+                except (TypeError, NotFoundError):
                     return BCJStatus.NOT_FOUND, Message.INVALID_ID_OR_DATE
 
         data = description if bool(description) else summary
@@ -253,9 +254,9 @@ class BCJAIapi:
                                 user_id=user_id,
                                 embeddings=embeddings,
                                 batch_id=batch_id)
-            except: #vantar að meðhöndla
+            except(TypeError, NotFoundError): #vantar að meðhöndla
                 return BCJStatus.NOT_FOUND, Message.INVALID_ID_OR_DATE
-            self.update_tree_for_user(user_id)
+        self.update_tree_for_user(user_id)
             
         return BCJStatus.OK, Message.VALID_INPUT
 
@@ -275,7 +276,8 @@ class BCJAIapi:
                 self.database.delete_batch(batch_id,user_id)
             except NoUpdatesError: #vantar að meðhöndla
                 return BCJStatus.ERROR, Message.INVALID
-            self.update_tree_for_user(user_id)
+        
+        self.update_tree_for_user(user_id)
 
         return BCJStatus.OK, Message.VALID_INPUT
 
@@ -299,7 +301,8 @@ class BCJAIapi:
         with self.__lock:
             try:
                 self.database.insert_batch(batch_data)
-            except (TypeError, MissingArgumentError,NotFoundError, DuplicateKeyError):
+            except (TypeError,NotFoundError, DuplicateKeyError):
                 return BCJStatus.ERROR, Message.INVALID
-            self.update_tree_for_user(user_id)
+
+        self.update_tree_for_user(user_id)
         return BCJStatus.OK, Message.VALID_INPUT
