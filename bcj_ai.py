@@ -19,7 +19,7 @@ import numpy as np
 from dotenv import load_dotenv
 from up_utils.word2vec import Word2Vec
 from up_utils.kdtree import KDTreeUP as KDTree
-from db import Database, NotFoundError,DuplicateKeyError MissingArgumentError
+from db import Database, NotFoundError,DuplicateKeyError,MissingArgumentError
 from helper import Message
 from log import logger
 from users import authenticate_user, get_or_create_user
@@ -46,7 +46,10 @@ class BCJAIapi:
         self.__lock = Lock()
         self.database = Database()
         self.model = tf.keras.models.load_model('Models', compile=False)
-        self.users = set(self.database.fetch_users())
+        try:
+            self.users = set(self.database.fetch_users())
+        except NotFoundError:
+            self.users = set()
         self.kdtree = None
         self.current_user = None
         load_dotenv()
@@ -203,12 +206,8 @@ class BCJAIapi:
             try:
                 self.database.delete(_id,user_id)
             except NoUpdatesError:
-                retun BCJStatus.NOT_FOUND, Message.VALID_INPUT
-            try:
-                new_data = self.database.fetch_all(user_id)
-                self.kdtree = self._restructure_tree(new_data)
-            except NotFoundError:
-                self.kdtree = None
+                return BCJStatus.NOT_FOUND, Message.VALID_INPUT
+            self.update_tree_for_user(user_id)
         return BCJStatus.OK, Message.VALID_INPUT
 
     @authenticate_user
@@ -256,11 +255,7 @@ class BCJAIapi:
                                 batch_id=batch_id)
             except: #vantar að meðhöndla
                 return BCJStatus.NOT_FOUND, Message.INVALID_ID_OR_DATE
-            try:
-                new_data = self.database.fetch_all(user_id)
-                self.kdtree = self._restructure_tree(new_data)
-            except NotFoundError:
-                self.kdtree = None
+            self.update_tree_for_user(user_id)
             
         return BCJStatus.OK, Message.VALID_INPUT
 
@@ -277,14 +272,11 @@ class BCJAIapi:
         """
         with self.__lock:
             try:
-                #vitum ekki hvort við fjarlægðum úr gagnagrunninum
-                num_of_deleted_rows = self.database.delete_batch(batch_id,user_id)
-            except: #vantar að meðhöndla
-                if num_of_deleted_rows > 0:
-                    new_data = self.database.fetch_all(user_id)
-                    self.kdtree = self._restructure_tree(new_data)
-            except Exception:
+                self.database.delete_batch(batch_id,user_id)
+            except NoUpdatesError: #vantar að meðhöndla
                 return BCJStatus.ERROR, Message.INVALID
+            self.update_tree_for_user(user_id)
+
         return BCJStatus.OK, Message.VALID_INPUT
 
     @get_or_create_user
@@ -309,9 +301,5 @@ class BCJAIapi:
                 self.database.insert_batch(batch_data)
             except (TypeError, MissingArgumentError,NotFoundError, DuplicateKeyError):
                 return BCJStatus.ERROR, Message.INVALID
-            try:
-                updated_results = self.database.fetch_all(user_id)
-                self.kdtree = self._restructure_tree(updated_results)
-            except:
-                self.kdtree = None
+            self.update_tree_for_user(user_id)
         return BCJStatus.OK, Message.VALID_INPUT

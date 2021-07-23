@@ -31,6 +31,21 @@ class MissingArgumentError(Exception):
 class NoUpdatesError(Exception):
     pass
 
+
+class AsyncpgSQL():
+    def __init__(self, url):
+        self._url = url
+        self._conn = None
+    
+    async def __aenter__(self):
+        self._conn = await asyncpg.connect(self._url)
+        return self._conn
+
+    async def __aexit__(self, exc_type, exc, tb): #closing the connection
+        if self._conn:
+            logger.info("conn closed")
+            await self._conn.close()
+
 class Database:
     """
     Class for handling database connection and queries
@@ -55,15 +70,15 @@ class Database:
             query = sql_file.read()
 
         try:
-            conn = await asyncpg.connect(self.database_url)
-            await conn.execute(query)
-            logger.info("Checking and/or setting up database complete.")
+            async with AsyncpgSQL(self.database_url) as conn:
+                conn = await asyncpg.connect(self.database_url)
+                await conn.execute(query)
+                logger.info("Checking and/or setting up database complete.")
             return True
         except RuntimeError:
             logger.error("Setting up database failed, re-evaluate enviroment variables.")
             return False
-        finally:
-            await conn.close()
+
 
     async def _insert(self,
                         _id: int,
