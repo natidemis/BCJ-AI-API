@@ -46,11 +46,11 @@ if __name__ != '__main__':
             else:
                 try:
                     self.database.insert_user(user_id)
-                    self.users.add(user_id)
-                    self.update_tree_for_user(user_id)
                     logger.info('Inserted user: %s, new user set: %s',user_id,self.users)
-                except Exception as e:
-                    logger.error('Inserting user: %s failed.',user_id)
-                    raise ValueError('User could not be added.') from e
+                except (TypeError, DuplicateKeyError) as e:
+                    logger.error('Inserting user: %s failed for err: %s',user_id, e)
+                    raise e
+                self.users.add(user_id)
+                self.update_tree_for_user(user_id)
             return fn(self, *args, **kwargs)
         return decorator

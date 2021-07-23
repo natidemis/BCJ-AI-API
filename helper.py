@@ -39,7 +39,7 @@ class QueryString(Enum):
     """
     UPDATE_BATCH_NO_EMBS = """
     UPDATE Vectors
-    SET batch_id = $1,
+    SET batch_id = $1
     WHERE id = $2 AND user_id = $3;
     """
     UPDATE_NO_BATCH_W_EMBS = """

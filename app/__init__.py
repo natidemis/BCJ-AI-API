@@ -17,7 +17,7 @@ import dotenv
 from dotenv import load_dotenv
 from bcj_ai import BCJAIapi as ai, BCJStatus
 from helper import Validator, Message
-from db import Database
+from db import Database, DuplicateKeyError
 
 
 load_dotenv()
@@ -104,7 +104,7 @@ class Bug(Resource):
                                             structured_info=req['structured_info'],
                                             summary=bleach.clean(req['summary']),
                                             description=bleach.clean(req['description']))
-            except ValueError:
+            except(TypeError, DuplicateKeyError):
                 return make_response(jsonify({'message': Message.NO_USER.value}),404)
             return make_response(jsonify(data={'message': message.value}), status.value)
 
