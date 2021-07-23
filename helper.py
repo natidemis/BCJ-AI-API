@@ -35,17 +35,17 @@ class QueryString(Enum):
     UPDATE Vectors
     SET embeddings = $1,
     batch_id = $2
-    WHERE id = $3 AND user_id = $4;
+    WHERE id = $3 AND user_id = $4 RETURNING * ;
     """
     UPDATE_BATCH_NO_EMBS = """
     UPDATE Vectors
     SET batch_id = $1
-    WHERE id = $2 AND user_id = $3;
+    WHERE id = $2 AND user_id = $3 RETURNING *;
     """
     UPDATE_NO_BATCH_W_EMBS = """
     UPDATE Vectors
     SET embeddings = $1
-    WHERE id = $2 AND user_id = $3;
+    WHERE id = $2 AND user_id = $3 RETRUNING *;
     """
 
     DELETE_BATCH = """

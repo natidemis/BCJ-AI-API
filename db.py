@@ -156,11 +156,13 @@ class Database:
 
         except asyncpg.exceptions.PostgresSyntaxError as e:
             logger.error("Missing argument exception: %s",e)
+            raise NotFoundError('Missing argument: %s' % e) from e
         except asyncpg.exceptions.ForeignKeyViolationError as e:
             logger.error('User does not exist in database: %s',e)
             raise NotFoundError('User not in database') from e
         except asyncpg.exceptions.DataError as e:
             logger.error("Incorrect type inserted: %s",e)
+            raise NotFoundError('Incorrect type input' % e) from e
         except asyncpg.exceptions.UniqueViolationError as e:
             logger.error("Duplicate key error: %s",e)
             raise DuplicateKeyError('Duplicate key error, %s' % e) from e
@@ -197,7 +199,7 @@ class Database:
         try:
             async with AsyncpgSQL(self.database_url) as conn:
                 if batch_id is not None and embeddings is not None:
-                    await conn.execute(
+                    result = await conn.execute(
                         QueryString.UPDATE_EMBS_W_BATCH.value,
                         embeddings,
                         batch_id,
@@ -205,33 +207,32 @@ class Database:
                         user_id
                         )
                 elif batch_id is not None and embeddings is None:
-                    await conn.execute(
+                    result = await conn.execute(
                         QueryString.UPDATE_BATCH_NO_EMBS.value,
                         batch_id,
                         _id,
                         user_id
                         )
                 elif batch_id is None and embeddings is not None:
-                    await conn.execute(
+                    result = await conn.execute(
                         QueryString.UPDATE_NO_BATCH_W_EMBS.value,
                         embeddings,
                         _id,
                         user_id
                         )
                 else:
-                    await conn.execute(
+                    result = await conn.execute(
                         QueryString.UPDATE_BATCH_NO_EMBS.value,
                         None,
                         _id,
                         user_id
                         )
+            if result == 'UPDATE 0':
+                raise NoUpdatesError('No changes were made to the db')
             logger.info("Update successful")
 
         except asyncpg.exceptions.PostgresSyntaxError as e:
             logger.error("Missing argument exception: %s",e)
-        except asyncpg.exceptions.ForeignKeyViolationError as e:
-            logger.error('User does not exist in database: %s',e)
-            raise NotFoundError('User not in database') from e
         except asyncpg.exceptions.DataError as e:
             logger.error("Incorrect type inserted: %s", e)
             raise TypeError('Incorrect type inserted: %s' % e) from e
@@ -306,8 +307,16 @@ class Database:
     def drop_table(self):
         """
         Method for dropping the table
-        """
 
+        **MAKE SURE YOU'RE IN DEVELOPMENT CODE WHEN RUNNING TESTS
+        AND RUNNING THIS FUNCTION IN GENERAL**
+
+        When setting up for production, set ENVIROMENT = production
+        in '.env'
+        """
+        if os.getenv('ENVIROMENT') is not None \
+            and os.getenv('ENVIROMENT') == 'production':
+            return
         result = asyncio.run(self._drop_table())
         return result
 

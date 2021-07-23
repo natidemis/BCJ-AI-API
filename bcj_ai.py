@@ -19,7 +19,7 @@ import numpy as np
 from dotenv import load_dotenv
 from up_utils.word2vec import Word2Vec
 from up_utils.kdtree import KDTreeUP as KDTree
-from db import Database, NotFoundError,DuplicateKeyError,MissingArgumentError
+from db import Database, NotFoundError,DuplicateKeyError,MissingArgumentError, NoUpdatesError
 from helper import Message
 from log import logger
 from users import authenticate_user, get_or_create_user
@@ -238,7 +238,7 @@ class BCJAIapi:
                                     user_id=user_id,
                                     batch_id=batch_id)
                     return BCJStatus.OK, Message.VALID_INPUT
-                except (TypeError, NotFoundError):
+                except (TypeError, NoUpdatesError):
                     return BCJStatus.NOT_FOUND, Message.INVALID_ID_OR_DATE
 
         data = description if bool(description) else summary
@@ -254,7 +254,7 @@ class BCJAIapi:
                                 user_id=user_id,
                                 embeddings=embeddings,
                                 batch_id=batch_id)
-            except(TypeError, NotFoundError): #vantar að meðhöndla
+            except(TypeError, NoUpdatesError): #vantar að meðhöndla
                 return BCJStatus.NOT_FOUND, Message.INVALID_ID_OR_DATE
         self.update_tree_for_user(user_id)
             
