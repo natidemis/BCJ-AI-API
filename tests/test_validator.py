@@ -1,4 +1,4 @@
-import sys,os
+import sys, os
 import pytest
 import numpy as np
 import random
@@ -207,4 +207,3 @@ def test_validate_data_get_invalid_k(validator, validate_data_get_test_data_nega
                 assert False
             except ValueError:
                 assert True
-

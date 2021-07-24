@@ -65,12 +65,13 @@ class Message(Enum):
     """
     Messages for response to http requests
     """
+    UNPROCESSABLE_INPUT = 'Something is wrong with the inserted data.'
     VALID_INPUT = 'Valid input, check status for result'
     FAILURE = '''Data not in proper format, read the requirement on github: https://github.com/natidemis/BCJ-AI-API'''
     UNFULFILLED_REQ = 'Either summary or description must have length > 0'
     UNAUTHORIZED = 'Unauthorized, wrong token'
     REMOVED = 'Successfully removed'
-    INVALID = 'Invalid ID'
+    DUPLICATE_ID = 'Invalid ID'
     INVALID_ID_OR_DATE = ("Either the id already exists or "
                 "the given date is not valid")
     NO_USER = "User not available."

@@ -61,23 +61,12 @@ class Bug(Resource):
         except(SchemaError, ValueError):
             return make_response(jsonify({"message": Message.FAILURE.value}), 400)
 
-        if req['summary'] == "" and req['description'] == "":
-            return make_response(jsonify({'message': Message.UNFULFILLED_REQ.value}), 400)
-
-        data = bleach.clean(req['description']) if bool(req['description']) \
-            else bleach.clean(req['summary'])
-        k= req['k'] if 'k' in req else 5
-        structured_info = req['structured_info']
-
         try:
-            bugs = ai.get_similar_bugs_k(
-                                        user_id=req['user_id'],
-                                        data=data,
-                                        structured_info=structured_info,
-                                        k=k)
+            bugs = ai.get_similar_bugs_k(**req)
         except ValueError:
             return make_response(jsonify({'message': Message.NO_USER.value}),404)
-
+        except AssertionError:
+            return make_response(jsonify({'message': Message.UNFULFILLED_REQ.value}), 400)
         return make_response(jsonify(data=bugs[1]),bugs[0].value)
 
     @auth.login_required
@@ -97,18 +86,14 @@ class Bug(Resource):
         except(SchemaError, ValueError):
             return make_response(jsonify({'message': Message.FAILURE.value}),400)
 
-        if bool(req['summary']) or bool(req['description']):
-            try:
-                status, message = ai.add_bug(
-                                            user_id=req['user_id'],
-                                            structured_info=req['structured_info'],
-                                            summary=bleach.clean(req['summary']),
-                                            description=bleach.clean(req['description']))
-            except(TypeError, DuplicateKeyError):
-                return make_response(jsonify({'message': Message.NO_USER.value}),404)
-            return make_response(jsonify(data={'message': message.value}), status.value)
+        try:
+            status, message = ai.add_bug(**req)
+        except(TypeError, DuplicateKeyError):
+            return make_response(jsonify({'message': Message.NO_USER.value}),404)
+        except AssertionError:
+            return make_response(jsonify({'message': Message.UNFULFILLED_REQ.value}),404)
 
-        return make_response(jsonify(data={'message': Message.UNFULFILLED_REQ.value}),400)
+        return make_response(jsonify(data={'message': message.value}), status.value)
 
     @auth.login_required
     def patch(self):
@@ -126,15 +111,9 @@ class Bug(Resource):
         except(SchemaError, ValueError):
             return make_response(jsonify(data={'message': Message.FAILURE.value}), 400)
 
-        summary = bleach.clean(req['summary']) if 'summary' in req else None
-        description = bleach.clean(req['description']) if 'description' in req else None
 
         try:
-            status, message = ai.update_bug(
-                                            user_id = req['user_id'],
-                                            summary=summary,
-                                            description = description,
-                                            structured_info = req['structured_info'])
+            status, message = ai.update_bug(**req)
         except ValueError:
             return make_response(jsonify({'message': Message.NO_USER.value}),404)
 
@@ -199,42 +178,29 @@ class Batch(Resource):
         -------
         Message with brief explanation and status code
         """
-        req = request.list_of_json
-        user_id = req['user_id'] if 'user_id' in req else None
-        list_of_json = req['data'] if 'data' in req else None
-        if not user_id or not list_of_json:
-            raise ValueError('User_id and data required')
-        data = []
-
+        
         try:
+            req = request.json
+            user_id = req['user_id'] if 'user_id' in req else None
+            list_of_json = req['data'] if 'data' in req else None
+            if not user_id or not list_of_json:
+                raise ValueError('User_id and data required')
+
             if not isinstance(list_of_json,list):
                 raise ValueError
-            validator.validate_batch_data(list_of_json[0])
-            batch_id = list_of_json[0]['structured_info']['batch_id']
-            for item in list_of_json:
-                validator.validate_batch_data(item)
-                if batch_id != item['structured_info']['batch_id']:
-                    raise ValueError('All batch_id must be the same')
-                if len(item['summary']) > 0 or len(item['description'])>0:
-                    data.append({
-                        "id": item['structured_info']['id'],
-                        "summary": bleach.clean(item['summary']),
-                        "description": bleach.clean(item['description']),
-                        "batch_id": item['structured_info']['batch_id'],
-                        "date": item['structured_info']['date']
-                    })
-                else:
-                    raise ValueError('Both summary and description may not have string length of 0')
-        except(SchemaError, ValueError):
+            [validator.validate_batch_data(los) for los in list_of_json]
+        except ValueError:
             return make_response(jsonify({'message': Message.FAILURE.value}),400)
 
         try:
-            status, message = ai.add_batch(batch=data,user_id=user_id)
+            status, message = ai.add_batch(**req)
         except ValueError:
             return make_response(jsonify({'message': Message.NO_USER.value}),404)
-
-        return make_response(jsonify(
-                                    data={'message': message.value}), status.value)
+        except AssertionError:
+            return make_response(jsonify({'message': 'All batch_id must be the same'}),
+                400)
+        return make_response(jsonify(data={'message': message.value}),
+                                    status.value)
 
 api.add_resource(Bug,'/bug')
 api.add_resource(Batch, '/batch')
