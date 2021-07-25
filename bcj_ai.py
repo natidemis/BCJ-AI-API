@@ -71,6 +71,7 @@ def get_or_create_user(fn):
             self.users.add(user_id)
             self.update_tree_for_user(user_id)
             logger.info('Inserted user: %s, new user set: %s',user_id,self.users)
+        logger.info('User: %s, already in: %s',user_id,self.users)
         return fn(self, *args, **kwargs)
     return decorator
 
@@ -189,15 +190,11 @@ class BCJAIapi:
             return BCJStatus.NOT_FOUND, Message.UNPROCESSABLE_INPUT
 
         with self. __lock:
-            result = self.kdtree.query(vec, k=k)
+            dists,ids = self.kdtree.query(vec, k=k)
         
-        ids = result[1][0].tolist()
-        dists = result[0][0].tolist()
-            
-
         response = {
-            "id": ids if k>1 else [ids],
-            "dist": dists if k>1 else [dists]
+            "id": ids.flatten().tolist(),
+            "dist": dists.flatten().tolist()
         }
 
         return BCJStatus.OK, response
@@ -221,7 +218,7 @@ class BCJAIapi:
             OK if the bug insertion is successful
             ERROR if the bug insertion is unsuccessful
         """
-        assert bool(description) or bool(description)
+        assert bool(description) or bool(summary)
 
         #Prepare the data for vectorization and insertion
         data = bleach.clean(description) if bool(description) \
@@ -261,9 +258,10 @@ class BCJAIapi:
             OK if bug removal is successful
             ERRROR if bug removal is unsuccessful
         """
+        #logger.info("here")
         with self.__lock:
             try:
-                self.database.delete(_id,user_id)
+                self.database.delete(_id=_id,user_id=user_id)
             except NoUpdatesError:
                 return BCJStatus.NOT_FOUND, Message.VALID_INPUT
         self.update_tree_for_user(user_id)

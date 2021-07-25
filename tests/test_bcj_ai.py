@@ -16,7 +16,7 @@ sys.path.insert(0, myPath + '/../')
 
 from bcj_ai import BCJAIapi, BCJStatus
 from helper import Message 
-from db import Database, DuplicateKeyError
+from db import Database, DuplicateKeyError, NoUpdatesError
 ################
 ### FIXTURES ###
 ################
@@ -27,12 +27,15 @@ def ai():
     return BCJAIapi()
 
 @pytest.fixture
+def N():
+    return 30
+
+@pytest.fixture
 def database():
     return Database()
 
 @pytest.fixture
-def no_disc_and_summ():
-    N = 30
+def no_disc_and_summ(N):
     return zip(
         [z for z in range(N)],
         [
@@ -45,8 +48,8 @@ def no_disc_and_summ():
     )
 
 @pytest.fixture
-def duplicate_key_data():
-    N = 30
+def duplicate_key_data(N):
+
     return zip(
         [1 for z in range(N)],
         [
@@ -59,8 +62,7 @@ def duplicate_key_data():
     )
 
 @pytest.fixture
-def valid_data():
-    N = 30
+def valid_data(N):
     return zip(
         [1 for z in range(N)],
         [
@@ -215,13 +217,79 @@ def test_similar_bugs_k_valid_input_no_k(ai, valid_data,database):
                     structured_info=structured_info,
                     summary="summary",
                     description= "description")
+    for user_id, structured_info, summ, desc in valid_data:
         status, res = ai.get_similar_bugs_k(user_id=user_id,
                     structured_info=structured_info,
                     summary="summary",#summ = None
                     description="description") #disc = None
         num += 1
         assert BCJStatus.OK == status and isinstance(res, dict) \
-            and len(res['id']) == len(res['dist']) == \
-            min(k,num)
+            and len(res['id']) == len(res['dist']) == min(k,num)
+    database.drop_table()
+    database.make_table()
+
+
+def test_similar_bugs_k_valid_input_w_k(ai, valid_data,database,N):
+    """
+    @ai.add_bug()
+    Tests for assertionError if both
+    'summary' and 'description'
+    don't satisfy the 'bool' function.
+    """
+    database.drop_table()
+    database.make_table()
+    k = random.randint(1,N) #default value for k in get_similar_bugs_k
+    num = 0 #number of bugs in the database
+    for user_id, structured_info, summ, desc in valid_data:
+    
+        ai.add_bug(user_id=user_id,
+                    structured_info=structured_info,
+                    summary="summary",
+                    description= "description")
+    for user_id, structured_info, summ, desc in valid_data:
+        status, res = ai.get_similar_bugs_k(user_id=user_id,
+                    structured_info=structured_info,
+                    summary="summary",#summ = None
+                    description="description",
+                    k=k) #disc = None
+        num += 1
+        assert BCJStatus.OK == status and isinstance(res, dict) \
+            and len(res['id']) == len(res['dist']) == min(k,num)
+    database.drop_table()
+    database.make_table()
+
+###############################
+### ai.delete_bug() ###########
+###############################
+
+def test_remove_bug_no_valid_id(ai,database,N):
+    database.drop_table()
+    database.make_table()
+    ai.add_bug(user_id=1,
+            structured_info= {'id': 1},
+            summary="summary",
+            description="description")
+
+    for _ in range(N):
+  
+        assert BCJStatus.NOT_FOUND, Message.VALID_INPUT == \
+            ai.remove_bug(_id=random.randint(2,N),user_id=1) #remove invalid id pairs.
+
+    database.drop_table()
+    database.make_table()
+
+def test_remove_bug_valid_delete(ai,database,N):
+    database.drop_table()
+    database.make_table()
+
+    for i in range(N):
+        ai.add_bug(user_id=1,
+            structured_info= {'id': 1},
+            summary="summary",
+            description="description")
+
+        assert BCJStatus.OK, Message.VALID_INPUT == \
+            ai.remove_bug(_id=i,user_id=1) #remove invalid id pairs.
+
     database.drop_table()
     database.make_table()

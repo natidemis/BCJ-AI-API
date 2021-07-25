@@ -20,7 +20,7 @@ def main():
     """
     Starts app for development.
     """
-    if not table_created:
+    if table_created:
         logger.info("Database initialized successfully, starting app in development..")
         app.run()
     else:
