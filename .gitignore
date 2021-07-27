@@ -10,4 +10,3 @@ glove.42B.300d.txt
 gensim_glove_vectors.txt
 __pycache__/
 server.log
-*.xlsx
