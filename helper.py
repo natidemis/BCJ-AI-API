@@ -45,7 +45,7 @@ class QueryString(Enum):
     UPDATE_NO_BATCH_W_EMBS = """
     UPDATE Vectors
     SET embeddings = $1
-    WHERE id = $2 AND user_id = $3 RETRUNING *;
+    WHERE id = $2 AND user_id = $3 RETURNING *;
     """
 
     DELETE_BATCH = """
@@ -71,10 +71,14 @@ class Message(Enum):
     UNFULFILLED_REQ = 'Either summary or description must have length > 0'
     UNAUTHORIZED = 'Unauthorized, wrong token'
     REMOVED = 'Successfully removed'
-    DUPLICATE_ID = 'Invalid ID'
+    DUPLICATE_ID = "This Id already exists for the given user"
+    NO_EXAMPLE = 'There is no example with the the given ID for this user.'
     INVALID_ID_OR_DATE = ("Either the id already exists or "
                 "the given date is not valid")
     NO_USER = "User not available."
+    NO_UPDATES = "There were no updates to make."
+
+
 class Validator:
     """
     Miscellaneous class for all things validation for the app.

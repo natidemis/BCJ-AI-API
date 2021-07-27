@@ -16,6 +16,7 @@ import asyncpg
 from log import logger
 from helper import QueryString
 
+
 load_dotenv()
 
 
@@ -111,7 +112,6 @@ class Database:
         try:
             async with AsyncpgSQL(self.database_url) as conn:
                 await conn.execute(QueryString.INSERT.value,_id,user_id,embeddings,batch_id)
-            logger.info("Inserting data successful")
 
         except asyncpg.exceptions.UniqueViolationError as e:
             logger.error("Duplicate key error: %s for user_id: %s and id: %s",e,user_id,_id)
@@ -119,7 +119,7 @@ class Database:
         except asyncpg.exceptions.ForeignKeyViolationError as e:
             logger.error('User_id does not exist in the Users database: %s,'
              'exception: %s',user_id,e)
-            raise NotFoundError('User not in database: %s' % e) from e
+            raise NotFoundError('122 User not in database: %s' % e) from e
         except asyncpg.exceptions.DataError as e:
             logger.error("Incorrect type inserted: %s",e)
         except asyncpg.exceptions.PostgresSyntaxError as e:
@@ -137,8 +137,7 @@ class Database:
 
         try:
             async with AsyncpgSQL(self.database_url) as conn:
-                await conn.fetch(QueryString.INSERT_USER.value,user_id)
-            logger.info("Inserting user successful")
+                await conn.execute(QueryString.INSERT_USER.value,user_id)
 
         except asyncpg.exceptions.UniqueViolationError as e:
             logger.error("Duplicate key error: %s", e)
@@ -152,14 +151,10 @@ class Database:
         try:
             async with AsyncpgSQL(self.database_url) as conn:
                 await conn.executemany(QueryString.INSERT.value,data)
-            logger.info("Batch insertion successful")
 
-        except asyncpg.exceptions.PostgresSyntaxError as e:
-            logger.error("Missing argument exception: %s",e)
-            raise NotFoundError('Missing argument: %s' % e) from e
         except asyncpg.exceptions.ForeignKeyViolationError as e:
             logger.error('User does not exist in database: %s',e)
-            raise NotFoundError('User not in database') from e
+            raise NotFoundError('157 User not in database') from e
         except asyncpg.exceptions.DataError as e:
             logger.error("Incorrect type inserted: %s",e)
             raise NotFoundError('Incorrect type input' % e) from e
@@ -180,8 +175,8 @@ class Database:
         try:
             async with AsyncpgSQL(self.database_url) as conn:
                 rows = await conn.fetch(QueryString.FETCH.value,user_id)
-            if not rows:
-                raise NotFoundError("Nothing in the Database")
+                if not rows:
+                    raise NotFoundError("Nothing in the Database")
             logger.info("Fetching all succeeded")
             return [{'id': row['id'],
                     'embeddings': row['embeddings'],
@@ -227,15 +222,14 @@ class Database:
                         _id,
                         user_id
                         )
-            if result == 'UPDATE 0':
-                raise NoUpdatesError('No changes were made to the db')
-            logger.info("Update successful")
+                if result == 'UPDATE 0':
+                    raise NoUpdatesError('No changes were made to the db')
+                logger.info("Update successful")
 
         except asyncpg.exceptions.PostgresSyntaxError as e:
             logger.error("Missing argument exception: %s",e)
         except asyncpg.exceptions.DataError as e:
             logger.error("Incorrect type inserted: %s", e)
-            raise TypeError('Incorrect type inserted: %s' % e) from e
 
 
     async def _delete(self, _id: int, user_id: int) -> None:
@@ -249,9 +243,9 @@ class Database:
 
         async with AsyncpgSQL(self.database_url) as conn:
             result = await conn.fetch(QueryString.DELETE.value,_id,user_id)
-        if result[0]['count'] == 0:
-            raise NoUpdatesError('Nothing was changed in the database')
-        logger.info("successfully deleted row")
+            if result[0]['count'] == 0:
+                raise NoUpdatesError('Nothing was changed in the database')
+
 
 
     async def _delete_batch(self,batch_id: int,user_id: int) -> None:
@@ -265,9 +259,9 @@ class Database:
 
         async with AsyncpgSQL(self.database_url) as conn:
             result = await conn.fetch(QueryString.DELETE_BATCH.value,batch_id,user_id)
-        if result[0]['count'] == 0:
-            raise NoUpdatesError('Nothing was changed in the database')
-        logger.info("successfully deleted row")
+            if result[0]['count'] == 0:
+                raise NoUpdatesError('Nothing was changed in the database')
+
 
 
     async def _drop_table(self):
@@ -276,14 +270,13 @@ class Database:
         """
         with open('sql/drop.sql','r') as sql_file:
             query = sql_file.read()
-        try:
-            conn = await asyncpg.connect(self.database_url)
-            await conn.execute(query)
-            logger.info("Dropped table to avoid unnecessary errors.")
-        except Exception:
-            logger.info("Error dropping table")
-        finally:
-            await conn.close()
+        async with AsyncpgSQL(self.database_url) as conn:
+            try:
+                conn = await asyncpg.connect(self.database_url)
+                await conn.execute(query)
+                logger.info("Dropped table to avoid unnecessary errors.")
+            except Exception:
+                logger.info("Error dropping table")
 
     async def _fetch_users(self) -> Union[List[int],None]:
         """
@@ -294,15 +287,14 @@ class Database:
         a list of dict
         """
 
-        try:
-            async with AsyncpgSQL(self.database_url) as conn:
-                rows = await conn.fetch(QueryString.FETCH_USERS.value)
+
+        async with AsyncpgSQL(self.database_url) as conn:
+            rows = await conn.fetch(QueryString.FETCH_USERS.value)
             if not rows:
                 raise NotFoundError("Nothing in the Database")
             logger.info("Fetching all succeeded")
             return [row['user_id'] for row in rows]
-        finally:
-            await conn.close()
+
 
     def drop_table(self):
         """
@@ -317,8 +309,8 @@ class Database:
         if os.getenv('ENVIROMENT') is not None \
             and os.getenv('ENVIROMENT') == 'production':
             return
-        result = asyncio.run(self._drop_table())
-        return result
+        asyncio.run(self._drop_table())
+
 
     def make_table(self) -> bool:
         """
