@@ -88,7 +88,7 @@ class Bug(Resource):
 
         try:
             status, message = ai.add_bug(**req)
-        except(TypeError, DuplicateKeyError):
+        except(TypeError, DuplicateKeyError, ValueError):
             return make_response(jsonify({'message': Message.NO_USER.value}),404)
         except AssertionError:
             return make_response(jsonify({'message': Message.UNFULFILLED_REQ.value}),404)
@@ -197,7 +197,8 @@ class Batch(Resource):
         except ValueError:
             return make_response(jsonify({'message': Message.NO_USER.value}),404)
         except AssertionError:
-            return make_response(jsonify({'message': 'All batch_id must be the same'}),
+            return make_response(jsonify({'message': ('Each example must contain same "batch_id" '
+            'and either summary or description must be a valid non-empty string')}),
                 400)
         return make_response(jsonify(data={'message': message.value}),
                                     status.value)
