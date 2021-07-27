@@ -53,7 +53,7 @@ Artificial Intelligence API for usability problems.
 ### Postgres
 * Check all available DNF modules for postgresql by running `sudo dnf module list postgresql`
 
-* Enable the repository for postgresql for a specific versing by using <br />`sudo dnf module enable postgresql:<version>`
+* Enable the repository for postgresql for a specific version by using <br />`sudo dnf module enable postgresql:<version>`
 
 * Install the module: `sudo dnf install postgresql-server`
 
