@@ -102,11 +102,12 @@ import requests
 url = "<your-url>/bug"
 token = "my bearer token"
 json = {
+    "user_id": 1,
     "summary": "summ",
     "description": "desc",
     "structured_info": {
         "id": 1,
-        "bucket": "somrh",
+        "batch_id": 1,
         "date": "2015-02-28"
     }
 }
