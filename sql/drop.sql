@@ -1,0 +1,6 @@
+DROP INDEX IF EXISTS vectors_id;
+DROP INDEX IF EXISTS vectors_batch;
+DROP INDEX IF EXISTS vectors_unique;
+DROP INDEX IF EXISTS vectors_user_id;
+DROP TABLE IF EXISTS Vectors;
+DROP TABLE IF EXISTS Users;
