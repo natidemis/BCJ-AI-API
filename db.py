@@ -17,7 +17,7 @@ from helper import QueryString
 
 load_dotenv()
 
-asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+#asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 class Database:
     """
