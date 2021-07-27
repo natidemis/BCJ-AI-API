@@ -19,8 +19,8 @@ from helper import QueryString
 
 load_dotenv()
 
-
-asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+#Uncomment this line to run on windows
+#asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 class NotFoundError(Exception):
     """
