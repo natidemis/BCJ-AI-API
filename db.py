@@ -26,23 +26,35 @@ class NotFoundError(Exception):
     """
     Database error when return value is empty.
     """
+    def __init__(self,message,value):
+        self.message = message
+        self.value = value
 
 
 class DuplicateKeyError(Exception):
     """
     Database error to raise when the key inserted already exists.
     """
+    def __init__(self,message,value):
+        self.message = message
+        self.value = value
 
 
 class MissingArgumentError(Exception):
     """
     Database error when variables don't match the required columns.
     """
+    def __init__(self,message,value):
+        self.message = message
+        self.value = value
 
 class NoUpdatesError(Exception):
     """
     Database error when a query makes no changes to the database.
     """
+    def __init__(self,message,value):
+        self.message = message
+        self.value = value
 
 
 
@@ -55,20 +67,64 @@ class AsyncpgSQL():
         self._conn = None
 
     async def __aenter__(self):
+        """
+        Connects the database
+        """
         self._conn = await asyncpg.connect(self._url)
         return self._conn
 
     async def __aexit__(self, exc_type, exc, tb): #closing the connection
+        """
+        Closes the database connection
+        """
         if self._conn:
             await self._conn.close()
 
 class Database:
     """
     Class for handling database connection and queries
+
+    Class methods:
+    _make_table
+    _insert
+    _insert_user
+    _insert_batch
+    _fetch_all
+    _update
+    _delete
+    _delete_batch
+    _fetch_users
+    _drop_table
+
+    Instance methods:
+    make_table
+    insert
+    insert_user
+    insert_batch
+    fetch_all
+    update
+    delete
+    delete_batch
+    fetch_users
+    drop_table
+
+    Instance variables:
+    database_url
     """
     def __init__(self):
         """
-        Class to setup the database table when required.
+        Initialize Database
+
+        Requirements:
+            - DATABASE_URL variable in '.env' file.
+        
+        Arguments
+        ---------
+        None
+
+        Returns
+        -------
+        Instance of a Database object
         """
         self.database_url = os.getenv('DATABASE_URL')
 
@@ -76,7 +132,11 @@ class Database:
 
     async def _make_table(self) -> bool:
         """
-        Asyncronous function to create the table
+        Class method to create the table
+
+        Arguments
+        ---------
+        None
 
         Returns
         -------
@@ -102,11 +162,25 @@ class Database:
                         embeddings: List[Union[int,float]],
                         batch_id: int= None) -> None:
         """
-        Async method for inserting into the database
+        Class method for inserting into the database
+
+        Arguments
+        ---------
+        _id: int
+            Identification number for the embedded bug
+
+        user_id: int
+            Indentification number of the user
+        
+        embeddings: Array of floats
+            The embeddings of the bug
+
+        Batch_id: int, None
+            Batch ID to associate bug with a batch of bugs
 
         Returns
         -------
-        True if insertion is successful, false otherwise
+        None, raises DuplicateKeyError, NotFoundError on exception
         """
 
         try:
@@ -128,7 +202,12 @@ class Database:
 
     async def _insert_user(self, user_id: int) -> None:
         """
-        Async method for inserting a user into the database
+        Class method for inserting a user into the database
+
+        Arguments
+        ---------
+        user_id: int
+            identification number for user.
 
         Returns
         -------
@@ -147,14 +226,29 @@ class Database:
             raise TypeError('Incorrect type inserted' % e) from e
 
 
-    async def _insert_batch(self,data) -> None:
+    async def _insert_batch(self,data: List[tuple]) -> None:
+        """
+        Class method for inserting a batch of data
+
+        Arguments
+        ---------
+        data: List of tuples [(id, user_id, embeddings, batch_id)]
+            id: int - Identification value for the bug.
+            user_id: int - Identification value for the user.
+            embeddings: List of floats - The embeddings for this bug
+            batch_id: int | None - A batch number to associate this bug with other bugs.
+        
+        Returns
+        -------
+        None, raises NotFoundError, Duplicate Error on exception
+        """
         try:
             async with AsyncpgSQL(self.database_url) as conn:
                 await conn.executemany(QueryString.INSERT.value,data)
 
         except asyncpg.exceptions.ForeignKeyViolationError as e:
             logger.error('User does not exist in database: %s',e)
-            raise NotFoundError('157 User not in database') from e
+            raise NotFoundError('User not in database') from e
         except asyncpg.exceptions.DataError as e:
             logger.error("Incorrect type inserted: %s",e)
             raise NotFoundError('Incorrect type input' % e) from e
@@ -166,11 +260,16 @@ class Database:
 
     async def _fetch_all(self, user_id: int) -> Union[list,None]:
         """
-        Async method for fetching all rows in the database
+        Class method for fetching all rows for a user in the database
+
+        Arguments
+        ---------
+        user_id: int
+            User identification number
 
         Returns
         -------
-        a list of dict
+        a list of dict, Raises NotFoundError is user has no rows to fetch.
         """
         try:
             async with AsyncpgSQL(self.database_url) as conn:
@@ -190,7 +289,26 @@ class Database:
                         user_id: int,
                         embeddings: List[Union[int,float]] = None,
                         batch_id: int=None) -> None:
+        """
+        Class method for updating a bug for a user.
 
+        Arguments
+        ---------
+        _id: int
+            Identification number for the embedded bug
+
+        user_id: int
+            Indentification number of the user
+        
+        embeddings: Array of floats | None
+            The embeddings of the bug
+
+        Batch_id: int | None
+            Batch ID to associate bug with a batch of bugs
+        
+        Returns
+        None, raises NoUpdatesError if nothing is updated.
+        """
         try:
             async with AsyncpgSQL(self.database_url) as conn:
                 if batch_id is not None and embeddings is not None:
@@ -234,11 +352,19 @@ class Database:
 
     async def _delete(self, _id: int, user_id: int) -> None:
         """
-        Removes a row from the database by _ID
+        Class method for removing a row from the database
+
+        Arguments
+        ---------
+        _id: int
+            Id of the bug
+        
+        user_id: int
+            User identification number
 
         Returns
         -------
-        None
+        None, raises NoUpdatesError if no deletion occurs.
         """
 
         async with AsyncpgSQL(self.database_url) as conn:
@@ -250,11 +376,19 @@ class Database:
 
     async def _delete_batch(self,batch_id: int,user_id: int) -> None:
         """
-        Removes all rows with batch_id
+        Class method for removing a batch of rows
+
+        Arguments
+        ---------
+        batch_id: int
+            Indentification number for a set of bugs
+        
+        user_id: int
+            User identification number assosicated with this batch
 
         Returns
         -------
-        None
+        None, raises NoUpdatesError if no deletes occur
         """
 
         async with AsyncpgSQL(self.database_url) as conn:
@@ -266,7 +400,8 @@ class Database:
 
     async def _drop_table(self):
         """
-        Method for dropping table for each setup of the server in development mode.
+        Class method for dropping table. Used in development
+
         """
         with open('sql/drop.sql','r') as sql_file:
             query = sql_file.read()
@@ -280,11 +415,15 @@ class Database:
 
     async def _fetch_users(self) -> Union[List[int],None]:
         """
-        Async method for fetching all users in the database
+        Class method for fetching all users in the database
+
+        Arguments
+        ---------
+        None
 
         Returns
         -------
-        a list of dict
+        a list of ids, raises NotFoundError if no users exist in the database
         """
 
 
@@ -314,12 +453,15 @@ class Database:
 
     def make_table(self) -> bool:
         """
-        One time use to set up the Vectors table,
-        required to determine vector length.
+        Instance method to create the table
+
+        Arguments
+        ---------
+        None
 
         Returns
         -------
-        True if table creation is successful, false otherwise
+        True if table creation successful, false otherwise
         """
         return asyncio.run(self._make_table())
 
@@ -329,11 +471,25 @@ class Database:
                 embeddings: List[Union[int,float]],
                 batch_id: int= None) -> None:
         """
-        Method for inserting into the database
+        Instance method for inserting into the database
+
+        Arguments
+        ---------
+        _id: int
+            Identification number for the embedded bug
+
+        user_id: int
+            Indentification number of the user
+        
+        embeddings: Array of floats
+            The embeddings of the bug
+
+        Batch_id: int, None
+            Batch ID to associate bug with a batch of bugs
 
         Returns
         -------
-        True if insertion successful, false otherwise
+        None, raises DuplicateKeyError, NotFoundError on exception
         """
 
         asyncio.run(self._insert(
@@ -344,22 +500,32 @@ class Database:
 
     def insert_user(self,user_id: int) -> None:
         """
-        Method for inserting user into database
+        Class method for inserting a user into the database
+
+        Arguments
+        ---------
+        user_id: int
+            identification number for user.
 
         Returns
         -------
-        True if insertion successful, false otherwise
+        True if insertion is successful, false otherwise
         """
 
         asyncio.run(self._insert_user(user_id=user_id))
 
     def fetch_all(self,user_id: int) -> Union[list,None]:
         """
-        Fetches all rows in the table
+        Instance method for fetching all rows for a user in the database
+
+        Arguments
+        ---------
+        user_id: int
+            User identification number
 
         Returns
         -------
-        All rows, None if a problem occurs
+        a list of dict, Raises NotFoundError is user has no rows to fetch.
         """
         return asyncio.run(self._fetch_all(user_id=user_id))
 
@@ -369,11 +535,24 @@ class Database:
                 embeddings: List[Union[int,float]] = None,
                 batch_id: int=None) -> None:
         """
-        Update values of a row by _id
+        Class method for updating a bug for a user.
 
+        Arguments
+        ---------
+        _id: int
+            Identification number for the embedded bug
+
+        user_id: int
+            Indentification number of the user
+        
+        embeddings: Array of floats | None
+            The embeddings of the bug
+
+        Batch_id: int | None
+            Batch ID to associate bug with a batch of bugs
+        
         Returns
-        -------
-        Boolean, true if successfully updated, false otherwise
+        None, raises NoUpdatesError if nothing is updated.
         """
         asyncio.run(self._update(
                                 _id=_id,
@@ -384,22 +563,38 @@ class Database:
 
     def delete(self, _id: int, user_id: int) -> None:
         """
-        Delete row by _id
+        Instance method for removing a row from the database
+
+        Arguments
+        ---------
+        _id: int
+            Id of the bug
+        
+        user_id: int
+            User identification number
 
         Returns
         -------
-        Boolean, true if successful, false otherwise
+        None, raises NoUpdatesError if no deletion occurs.
         """
 
         asyncio.run(self._delete(_id=_id,user_id=user_id))
 
     def delete_batch(self, batch_id: int,user_id) -> None:
         """
-        Delete row by batch_id
+        Instance method for removing a batch of rows
+
+        Arguments
+        ---------
+        batch_id: int
+            Indentification number for a set of bugs
+        
+        user_id: int
+            User identification number assosicated with this batch
 
         Returns
         -------
-        Boolean, true if successful, false otherwise
+        None, raises NoUpdatesError if no deletes occur
         """
 
         asyncio.run(self._delete_batch(batch_id=batch_id,user_id=user_id))
@@ -407,11 +602,19 @@ class Database:
 
     def insert_batch(self, data: List[tuple]) -> None:
         """
-        Method for inserting a batch of data
+        Instance method for inserting a batch of data
 
+        Arguments
+        ---------
+        data: List of tuples [(id, user_id, embeddings, batch_id)]
+            id: int - Identification value for the bug.
+            user_id: int - Identification value for the user.
+            embeddings: List of floats - The embeddings for this bug
+            batch_id: int | None - A batch number to associate this bug with other bugs.
+        
         Returns
         -------
-        Number of inserted data
+        None, raises NotFoundError, Duplicate Error on exception
         """
 
         asyncio.run(self._insert_batch(data))
@@ -419,11 +622,15 @@ class Database:
 
     def fetch_users(self) -> Union[List[int],None]:
         """
-        Fetch all users in the database
+        Instance method for fetching all users in the database
+
+        Arguments
+        ---------
+        None
 
         Returns
         -------
-        a list of user ids
+        a list of ids, raises NotFoundError if no users exist in the database
         """
 
         return asyncio.run(self._fetch_users())
