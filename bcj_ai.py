@@ -2,6 +2,7 @@
 # pylint: disable=C0103
 # pylint: disable=W0703
 # pylint: disable=W0613
+# pylint: disable=W0212
 """
 @authors: kra33, Gitcelo, natidemis
 May 2021
@@ -28,8 +29,13 @@ from log import logger
 
 def authenticate_user(fn):
     """
-    Method for validating the given user_id.
+    Decorator function for validating the given user_id.
     If the user exists, fetch data for that 'user' if required.
+
+    Arguments
+    ---------
+    None
+
     Returns
     -------
     Decorator to be applied to a function.
@@ -39,7 +45,7 @@ def authenticate_user(fn):
             else args[0]
         if user_id in self.users:
             if self.current_user != user_id:
-                self.update_tree_for_user(user_id)
+                self._update_tree_for_user(user_id)
             logger.info('User: %s in database: %s. Auth succeeded.',user_id,self.users)
         else:
             logger.error('User: %s not in database: %s, Auth failed',user_id,self.users)
@@ -49,10 +55,15 @@ def authenticate_user(fn):
 
 def get_or_create_user(fn):
     """
-    Method for validating the given user_id.
+    Decorator function for validating the given user_id.
     If the user exists, fetch data for that 'user' if required.
     Otherwise, create a new user for the given user_id
     Returns
+
+    Arguments
+    --------
+    None
+
     -------
     Decorator to be applied to a function.
     """
@@ -62,12 +73,12 @@ def get_or_create_user(fn):
         if user_id in self.users:
             logger.info("user alread IN!")
             if self.current_user != user_id:
-                self.update_tree_for_user(user_id)
+                self._update_tree_for_user(user_id)
         else:
             try:
-                self.database.insert_user(user_id)
+                self._database.insert_user(user_id)
                 self.users.add(user_id)
-                self.update_tree_for_user(user_id)
+                self._update_tree_for_user(user_id)
                 logger.info('Inserted user: %s, new user set: %s',user_id,self.users)
             except (TypeError, DuplicateKeyError) as e:
                 logger.error('Inserting user: %s failed for err: %s',user_id, e)
@@ -88,18 +99,51 @@ class BCJStatus(IntEnum):
 class BCJAIapi:
     """
     API class for AI
+
+    Class variables:
+        _lock: threading.Lock
+            Semaphore for locking certain resources
+        _database: db.Database
+            Connections to the database
+        _model: tf.keras.model
+            model for predicting word embeddings
+        _w2v: up_utils.Word2Vec
+            word embedder
+
+    Instance variables:
+        users:
+            All users currently available in the database
+        current_user:
+            current user of the instance
+        kdtree: up_utils.kdtree
+            nearest neighbour look up
+
+    Class methods:
+        _restructure_tree
+        _update_tree_for_user
+    Instance methods:
+        get_similar_bugs_k
+        add_bug
+        remove_bug
+        update_bug
+        remove_batch
+        add_batch
     """
 
     def __init__(self):
         """
         Initialize the AI model from disk; read embedding vectors from disk;
         get ready for classifying bugs and returning similar bug ids.
+
+        Arguments
+        ---------
+        None
         """
-        self.__lock = Lock()
-        self.database = Database()
-        self.model = tf.keras.models.load_model('Models', compile=False)
+        self._lock = Lock()
+        self._database = Database()
+        self._model = tf.keras.models.load_model('Models', compile=False)
         try:
-            self.users = set(self.database.fetch_users())
+            self.users = set(self._database.fetch_users())
         except NotFoundError:
             self.users = set()
         self.kdtree = None
@@ -110,7 +154,7 @@ class BCJAIapi:
         COMMONCRAWL_PATH = os.getenv('COMMONCRAWL_PATH')
         GOOGLENEWS_PATH = os.getenv('GOOGLENEWS_PATH')
         #WV_ITEM_LIMIT = os.getenv('WV_ITEM_LIMIT')
-        self.w2v = Word2Vec(
+        self._w2v = Word2Vec(
             outputfile=OUTPUT_FILE,
             dataset=DATASET,
             commoncrawl_path=COMMONCRAWL_PATH,
@@ -120,11 +164,16 @@ class BCJAIapi:
 
     def _restructure_tree(self,new_data: list) -> KDTree:
         """
-        Private method for updating the tree.
+        Private method for updating 'kdtree'.
+
+        Arguments
+        ---------
+            new_data: list[dict]
+                data containing a list of embeddings and IDs
 
         Returns
         -------
-        KDTreeUP(KDTree)
+        None, reconstructes self.kdtree
         """
         if new_data:
             embeddings = np.vstack([data['embeddings'] for data in new_data])
@@ -134,7 +183,7 @@ class BCJAIapi:
             self.kdtree = None
 
 
-    def update_tree_for_user(self, user_id: int) -> None:
+    def _update_tree_for_user(self, user_id: int) -> None:
         """
         Update the kdtree with the data provided by `user_id`
 
@@ -142,9 +191,9 @@ class BCJAIapi:
         -------
         None
         """
-        with self.__lock:
+        with self._lock:
             try:
-                data = self.database.fetch_all(user_id)
+                data = self._database.fetch_all(user_id)
                 self._restructure_tree(data)
             except NotFoundError:
                 self.kdtree = None
@@ -163,12 +212,24 @@ class BCJAIapi:
         Return the ID of the k most similar bugs based on given summary, desription, and
         structured information.
 
+        Arguments
+        ---------
+            user_id: int
+                Indentification number of the user: must exist in the database
+            summary: str
+                A brief summary of the bug
+            description: str
+                A description of the bug
+            structured info: dict {'id': int, 'date': str, 'batch_id': int | None}
+                'date': str
+                    A string representation of a date for the bug
+
+            'k': int
+                The number of similar bugs to fetch
+
         Returns
         -------
-        status : BCJStatus
-            OK if the requested number of bugs were found.
-        idx : list
-            A list of min(k,N) most similar bugs where N is the total number of bugs
+        BCJStatus, dict containing Id's and distances of the 'k' most similar
         """
 
         assert bool(summary) or bool(description)
@@ -183,12 +244,12 @@ class BCJAIapi:
         k = min(k,N)
 
         try:
-            vec= self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
+            vec= self._model.predict(np.array([self._w2v.get_sentence_matrix(data)]))
         except Exception:
             logger.error('Data is invalid.')
             return BCJStatus.NOT_FOUND, Message.UNPROCESSABLE_INPUT
 
-        with self. __lock:
+        with self. _lock:
             dists,ids = self.kdtree.query(vec, k=k)
 
         response = {
@@ -211,11 +272,26 @@ class BCJAIapi:
         To see how we sanitized the data, see __init__.py in the folder
         app.
 
+        Arguments
+        ---------
+            user_id: int
+                Indentification number of the user: must exist in the database
+            summary: str
+                A brief summary of the bug
+            description: str
+                A description of the bug
+            structured info: dict {'id': int, 'date': str, 'batch_id': int | None}
+                'id': int
+                    Id for the bug
+                'date': str
+                    A string representation of a date for the bug
+                'batch_id: int | None
+                    the Id which this bug belongs to, None other if no such Id exists
+
         Returns
         -------
-        status: BCJStatus
-            OK if the bug insertion is successful
-            ERROR if the bug insertion is unsuccessful
+        BCJStatus, Message
+
         """
         assert bool(description) or bool(summary)
 
@@ -224,14 +300,14 @@ class BCJAIapi:
             else bleach.clean(summary)
         batch_id = structured_info['batch_id'] if 'batch_id' in structured_info else None
         try:
-            embeddings= self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
+            embeddings= self._model.predict(np.array([self._w2v.get_sentence_matrix(data)]))
         except Exception:
             logger.error('Data is invalid.')
             return BCJStatus.NOT_FOUND, Message.UNPROCESSABLE_INPUT
 
-        with self.__lock:
+        with self._lock:
             try:
-                self.database.insert(_id=structured_info['id'],
+                self._database.insert(_id=structured_info['id'],
                             user_id=user_id,
                             embeddings=embeddings,
                             batch_id=batch_id)
@@ -239,7 +315,7 @@ class BCJAIapi:
                 return BCJStatus.BAD_REQUEST, Message.DUPLICATE_ID
 
 
-        with self.__lock:
+        with self._lock:
             if self.kdtree is None:
                 self.kdtree = KDTree(data=embeddings, indices=[structured_info['id']])
             else:
@@ -252,19 +328,24 @@ class BCJAIapi:
         """
         Remove a bug with idx as its id.
 
+        Arguments
+        ---------
+            user_id: int
+                Indentification number of the user: must exist in the database
+            _id: int
+                Id for the bug
+
         Returns
         -------
-        status: BCJstatus
-            OK if bug removal is successful
-            ERRROR if bug removal is unsuccessful
+        BCJstatus, Message
         """
 
-        with self.__lock:
+        with self._lock:
             try:
-                self.database.delete(_id=_id,user_id=user_id)
+                self._database.delete(_id=_id,user_id=user_id)
             except NoUpdatesError:
                 return BCJStatus.NOT_FOUND, Message.VALID_INPUT
-        self.update_tree_for_user(user_id)
+        self._update_tree_for_user(user_id)
         return BCJStatus.OK, Message.VALID_INPUT
 
     @authenticate_user
@@ -276,11 +357,25 @@ class BCJAIapi:
         """
         Updates a bug with the parameters given. The id of the bug should be in structured_info.
 
+        Arguments
+        ---------
+            user_id: int
+                Indentification number of the user: must exist in the database
+            summary: str
+                A brief summary of the bug
+            description: str
+                A description of the bug
+            structured info: dict {'id': int, 'date': str, 'batch_id': int | None}
+                'id': int
+                    Id for the bug
+                'date': str
+                    A string representation of a date for the bug
+                'batch_id: int | None
+                    the Id which this bug belongs to, None other if no such Id exists
+
         Returns
         -------
-        status: BCJStatus
-            OK if bug update is successful
-            ERROR if bug update is unsuccessful
+        BCJStatus, Message
         """
 
         #Gætum þurft að breyta ef 'DATE' þarf að fara í gervigreindina
@@ -291,10 +386,10 @@ class BCJAIapi:
         if not bool(summary) and not bool(description):
             if 'batch_id' not in structured_info:
                 return BCJStatus.NOT_FOUND, Message.NO_UPDATES
-            with self.__lock:
+            with self._lock:
                 try:
                     if 'batch_id' in structured_info:
-                        self.database.update(_id=structured_info['id'],
+                        self._database.update(_id=structured_info['id'],
                                         user_id=user_id,
                                         batch_id=batch_id)
                         return BCJStatus.OK, Message.VALID_INPUT
@@ -305,21 +400,21 @@ class BCJAIapi:
         data = bleach.clean(description) if bool(description) \
             else bleach.clean(summary)
         try:
-            embeddings= self.model.predict(np.array([self.w2v.get_sentence_matrix(data)]))
+            embeddings= self._model.predict(np.array([self._w2v.get_sentence_matrix(data)]))
         except Exception:
             logger.error('Data is invalid.')
             return BCJStatus.NOT_FOUND, Message.UNPROCESSABLE_INPUT
 
-        with self.__lock:
+        with self._lock:
             try:
-                self.database.update(_id=structured_info['id'],
+                self._database.update(_id=structured_info['id'],
                                 user_id=user_id,
                                 embeddings=embeddings,
                                 batch_id=batch_id)
             except(TypeError, NoUpdatesError):
                 return BCJStatus.NOT_FOUND, Message.NO_UPDATES
 
-        self.update_tree_for_user(user_id)
+        self._update_tree_for_user(user_id)
 
         return BCJStatus.OK, Message.VALID_INPUT
 
@@ -328,19 +423,24 @@ class BCJAIapi:
         """
         Removes a batch of bugs. The batch's id is idx.
 
+        Arguments
+        ---------
+            user_id: int
+                Indentification number of the user: must exist in the database
+            batch_id: int
+                Identification number of the batch
+
         Returns
         -------
-        status: BCJStatus
-            OK if bug update is successful
-            ERROR if bug update is unsuccessful
+        BCJStatus, Message
         """
-        with self.__lock:
+        with self._lock:
             try:
-                self.database.delete_batch(batch_id,user_id)
+                self._database.delete_batch(batch_id,user_id)
             except NoUpdatesError: #vantar að meðhöndla
                 return BCJStatus.ERROR, Message.DUPLICATE_ID
 
-        self.update_tree_for_user(user_id)
+        self._update_tree_for_user(user_id)
 
         return BCJStatus.OK, Message.VALID_INPUT
 
@@ -349,9 +449,26 @@ class BCJAIapi:
         """
         Adds a batch to the database and updates the KD-Tree
 
+        Arguments
+        ---------
+            user_id: int
+                Indentification number of the user: must exist in the database
+            data: list[dict]
+                summary: str
+                    A brief summary of the bug
+                description: str
+                    A description of the bug
+                structured info: dict {'id': int, 'date': str, 'batch_id': int | None}
+                    'id': int
+                        Id for the bug
+                    'date': str
+                        A string representation of a date for the bug
+                    'batch_id: int | None
+                        the Id which this bug belongs to, None other if no such Id exists
+
         Returns
         -------
-        BCJStatus
+        BCJStatus, Message
         """
         #All batch_ids but be the same, as it is, a "batch"
         assert all(d['structured_info']['batch_id'] == data[0]['structured_info']['batch_id']
@@ -367,18 +484,18 @@ class BCJAIapi:
 
         #vectorize sentences and combine them with the approperiate id
         try:
-            embeddings = self.model.predict(np.array(self.w2v.get_sentence_matrix(sentences)))
+            embeddings = self._model.predict(np.array(self._w2v.get_sentence_matrix(sentences)))
         except Exception:
             logger.error('Data is invalid.')
             return BCJStatus.NOT_FOUND, Message.UNPROCESSABLE_INPUT
         batch_data = [(bug['structured_info']['id'],user_id,
                             embedding,bug['structured_info']['batch_id'])
                             for bug, embedding in zip(data, embeddings)]
-        with self.__lock:
+        with self._lock:
             try:
-                self.database.insert_batch(batch_data)
+                self._database.insert_batch(batch_data)
             except DuplicateKeyError:
                 return BCJStatus.BAD_REQUEST, Message.DUPLICATE_ID
 
-        self.update_tree_for_user(user_id)
+        self._update_tree_for_user(user_id)
         return BCJStatus.OK, Message.VALID_INPUT
