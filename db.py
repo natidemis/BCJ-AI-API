@@ -26,35 +26,38 @@ class NotFoundError(Exception):
     """
     Database error when return value is empty.
     """
-    def __init__(self,message,value):
+    def __init__(self, message: str, *args):
+        super().__init__(message, *args)
         self.message = message
-        self.value = value
+        self.args = args
 
+    def __str__(self):
+        return "{}: {}".format(self.message,self.args)
 
 class DuplicateKeyError(Exception):
     """
     Database error to raise when the key inserted already exists.
     """
-    def __init__(self,message,value):
+    def __init__(self,message, *args):
+        super().__init__(message, *args)
         self.message = message
-        self.value = value
+        self.args = args
 
+    def __str__(self):
+        return "{}: {}".format(self.message,self.args)
 
-class MissingArgumentError(Exception):
-    """
-    Database error when variables don't match the required columns.
-    """
-    def __init__(self,message,value):
-        self.message = message
-        self.value = value
 
 class NoUpdatesError(Exception):
     """
     Database error when a query makes no changes to the database.
     """
-    def __init__(self,message,value):
+    def __init__(self,message, *args):
+        super().__init__(message, *args)
         self.message = message
-        self.value = value
+        self.args = args
+
+    def __str__(self):
+        return "{}: {}".format(self.message,self.args)
 
 
 
@@ -117,7 +120,7 @@ class Database:
 
         Requirements:
             - DATABASE_URL variable in '.env' file.
-        
+
         Arguments
         ---------
         None
@@ -171,7 +174,7 @@ class Database:
 
         user_id: int
             Indentification number of the user
-        
+
         embeddings: Array of floats
             The embeddings of the bug
 
@@ -189,11 +192,11 @@ class Database:
 
         except asyncpg.exceptions.UniqueViolationError as e:
             logger.error("Duplicate key error: %s for user_id: %s and id: %s",e,user_id,_id)
-            raise DuplicateKeyError('Duplicate key error: %s' % e) from e
+            raise DuplicateKeyError('Duplicate key error: %s' % e,(_id,user_id)) from e
         except asyncpg.exceptions.ForeignKeyViolationError as e:
             logger.error('User_id does not exist in the Users database: %s,'
              'exception: %s',user_id,e)
-            raise NotFoundError('122 User not in database: %s' % e) from e
+            raise NotFoundError('122 User not in database: %s' % e,(_id,user_id)) from e
         except asyncpg.exceptions.DataError as e:
             logger.error("Incorrect type inserted: %s",e)
         except asyncpg.exceptions.PostgresSyntaxError as e:
@@ -220,7 +223,7 @@ class Database:
 
         except asyncpg.exceptions.UniqueViolationError as e:
             logger.error("Duplicate key error: %s", e)
-            raise DuplicateKeyError('Duplicate key for %s' % user_id) from e
+            raise DuplicateKeyError('Duplicate key for %s' % user_id,user_id) from e
         except asyncpg.exceptions.DataError as e:
             logger.error("incorrect type inserted: %s",e)
             raise TypeError('Incorrect type inserted' % e) from e
@@ -237,7 +240,7 @@ class Database:
             user_id: int - Identification value for the user.
             embeddings: List of floats - The embeddings for this bug
             batch_id: int | None - A batch number to associate this bug with other bugs.
-        
+
         Returns
         -------
         None, raises NotFoundError, Duplicate Error on exception
@@ -275,14 +278,14 @@ class Database:
             async with AsyncpgSQL(self.database_url) as conn:
                 rows = await conn.fetch(QueryString.FETCH.value,user_id)
                 if not rows:
-                    raise NotFoundError("Nothing in the Database")
+                    raise NotFoundError("Nothing in the Database",rows)
             logger.info("Fetching all succeeded")
             return [{'id': row['id'],
                     'embeddings': row['embeddings'],
                     'batch_id': row['batch_id']} for row in rows]
         except asyncpg.exceptions.DataError as e:
             logger.error("Incorrect type inserted: %s",e)
-
+            return None
 
     async def _update(self,
                         _id: int,
@@ -299,13 +302,13 @@ class Database:
 
         user_id: int
             Indentification number of the user
-        
+
         embeddings: Array of floats | None
             The embeddings of the bug
 
         Batch_id: int | None
             Batch ID to associate bug with a batch of bugs
-        
+
         Returns
         None, raises NoUpdatesError if nothing is updated.
         """
@@ -341,7 +344,7 @@ class Database:
                         user_id
                         )
                 if result == 'UPDATE 0':
-                    raise NoUpdatesError('No changes were made to the db')
+                    raise NoUpdatesError('No changes were made to the db',(_id,user_id,batch_id))
                 logger.info("Update successful")
 
         except asyncpg.exceptions.PostgresSyntaxError as e:
@@ -358,7 +361,7 @@ class Database:
         ---------
         _id: int
             Id of the bug
-        
+
         user_id: int
             User identification number
 
@@ -370,7 +373,7 @@ class Database:
         async with AsyncpgSQL(self.database_url) as conn:
             result = await conn.fetch(QueryString.DELETE.value,_id,user_id)
             if result[0]['count'] == 0:
-                raise NoUpdatesError('Nothing was changed in the database')
+                raise NoUpdatesError('Nothing was changed in the database',(_id,user_id))
 
 
 
@@ -382,7 +385,7 @@ class Database:
         ---------
         batch_id: int
             Indentification number for a set of bugs
-        
+
         user_id: int
             User identification number assosicated with this batch
 
@@ -394,7 +397,7 @@ class Database:
         async with AsyncpgSQL(self.database_url) as conn:
             result = await conn.fetch(QueryString.DELETE_BATCH.value,batch_id,user_id)
             if result[0]['count'] == 0:
-                raise NoUpdatesError('Nothing was changed in the database')
+                raise NoUpdatesError('Nothing was changed in the database',(batch_id,user_id))
 
 
 
@@ -480,7 +483,7 @@ class Database:
 
         user_id: int
             Indentification number of the user
-        
+
         embeddings: Array of floats
             The embeddings of the bug
 
@@ -544,13 +547,13 @@ class Database:
 
         user_id: int
             Indentification number of the user
-        
+
         embeddings: Array of floats | None
             The embeddings of the bug
 
         Batch_id: int | None
             Batch ID to associate bug with a batch of bugs
-        
+
         Returns
         None, raises NoUpdatesError if nothing is updated.
         """
@@ -569,7 +572,7 @@ class Database:
         ---------
         _id: int
             Id of the bug
-        
+
         user_id: int
             User identification number
 
@@ -588,7 +591,7 @@ class Database:
         ---------
         batch_id: int
             Indentification number for a set of bugs
-        
+
         user_id: int
             User identification number assosicated with this batch
 
@@ -611,7 +614,7 @@ class Database:
             user_id: int - Identification value for the user.
             embeddings: List of floats - The embeddings for this bug
             batch_id: int | None - A batch number to associate this bug with other bugs.
-        
+
         Returns
         -------
         None, raises NotFoundError, Duplicate Error on exception
