@@ -81,27 +81,44 @@ class Message(Enum):
 
 class Validator:
     """
-    Miscellaneous class for all things validation for the app.
+    Validation class for json objects
+
+    Class methods:
+        validate_datestring
+
+    Instance methods:
+        validate_update_data
+        validate_post_data
+        validate_data_get
+        validate_batch_data
+        validate_id
+        validate_batch_id
+
+    class variables:
+        _info_schema
+        _info_schema_get
+        _info_schema_update
+        _batch_schema
     """
 
     def __init__(self):
         """
-        A class containing validation functions for the app
+        Initialize Validator
         """
-        self.info_schema = Schema({
+        self._info_schema = Schema({
             'id': int,
             'date': str,
             Optional("batch_id"): int
         })
-        self.batch_schema = Schema({
+        self._batch_schema = Schema({
             'id': int,
             'date': str,
             'batch_id': int
         })
-        self.info_schema_get = Schema({
+        self._info_schema_get = Schema({
             'date': str,
         })
-        self.info_schema_update = Schema({
+        self._info_schema_update = Schema({
             'id': int,
             'date': str,
             Optional("batch_id"): Or(int,None)
@@ -113,9 +130,14 @@ class Validator:
         """
         Verify that `date` is in YYYY-MM-DD format
 
+        Arguments
+        ---------
+            date: str
+                date string to be validated.
+
         Returns
         -------
-        None, raises value error if 'date' is invalid
+        None, raises ValueError if 'date' is invalid
         """
         try:
             datetime.strptime(date, '%Y-%m-%d')
@@ -126,9 +148,13 @@ class Validator:
         """
         Validate whether the required variables are there to update
 
+        Arguments
+        ---------
+            data: dict
+                data to be validated
         Returns
         -------
-        None, raises SchemaError if data is not in proper format
+        None, raises ValueError if data is not in proper format
         """
         schema = Schema({
             "user_id": int,
@@ -139,18 +165,23 @@ class Validator:
 
         try:
             schema.validate(data)
-            self.info_schema_update.validate(data['structured_info'])
+            self._info_schema_update.validate(data['structured_info'])
             self.validate_datestring(data['structured_info']['date'])
         except:
             raise ValueError from Exception
 
-    def validate_data(self,data: dict) -> None:
+    def validate_post_data(self,data: dict) -> None:
         """
         Validate whether `data` is in the enforced format.
 
+        Arguments
+        ---------
+            data: dict
+                object to be validated.
+
         Returns
         -------
-        None, raises SchemaError if data is not in proper format
+        None, raises ValueError if data is not in proper format
         """
         schema = Schema({
                 "user_id": int,
@@ -162,15 +193,20 @@ class Validator:
 
         try:
             schema.validate(data)
-            self.info_schema.validate(data['structured_info'])
+            self._info_schema.validate(data['structured_info'])
             self.validate_datestring(data['structured_info']['date'])
         except:
             raise ValueError from Exception
 
-    def validate_data_get(self,data: dict) -> None:
+    def validate_get_data(self,data: dict) -> None:
         """
         Validate whether `data` is in the enforced format.
         Used for the get request on /bug
+
+        Arguments
+        ---------
+            data: dict
+                object to be validated
 
         Returns
         -------
@@ -186,7 +222,7 @@ class Validator:
 
         try:
             schema.validate(data)
-            self.info_schema_get.validate(data['structured_info'])
+            self._info_schema_get.validate(data['structured_info'])
             self.validate_datestring(data['structured_info']['date'])
         except:
             raise ValueError from Exception
@@ -194,6 +230,11 @@ class Validator:
     def validate_batch_data(self,data: dict) -> None:
         """
         Validate whether `data` is in the enforced format.
+
+        Arguments
+        ---------
+            data: dict
+                Object to be validated
 
         Returns
         -------
@@ -209,7 +250,7 @@ class Validator:
 
         try:
             schema.validate(data)
-            self.batch_schema.validate(data['structured_info'])
+            self._batch_schema.validate(data['structured_info'])
             self.validate_datestring(data['structured_info']['date'])
         except:
             raise ValueError from Exception
@@ -218,6 +259,12 @@ class Validator:
         """
         Validate whether `data` is in the enforced format.
         Helper function for 'delete' og '/bug'
+
+        Arguments
+        ---------
+            data: dict
+                Object to be validated
+
         Returns
         -------
         None, raises SchemaError if `data` invalid
@@ -234,6 +281,11 @@ class Validator:
     def validate_batch_id(self, data: dict) -> None:
         """
         Validate whether `data` is in the enforced format.
+
+        Arguments
+        ---------
+            data: dict
+                Object to be validated
 
         Returns
         -------
