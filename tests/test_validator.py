@@ -45,7 +45,7 @@ def get_random_date(year='2015'):
 def random_valid_data(get_random_date):
     """
     Generates some valid date for
-    the validate_data() method
+    the validate_post_data() method
     """
     return [{
         "user_id": random.randint(1,1000),
@@ -59,9 +59,9 @@ def random_valid_data(get_random_date):
 
 
 @pytest.fixture
-def validate_data_get_test_data(get_random_date):
+def validate_get_data_test_data(get_random_date):
     """
-    Test data for the validate_data_get() method.
+    Test data for the validate_get_data() method.
     """
     return [{
         "user_id": random.randint(1,1000),
@@ -76,9 +76,9 @@ def validate_data_get_test_data(get_random_date):
 
 
 @pytest.fixture
-def validate_data_get_test_data_negative_k(get_random_date):
+def validate_get_data_test_data_negative_k(get_random_date):
     """
-    Test method for the validate_data_get() method
+    Test method for the validate_get_data() method
     """
     return [{
         "user_id": random.randint(1,1000),
@@ -182,7 +182,7 @@ def test_validate_data(validator, random_valid_data):
     Test whether correct data format gives any errors
     """
     for data in random_valid_data:
-        validator.validate_data(data)
+        validator.validate_post_data(data)
 
 def test_validate_data_incorrect_date(validator, invalid_date_data):
     """
@@ -192,7 +192,7 @@ def test_validate_data_incorrect_date(validator, invalid_date_data):
     """
     for data in invalid_date_data:
         try:
-            validator.validate_data(data)
+            validator.validate_post_data(data)
             assert False
         except ValueError:
             assert True
@@ -205,7 +205,7 @@ def test_validate_data_missing_value(validator, data_with_missing_value):
     """
     for data in data_with_missing_value:
         try:
-            validator.validate_data(data)
+            validator.validate_post_data(data)
             assert False
         except ValueError:
             assert True
@@ -223,30 +223,30 @@ def test_random_valid_update_data(random_valid_update_data, validator):
         validator.validate_update_data(data)
 
 ##########################################
-### test Validator.validate_data_get() ###
+### test Validator.validate_get_data() ###
 ##########################################
 
-def test_validate_data_get(validator,
-                            validate_data_get_test_data):
+def test_validate_get_data(validator,
+                            validate_get_data_test_data):
     """
-    @Validator.validate_data_get()
+    @Validator.validate_get_data()
 
     Tests for valid get data
     """
-    for data in validate_data_get_test_data:
-        validator.validate_data_get(data)
+    for data in validate_get_data_test_data:
+        validator.validate_get_data(data)
 
 
-def test_validate_data_get_invalid_k(validator,
-                                    validate_data_get_test_data_negative_k):
+def test_validate_get_data_invalid_k(validator,
+                                    validate_get_data_test_data_negative_k):
     """
-    @Validator.validate_data_get()
+    @Validator.validate_get_data()
     Tests for invalid 'k' value
     """
 
-    for data in validate_data_get_test_data_negative_k:
+    for data in validate_get_data_test_data_negative_k:
         try:
-            validator.validate_data_get(data)
+            validator.validate_get_data(data)
             assert False
         except ValueError:
             assert True

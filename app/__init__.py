@@ -57,7 +57,7 @@ class Bug(Resource):
 
         req = request.json #Retrieve JSON
         try:
-            validator.validate_data_get(req) #Validate the JSON
+            validator.validate_get_data(req) #Validate the JSON
         except(SchemaError, ValueError):
             return make_response(jsonify({"message": Message.FAILURE.value}), 400)
 
@@ -82,7 +82,7 @@ class Bug(Resource):
 
         req = request.json
         try:
-            validator.validate_data(req)
+            validator.validate_post_data(req)
         except(SchemaError, ValueError):
             return make_response(jsonify({'message': Message.FAILURE.value}),400)
 
