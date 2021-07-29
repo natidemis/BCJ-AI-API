@@ -25,7 +25,7 @@ from db import Database, NotFoundError,DuplicateKeyError, NoUpdatesError
 from helper import Message
 from log import logger
 
-
+load_dotenv(verbose=True)
 
 def authenticate_user(fn):
     """
@@ -148,7 +148,6 @@ class BCJAIapi:
             self.users = set()
         self.kdtree = None
         self.current_user = None
-        load_dotenv()
         OUTPUT_FILE = os.getenv('OUTPUT_FILE')
         DATASET = os.getenv('DATASET') # Dataset can either be googlenews or commoncrawl
         COMMONCRAWL_PATH = os.getenv('COMMONCRAWL_PATH')
