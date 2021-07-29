@@ -30,7 +30,7 @@ ai = ai()
 
 
 # TODO: Set Limit on summary and description #pylint: disable=W0511
-
+# TODO: take in command-line-argument to reset the database.
 
 def verify_token(req: Request):
     """
