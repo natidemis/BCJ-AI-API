@@ -72,12 +72,13 @@ class Message(Enum):
     UNAUTHORIZED = 'Unauthorized, wrong token'
     REMOVED = 'Successfully removed'
     DUPLICATE_ID = "This Id already exists for the given user"
+    DUPLICATE_ID_BATCH = "One of the given bug Id's already exists for this user"
     NO_EXAMPLE = 'There is no example with the the given ID for this user.'
     INVALID_ID_OR_DATE = ("Either the id already exists or "
                 "the given date is not valid")
     NO_USER = "User not available."
     NO_UPDATES = "There were no updates to make."
-
+    NO_DELETION = "There was nothing to delete for the given (user_id, id) pair."
 
 class Validator:
     """

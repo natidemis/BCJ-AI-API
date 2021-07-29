@@ -400,7 +400,7 @@ def test_remove_bug_valid_delete(database,N):
             structured_info= {'id': i},
             summary="summary",
             description="description")
-        status, message = ai.remove_bug(_id=i,user_id=1)
+        status, message = ai.remove_bug(id=i,user_id=1)
         assert BCJStatus.OK == status and \
             Message.VALID_INPUT == message
 
@@ -422,7 +422,7 @@ def test_remove_bug_no_valid_id(database,N):
             description="description")
 
     for _ in range(N):
-        status, message = ai.remove_bug(_id=random.randint(2,N),user_id=1)
+        status, message = ai.remove_bug(id=random.randint(2,N),user_id=1)
         assert BCJStatus.NOT_FOUND == status and \
             Message.VALID_INPUT == message
 
@@ -623,7 +623,7 @@ def test_add_batch_duplicate_key(database, duplicate_id_batch_data):
 
     status, message = ai.add_batch(**data)
     assert status == BCJStatus.BAD_REQUEST and \
-        message == Message.DUPLICATE_ID
+        message == Message.DUPLICATE_ID_BATCH
 
 ##################################
 ### ai.delete_batch() ############
@@ -649,7 +649,7 @@ def test_remove_batch_no_updates(database,valid_batch_data):
 
     status, message = ai.remove_batch(user_id=user,batch_id=2)
     assert status == BCJStatus.ERROR and \
-        message == Message.DUPLICATE_ID
+        message == Message.NO_DELETION
 
 
 def test_remove_batch_valid_remove(database,valid_batch_data):
@@ -708,7 +708,7 @@ def test_db_and_kdtree_equivalency_on_delete(ai,valid_batch_data,database,N):
 
     #delete values and assert that kdtree and database contain the same data
     for i in range(N):
-        ai.remove_bug(user_id=user, _id=i)
+        ai.remove_bug(user_id=user, id=i)
         db_data = database.fetch_all(user)
         kdtree_ids = ai.kdtree.local_indices.tolist()
         kdtree_embeddings = ai.kdtree.data.tolist()

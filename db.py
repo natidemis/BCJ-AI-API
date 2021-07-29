@@ -15,12 +15,13 @@ from dotenv import load_dotenv
 import asyncpg
 from log import logger
 from helper import QueryString
-
+import nest_asyncio
 
 load_dotenv()
 
 #Uncomment this line to run on windows
-asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+nest_asyncio.apply()
+#asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 class NotFoundError(Exception):
     """
@@ -160,7 +161,7 @@ class Database:
 
 
     async def _insert(self,
-                        _id: int,
+                        id: int,
                         user_id: int,
                         embeddings: List[Union[int,float]],
                         batch_id: int= None) -> None:
@@ -169,7 +170,7 @@ class Database:
 
         Arguments
         ---------
-        _id: int
+        id: int
             Identification number for the embedded bug
 
         user_id: int
@@ -188,15 +189,15 @@ class Database:
 
         try:
             async with AsyncpgSQL(self.database_url) as conn:
-                await conn.execute(QueryString.INSERT.value,_id,user_id,embeddings,batch_id)
+                await conn.execute(QueryString.INSERT.value,id,user_id,embeddings,batch_id)
 
         except asyncpg.exceptions.UniqueViolationError as e:
-            logger.error("Duplicate key error: %s for user_id: %s and id: %s",e,user_id,_id)
-            raise DuplicateKeyError('Duplicate key error: %s' % e,(_id,user_id)) from e
+            logger.error("Duplicate key error: %s for user_id: %s and id: %s",e,user_id,id)
+            raise DuplicateKeyError('Duplicate key error: %s' % e,(id,user_id)) from e
         except asyncpg.exceptions.ForeignKeyViolationError as e:
             logger.error('User_id does not exist in the Users database: %s,'
              'exception: %s',user_id,e)
-            raise NotFoundError('122 User not in database: %s' % e,(_id,user_id)) from e
+            raise NotFoundError('122 User not in database: %s' % e,(id,user_id)) from e
         except asyncpg.exceptions.DataError as e:
             logger.error("Incorrect type inserted: %s",e)
         except asyncpg.exceptions.PostgresSyntaxError as e:
@@ -288,7 +289,7 @@ class Database:
             return None
 
     async def _update(self,
-                        _id: int,
+                        id: int,
                         user_id: int,
                         embeddings: List[Union[int,float]] = None,
                         batch_id: int=None) -> None:
@@ -297,7 +298,7 @@ class Database:
 
         Arguments
         ---------
-        _id: int
+        id: int
             Identification number for the embedded bug
 
         user_id: int
@@ -319,32 +320,32 @@ class Database:
                         QueryString.UPDATE_EMBS_W_BATCH.value,
                         embeddings,
                         batch_id,
-                        _id,
+                        id,
                         user_id
                         )
                 elif batch_id is not None and embeddings is None:
                     result = await conn.execute(
                         QueryString.UPDATE_BATCH_NO_EMBS.value,
                         batch_id,
-                        _id,
+                        id,
                         user_id
                         )
                 elif batch_id is None and embeddings is not None:
                     result = await conn.execute(
                         QueryString.UPDATE_NO_BATCH_W_EMBS.value,
                         embeddings,
-                        _id,
+                        id,
                         user_id
                         )
                 else:
                     result = await conn.execute(
                         QueryString.UPDATE_BATCH_NO_EMBS.value,
                         None,
-                        _id,
+                        id,
                         user_id
                         )
                 if result == 'UPDATE 0':
-                    raise NoUpdatesError('No changes were made to the db',(_id,user_id,batch_id))
+                    raise NoUpdatesError('No changes were made to the db',(id,user_id,batch_id))
                 logger.info("Update successful")
 
         except asyncpg.exceptions.PostgresSyntaxError as e:
@@ -353,13 +354,13 @@ class Database:
             logger.error("Incorrect type inserted: %s", e)
 
 
-    async def _delete(self, _id: int, user_id: int) -> None:
+    async def _delete(self, id: int, user_id: int) -> None:
         """
         Class method for removing a row from the database
 
         Arguments
         ---------
-        _id: int
+        id: int
             Id of the bug
 
         user_id: int
@@ -371,9 +372,9 @@ class Database:
         """
 
         async with AsyncpgSQL(self.database_url) as conn:
-            result = await conn.fetch(QueryString.DELETE.value,_id,user_id)
+            result = await conn.fetch(QueryString.DELETE.value,id,user_id)
             if result[0]['count'] == 0:
-                raise NoUpdatesError('Nothing was changed in the database',(_id,user_id))
+                raise NoUpdatesError('Nothing was changed in the database',(id,user_id))
 
 
 
@@ -469,7 +470,7 @@ class Database:
         return asyncio.run(self._make_table())
 
     def insert(self,
-                _id: int,
+                id: int,
                 user_id: int,
                 embeddings: List[Union[int,float]],
                 batch_id: int= None) -> None:
@@ -478,7 +479,7 @@ class Database:
 
         Arguments
         ---------
-        _id: int
+        id: int
             Identification number for the embedded bug
 
         user_id: int
@@ -496,7 +497,7 @@ class Database:
         """
 
         asyncio.run(self._insert(
-                                _id=_id,
+                                id=id,
                                 user_id = user_id,
                                 embeddings=embeddings,
                                 batch_id=batch_id))
@@ -533,7 +534,7 @@ class Database:
         return asyncio.run(self._fetch_all(user_id=user_id))
 
     def update(self,
-                _id: int,
+                id: int,
                 user_id: int,
                 embeddings: List[Union[int,float]] = None,
                 batch_id: int=None) -> None:
@@ -542,7 +543,7 @@ class Database:
 
         Arguments
         ---------
-        _id: int
+        id: int
             Identification number for the embedded bug
 
         user_id: int
@@ -558,19 +559,19 @@ class Database:
         None, raises NoUpdatesError if nothing is updated.
         """
         asyncio.run(self._update(
-                                _id=_id,
+                                id=id,
                                 user_id=user_id,
                                 embeddings=embeddings,
                                 batch_id=batch_id))
 
 
-    def delete(self, _id: int, user_id: int) -> None:
+    def delete(self, id: int, user_id: int) -> None:
         """
         Instance method for removing a row from the database
 
         Arguments
         ---------
-        _id: int
+        id: int
             Id of the bug
 
         user_id: int
@@ -581,7 +582,7 @@ class Database:
         None, raises NoUpdatesError if no deletion occurs.
         """
 
-        asyncio.run(self._delete(_id=_id,user_id=user_id))
+        asyncio.run(self._delete(id=id,user_id=user_id))
 
     def delete_batch(self, batch_id: int,user_id) -> None:
         """

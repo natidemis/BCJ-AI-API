@@ -294,7 +294,7 @@ class BCJAIapi:
 
         """
         assert bool(description) or bool(summary)
-
+        print(user_id, summary, description, structured_info)
         #Prepare the data for vectorization and insertion
         data = bleach.clean(description) if bool(description) \
             else bleach.clean(summary)
@@ -307,7 +307,7 @@ class BCJAIapi:
 
         with self._lock:
             try:
-                self._database.insert(_id=structured_info['id'],
+                self._database.insert(id=structured_info['id'],
                             user_id=user_id,
                             embeddings=embeddings,
                             batch_id=batch_id)
@@ -324,7 +324,7 @@ class BCJAIapi:
         return BCJStatus.OK, Message.VALID_INPUT
 
     @authenticate_user
-    def remove_bug(self,user_id: int, _id: int) -> Tuple[BCJStatus, Message]:
+    def remove_bug(self,user_id: int, id: int) -> Tuple[BCJStatus, Message]:
         """
         Remove a bug with idx as its id.
 
@@ -342,7 +342,7 @@ class BCJAIapi:
 
         with self._lock:
             try:
-                self._database.delete(_id=_id,user_id=user_id)
+                self._database.delete(id=id,user_id=user_id)
             except NoUpdatesError:
                 return BCJStatus.NOT_FOUND, Message.VALID_INPUT
         self._update_tree_for_user(user_id)
@@ -389,7 +389,7 @@ class BCJAIapi:
             with self._lock:
                 try:
                     if 'batch_id' in structured_info:
-                        self._database.update(_id=structured_info['id'],
+                        self._database.update(id=structured_info['id'],
                                         user_id=user_id,
                                         batch_id=batch_id)
                         return BCJStatus.OK, Message.VALID_INPUT
@@ -407,7 +407,7 @@ class BCJAIapi:
 
         with self._lock:
             try:
-                self._database.update(_id=structured_info['id'],
+                self._database.update(id=structured_info['id'],
                                 user_id=user_id,
                                 embeddings=embeddings,
                                 batch_id=batch_id)
@@ -437,8 +437,8 @@ class BCJAIapi:
         with self._lock:
             try:
                 self._database.delete_batch(batch_id,user_id)
-            except NoUpdatesError: #vantar að meðhöndla
-                return BCJStatus.ERROR, Message.DUPLICATE_ID
+            except NoUpdatesError: 
+                return BCJStatus.ERROR, Message.NO_DELETION
 
         self._update_tree_for_user(user_id)
 
@@ -495,7 +495,7 @@ class BCJAIapi:
             try:
                 self._database.insert_batch(batch_data)
             except DuplicateKeyError:
-                return BCJStatus.BAD_REQUEST, Message.DUPLICATE_ID
+                return BCJStatus.BAD_REQUEST, Message.DUPLICATE_ID_BATCH
 
         self._update_tree_for_user(user_id)
         return BCJStatus.OK, Message.VALID_INPUT
