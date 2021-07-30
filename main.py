@@ -31,7 +31,8 @@ ai = ai()
 
 # TODO: Set Limit on summary and description #pylint: disable=W0511
 # TODO: take in command-line-argument to reset the database.
-
+# TODO: make fetch_vectors and gen_token a setup.py file. 
+# TODO: movie base classes to a separate file
 def verify_token(req: Request):
     """
     Authentication method for the enviroment using this service
@@ -46,18 +47,18 @@ def verify_token(req: Request):
             detail='Unauthorized'
         )
 
-class StructuredInfoBase(BaseModel):
+class StructuredInfoBase(BaseModel, extra=Extra.forbid):
     """
     Base Model for all 'structured_info' variables
     """
     date: str
 
-    class Config:
-        """
-        Settings for the class
-        """
-        extra: Extra.forbid
-        validate_assignment: True
+    #class Config:
+    #    """
+    #    Settings for the class
+    #    """
+    #    extra: Extra.forbid
+    #    validate_assignment: True
 
     @validator('date', pre= True)
     def parse_date(cls, value: str) -> None: #pylint: disable=E0213
@@ -95,7 +96,7 @@ class StructuredInfoBatch(StructuredInfoBase):
 
 
 
-class BaseData(BaseModel):
+class BaseData(BaseModel,extra=Extra.forbid):
     """
         Base model for all validators
     """
@@ -115,12 +116,12 @@ class BaseData(BaseModel):
                 cls.__fields__[field].required = False
 
 
-    class Config:
-        """
-        Settings for the class
-        """
-        extra: Extra.forbid
-        validate_assignment: True
+    #class Config:
+    #    """
+    #    Settings for the class
+    #    """
+    #    extra: Extra.forbid
+    #    validate_assignment: True
 
 class MainData(BaseData):
     """
@@ -189,7 +190,7 @@ async def k_most_similar_bugs(data: GetData, authorized: bool = Depends(verify_t
 
     if authorized:
         try:
-            bugs = ai.get_similar_bugs_k(**data.dict())
+            bugs = await ai.get_similar_bugs_k(**data.dict())
         except ValueError :
             raise HTTPException(status_code=404, detail=Message.NO_USER.value)
         except AssertionError:
@@ -211,7 +212,7 @@ async def insert_bugs(data: MainData, authorized: bool = Depends(verify_token)):
 
     if authorized:
         try:
-            status, message = ai.add_bug(**data.dict())
+            status, message = await ai.add_bug(**data.dict())
         except ValueError:
             raise HTTPException(status_code=404, detail= Message.NO_USER.value)
         except AssertionError:
@@ -230,7 +231,7 @@ async def update_bug(data: MainData, authorized: bool = Depends(verify_token)):
     """
     if authorized:
         try:
-            status, message = ai.update_bug(**data.dict())
+            status, message = await ai.update_bug(**data.dict())
         except ValueError:
             raise HTTPException(status_code=404, detail= Message.NO_USER.value)
 
@@ -247,7 +248,7 @@ async def delete_bug(data: DeleteData, authorized: bool = Depends(verify_token))
     """
     if authorized:
         try:
-            status, message = ai.remove_bug(**data.dict())
+            status, message = await ai.remove_bug(**data.dict())
         except ValueError:
             raise HTTPException(status_code=404, detail= Message.NO_USER.value)
 
@@ -265,7 +266,7 @@ async def delete_batch(data: DeleteBatchData, authorized: bool = Depends(verify_
     """
     if authorized:
         try:
-            status, message = ai.remove_batch(**data.dict())
+            status, message = await ai.remove_batch(**data.dict())
         except ValueError:
             raise HTTPException(status_code=404, detail= Message.NO_USER.value)
 
@@ -285,7 +286,7 @@ async def insert_batch(data: BatchData, authorized: bool = Depends(verify_token)
 
     if authorized:
         try:
-            status, message = ai.add_batch(**data.dict())
+            status, message = await ai.add_batch(**data.dict())
         except ValueError:
             raise HTTPException(status_code=404, detail= Message.NO_USER.value)
         except AssertionError:
