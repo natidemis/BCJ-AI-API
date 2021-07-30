@@ -636,6 +636,7 @@ class Database:
         -------
         a list of ids, raises NotFoundError if no users exist in the database
         """
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(self._fetch_users())
 
-        return asyncio.run(self._fetch_users())
   
