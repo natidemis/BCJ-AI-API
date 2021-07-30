@@ -40,7 +40,7 @@ def authenticate_user(fn):
     -------
     Decorator to be applied to a function.
     """
-    def decorator(self, *args, **kwargs):
+    async def decorator(self, *args, **kwargs):
         user_id = kwargs['user_id'] if 'user_id' in kwargs \
             else args[0]
         if user_id in self.users:
@@ -50,7 +50,7 @@ def authenticate_user(fn):
         else:
             logger.error('User: %s not in database: %s, Auth failed',user_id,self.users)
             raise ValueError('User not available')
-        return fn(self, *args, **kwargs)
+        return await fn(self, *args, **kwargs)
     return decorator
 
 def get_or_create_user(fn):
@@ -67,7 +67,7 @@ def get_or_create_user(fn):
     -------
     Decorator to be applied to a function.
     """
-    def decorator(self, *args, **kwargs):
+    async def decorator(self, *args, **kwargs):
         user_id = kwargs['user_id'] if 'user_id' in kwargs \
             else args[0]
         if user_id in self.users:
@@ -76,14 +76,14 @@ def get_or_create_user(fn):
                 self._update_tree_for_user(user_id)
         else:
             try:
-                self._database.insert_user(user_id)
+                await self._database._insert_user(user_id)
                 self.users.add(user_id)
                 self._update_tree_for_user(user_id)
                 logger.info('Inserted user: %s, new user set: %s',user_id,self.users)
             except (TypeError, DuplicateKeyError) as e:
                 logger.error('Inserting user: %s failed for err: %s',user_id, e)
                 raise ValueError from e
-        return fn(self, *args, **kwargs)
+        return await fn(self, *args, **kwargs)
     return decorator
 
 
@@ -202,7 +202,7 @@ class BCJAIapi:
 
 
     @authenticate_user
-    def get_similar_bugs_k(self,#pylint: disable=too-many-arguments
+    async def get_similar_bugs_k(self,#pylint: disable=too-many-arguments
                             user_id: int,
                             summary: str = None,
                             description: str = None,
@@ -260,7 +260,7 @@ class BCJAIapi:
         return BCJStatus.OK, response
 
     @get_or_create_user
-    def add_bug(self,
+    async def add_bug(self,
                 user_id: int,
                 structured_info: dict,
                 summary: str=None,
@@ -307,7 +307,7 @@ class BCJAIapi:
 
         with self._lock:
             try:
-                self._database.insert(id=structured_info['id'],
+                await self._database._insert(id=structured_info['id'],
                             user_id=user_id,
                             embeddings=embeddings,
                             batch_id=batch_id)
@@ -324,7 +324,7 @@ class BCJAIapi:
         return BCJStatus.OK, Message.VALID_INPUT
 
     @authenticate_user
-    def remove_bug(self,user_id: int, id: int) -> Tuple[BCJStatus, Message]:
+    async def remove_bug(self,user_id: int, id: int) -> Tuple[BCJStatus, Message]:
         """
         Remove a bug with idx as its id.
 
@@ -342,14 +342,14 @@ class BCJAIapi:
 
         with self._lock:
             try:
-                self._database.delete(id=id,user_id=user_id)
+                await self._database._delete(id=id,user_id=user_id)
             except NoUpdatesError:
                 return BCJStatus.NOT_FOUND, Message.VALID_INPUT
         self._update_tree_for_user(user_id)
         return BCJStatus.OK, Message.VALID_INPUT
 
     @authenticate_user
-    def update_bug(self,
+    async def update_bug(self,
                     user_id: int,
                     structured_info: dict,
                     summary: str=None,
@@ -389,7 +389,7 @@ class BCJAIapi:
             with self._lock:
                 try:
                     if 'batch_id' in structured_info:
-                        self._database.update(id=structured_info['id'],
+                        await self._database._update(id=structured_info['id'],
                                         user_id=user_id,
                                         batch_id=batch_id)
                         return BCJStatus.OK, Message.VALID_INPUT
@@ -407,7 +407,7 @@ class BCJAIapi:
 
         with self._lock:
             try:
-                self._database.update(id=structured_info['id'],
+                await self._database._update(id=structured_info['id'],
                                 user_id=user_id,
                                 embeddings=embeddings,
                                 batch_id=batch_id)
@@ -419,7 +419,7 @@ class BCJAIapi:
         return BCJStatus.OK, Message.VALID_INPUT
 
     @authenticate_user
-    def remove_batch(self,user_id: int, batch_id: int) -> Tuple[BCJStatus, Message]:
+    async def remove_batch(self,user_id: int, batch_id: int) -> Tuple[BCJStatus, Message]:
         """
         Removes a batch of bugs. The batch's id is idx.
 
@@ -436,7 +436,7 @@ class BCJAIapi:
         """
         with self._lock:
             try:
-                self._database.delete_batch(batch_id,user_id)
+                await self._database._delete_batch(batch_id,user_id)
             except NoUpdatesError: 
                 return BCJStatus.ERROR, Message.NO_DELETION
 
@@ -445,7 +445,7 @@ class BCJAIapi:
         return BCJStatus.OK, Message.VALID_INPUT
 
     @get_or_create_user
-    def add_batch(self,user_id: int, data: list) -> Tuple[BCJStatus, Message]:
+    async def add_batch(self,user_id: int, data: list) -> Tuple[BCJStatus, Message]:
         """
         Adds a batch to the database and updates the KD-Tree
 
@@ -493,7 +493,7 @@ class BCJAIapi:
                             for bug, embedding in zip(data, embeddings)]
         with self._lock:
             try:
-                self._database.insert_batch(batch_data)
+                await self._database._insert_batch(batch_data)
             except DuplicateKeyError:
                 return BCJStatus.BAD_REQUEST, Message.DUPLICATE_ID_BATCH
 

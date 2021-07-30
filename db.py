@@ -15,12 +15,12 @@ from dotenv import load_dotenv
 import asyncpg
 from log import logger
 from helper import QueryString
-import nest_asyncio
+
 
 load_dotenv()
 
 #Uncomment this line to run on windows
-nest_asyncio.apply()
+
 #asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 class NotFoundError(Exception):
