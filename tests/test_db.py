@@ -15,27 +15,18 @@ import sys
 import os
 import random
 import pytest
-import numpy as np
 
 myPath = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, myPath + '/../')
 
-from db import Database, NotFoundError, DuplicateKeyError
+from db import NotFoundError, DuplicateKeyError
 
 
 ################
 ### FIXTURES ###
 ################
 
-@pytest.fixture
-def rng():
-    """ Return default random generator """
-    return np.random.default_rng()
 
-@pytest.fixture
-def database():
-    """Our db.Database to be tested"""
-    return Database()
 
 
 @pytest.fixture
