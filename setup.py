@@ -2,12 +2,14 @@
 @author natidemis
 June 2021
 
-Script for downloading gensim and numpy vectors from drive
+script for generating a secret token
 """
+import secrets
 import os.path
 import logging
 import gdown
 from log import logger
+
 
 GOOGLE_NEWS = 'GoogleNews-vectors-negative300.bin'
 
@@ -23,3 +25,8 @@ if not os.path.exists(GOOGLE_NEWS):
         logger.error("Failed to fetch the vectors.")
 else:
     logging.info("Google news vectors file is already in path")
+
+with open('.env', 'w') as f:
+    f.write('DEBUG = False \nSECRET_TOKEN = {}\n'.format(secrets.token_urlsafe(100)))
+    f.write('GOOGLENEWS_PATH = ./GoogleNews-vectors-negative300.bin\n')
+    f.write('DATASET = googlenews')

@@ -23,33 +23,12 @@ sys.path.insert(0, myPath + '/../')
 
 from bcj_ai import BCJAIapi, BCJStatus
 from helper import Message
-from db import Database, NotFoundError
+from db import NotFoundError
 ################
 ### FIXTURES ###
 ################
 
 
-@pytest.fixture
-def ai():
-    """
-    Class to be tested
-    """
-    return BCJAIapi()
-
-@pytest.fixture
-def N():
-    """
-    Arbitrary value high enough to test multiple cases
-    """
-    return 30
-
-@pytest.fixture
-def database():
-    """
-    Class to access and operate on the database.
-    Used in conjunction with 'ai'
-    """
-    return Database()
 
 @pytest.fixture
 def no_desc_and_summ(N):
