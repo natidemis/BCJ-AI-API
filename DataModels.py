@@ -2,6 +2,12 @@ from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, validator, Extra
 
+"""
+@authors: Gitcelo, natidemis
+May-June 2021
+
+Datastructures for input requests
+"""
 
 class StructuredInfoBase(BaseModel, extra=Extra.forbid):
     """

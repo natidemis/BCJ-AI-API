@@ -15,7 +15,9 @@ from dotenv import load_dotenv
 import asyncpg
 from log import logger
 from helper import QueryString
+import nest_asyncio
 
+nest_asyncio.apply()
 
 load_dotenv()
 
