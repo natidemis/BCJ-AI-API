@@ -25,7 +25,17 @@ from db import Database, NotFoundError,DuplicateKeyError, NoUpdatesError
 from helper import Message
 from log import logger
 
+class AsyncObject(object):
+    """
+    Inheriting this class makes it possible to define an async __init__.
+    """
+    async def __new__(cls, *args, **kwargs):
+        instance = super().__new__(cls)
+        await instance.__init__(*args, **kwargs)
+        return instance
 
+    async def __init__(self):
+        pass
 
 def authenticate_user(fn):
     """
@@ -41,11 +51,10 @@ def authenticate_user(fn):
     Decorator to be applied to a function.
     """
     async def decorator(self, *args, **kwargs):
-        user_id = kwargs['user_id'] if 'user_id' in kwargs \
-            else args[0]
+        user_id = kwargs.get('user_id')
         if user_id in self.users:
             if self.current_user != user_id:
-                self._update_tree_for_user(user_id)
+                await self._update_tree_for_user(user_id)
             logger.info('User: %s in database: %s. Auth succeeded.',user_id,self.users)
         else:
             logger.error('User: %s not in database: %s, Auth failed',user_id,self.users)
@@ -68,18 +77,18 @@ def get_or_create_user(fn):
     Decorator to be applied to a function.
     """
     async def decorator(self, *args, **kwargs):
-        user_id = kwargs['user_id'] if 'user_id' in kwargs \
-            else args[0]
+        user_id = kwargs.get('user_id')
         if user_id in self.users:
             logger.info("user alread IN!")
             if self.current_user != user_id:
-                self._update_tree_for_user(user_id)
+                await self._update_tree_for_user(user_id)
         else:
             try:
-                await self._database._insert_user(user_id)
-                self.users.add(user_id)
-                self._update_tree_for_user(user_id)
-                logger.info('Inserted user: %s, new user set: %s',user_id,self.users)
+                with self._lock:
+                    await self._database.insert_user(user_id)
+                    self.users.add(user_id)
+                    await self._update_tree_for_user(user_id)
+                    logger.info('Inserted user: %s, new user set: %s',user_id,self.users)
             except (TypeError, DuplicateKeyError) as e:
                 logger.error('Inserting user: %s failed for err: %s',user_id, e)
                 raise ValueError from e
@@ -96,7 +105,7 @@ class BCJStatus(IntEnum):
     ERROR = 500
     BAD_REQUEST = 400
 
-class BCJAIapi:
+class BCJAIapi(AsyncObject):
     """
     API class for AI
 
@@ -130,7 +139,7 @@ class BCJAIapi:
         add_batch
     """
 
-    def __init__(self):
+    async def __init__(self):
         """
         Initialize the AI model from disk; read embedding vectors from disk;
         get ready for classifying bugs and returning similar bug ids.
@@ -143,7 +152,7 @@ class BCJAIapi:
         self._database = Database()
         self._model = tf.keras.models.load_model('Models', compile=False)
         try:
-            self.users = set(self._database.fetch_users())
+            self.users = set(await self._database.fetch_users())
         except NotFoundError:
             self.users = set()
         self.kdtree = None
@@ -183,7 +192,7 @@ class BCJAIapi:
             self.kdtree = None
 
 
-    def _update_tree_for_user(self, user_id: int) -> None:
+    async def _update_tree_for_user(self, user_id: int) -> None:
         """
         Update the kdtree with the data provided by `user_id`
 
@@ -193,7 +202,7 @@ class BCJAIapi:
         """
         with self._lock:
             try:
-                data = self._database.fetch_all(user_id)
+                data = await self._database.fetch_all(user_id)
                 self._restructure_tree(data)
             except NotFoundError:
                 self.kdtree = None
@@ -294,7 +303,6 @@ class BCJAIapi:
 
         """
         assert bool(description) or bool(summary)
-        print(user_id, summary, description, structured_info)
         #Prepare the data for vectorization and insertion
         data = bleach.clean(description) if bool(description) \
             else bleach.clean(summary)
@@ -307,7 +315,7 @@ class BCJAIapi:
 
         with self._lock:
             try:
-                await self._database._insert(id=structured_info['id'],
+                await self._database.insert(id=structured_info['id'],
                             user_id=user_id,
                             embeddings=embeddings,
                             batch_id=batch_id)
@@ -324,7 +332,7 @@ class BCJAIapi:
         return BCJStatus.OK, Message.VALID_INPUT
 
     @authenticate_user
-    async def remove_bug(self,user_id: int, id: int) -> Tuple[BCJStatus, Message]:
+    async def remove_bug(self,user_id: int, id: int) -> Tuple[BCJStatus, Message]: #pylint: disable=redefined-builtin
         """
         Remove a bug with idx as its id.
 
@@ -342,10 +350,10 @@ class BCJAIapi:
 
         with self._lock:
             try:
-                await self._database._delete(id=id,user_id=user_id)
+                await self._database.delete(id=id,user_id=user_id)
             except NoUpdatesError:
                 return BCJStatus.NOT_FOUND, Message.VALID_INPUT
-        self._update_tree_for_user(user_id)
+        await self._update_tree_for_user(user_id)
         return BCJStatus.OK, Message.VALID_INPUT
 
     @authenticate_user
@@ -389,7 +397,7 @@ class BCJAIapi:
             with self._lock:
                 try:
                     if 'batch_id' in structured_info:
-                        await self._database._update(id=structured_info['id'],
+                        await self._database.update(id=structured_info['id'],
                                         user_id=user_id,
                                         batch_id=batch_id)
                         return BCJStatus.OK, Message.VALID_INPUT
@@ -407,14 +415,14 @@ class BCJAIapi:
 
         with self._lock:
             try:
-                await self._database._update(id=structured_info['id'],
+                await self._database.update(id=structured_info['id'],
                                 user_id=user_id,
                                 embeddings=embeddings,
                                 batch_id=batch_id)
             except(TypeError, NoUpdatesError):
                 return BCJStatus.NOT_FOUND, Message.NO_UPDATES
 
-        self._update_tree_for_user(user_id)
+        await self._update_tree_for_user(user_id)
 
         return BCJStatus.OK, Message.VALID_INPUT
 
@@ -436,11 +444,11 @@ class BCJAIapi:
         """
         with self._lock:
             try:
-                await self._database._delete_batch(batch_id,user_id)
-            except NoUpdatesError: 
+                await self._database.delete_batch(batch_id,user_id)
+            except NoUpdatesError:
                 return BCJStatus.ERROR, Message.NO_DELETION
 
-        self._update_tree_for_user(user_id)
+        await self._update_tree_for_user(user_id)
 
         return BCJStatus.OK, Message.VALID_INPUT
 
@@ -493,9 +501,9 @@ class BCJAIapi:
                             for bug, embedding in zip(data, embeddings)]
         with self._lock:
             try:
-                await self._database._insert_batch(batch_data)
+                await self._database.insert_batch(batch_data)
             except DuplicateKeyError:
                 return BCJStatus.BAD_REQUEST, Message.DUPLICATE_ID_BATCH
 
-        self._update_tree_for_user(user_id)
+        await self._update_tree_for_user(user_id)
         return BCJStatus.OK, Message.VALID_INPUT

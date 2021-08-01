@@ -9,7 +9,7 @@ May-June 2021
 Datastructures for input requests
 """
 
-class StructuredInfoBase(BaseModel, extra=Extra.forbid):
+class StructuredInfoBaseModel(BaseModel, extra=Extra.forbid):
     """
     Base Model for all 'structured_info' variables
     """
@@ -35,14 +35,14 @@ class StructuredInfoBase(BaseModel, extra=Extra.forbid):
             raise ValueError('Not in correct format') from exp
         return value
 
-class StructuredInfoMain(StructuredInfoBase):
+class StructuredInfoMainModel(StructuredInfoBaseModel):
     """
     'structured_info' validator for patch and post on '/bug'
     """
     id: int
     batch_id: Optional[str] = None
 
-class StructuredInfoBatch(StructuredInfoBase):
+class StructuredInfoBatchModel(StructuredInfoBaseModel):
     """
     'structured_info' validator for 'post' og '/batch'
     """
@@ -51,14 +51,14 @@ class StructuredInfoBatch(StructuredInfoBase):
 
 
 
-class BaseData(BaseModel,extra=Extra.forbid):
+class BaseDataModel(BaseModel,extra=Extra.forbid):
     """
         Base model for all validators
     """
     user_id: int
     summary: Optional[str] = None
     description: Optional[str] = None
-    structured_info: StructuredInfoBase
+    structured_info: StructuredInfoBaseModel
 
     def __init_subclass__(cls, optional_fields=None, **kwargs):
         """
@@ -71,16 +71,16 @@ class BaseData(BaseModel,extra=Extra.forbid):
                 cls.__fields__[field].required = False
 
 
-class MainData(BaseData):
+class MainDataModel(BaseDataModel):
     """
      Validator for patch and post on '/bug'
     """
 
-    structured_info: StructuredInfoMain
+    structured_info: StructuredInfoMainModel
 
 
 
-class GetData(BaseData):
+class GetDataModel(BaseDataModel):
     """
     Validator for /get on '/bug'
     """
@@ -95,31 +95,31 @@ class GetData(BaseData):
             assert value > 0, '"k" must meet the constraint k > 0'
         return value
 
-class ValidBatch(BaseModel):
+class ValidBatchModel(BaseModel):
     """
     Validator list data on 'post' on '/batch'
     """
     summary: Optional[str] = None
     description: Optional[str] = None
-    structured_info: StructuredInfoBatch
+    structured_info: StructuredInfoBatchModel
 
 
 
-class BatchData(BaseModel):
+class BatchDataModel(BaseModel):
     """
     Validator for 'post' on '/batch'
     """
     user_id: int
-    data: List[ValidBatch]
+    data: List[ValidBatchModel]
 
-class DeleteData(BaseModel):
+class DeleteDataModel(BaseModel):
     """
     Validator for 'delete' on '/bug'
     """
     user_id: int
     id: int
 
-class DeleteBatchData(BaseModel):
+class DeleteBatchDataModel(BaseModel):
     """
     Validator for 'delete' on '/batch'
     """
