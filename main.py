@@ -9,26 +9,30 @@ May-June 2021
 API for AI web service
 """
 
+
 import os
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.responses import JSONResponse
-from bcj_ai import BCJAIapi as ai
+from bcj_ai import BCJAIapi as AI
 from helper import Message
-from DataModels import *
-
+from DataModels import (BatchDataModel,
+                        GetDataModel,
+                        MainDataModel,
+                        DeleteDataModel,
+                        DeleteBatchDataModel)
+from db import Database
+from log import logger
 
 load_dotenv()
 secret_token = os.getenv('SECRET_TOKEN')
 app = FastAPI()
 
-
-ai = ai()
-
+ai = None
 
 # TODO: Set Limit on summary and description #pylint: disable=W0511
 # TODO: take in command-line-argument to reset the database.
-# TODO: make fetch_vectors and gen_token a setup.py file. 
+# TODO: make fetch_vectors and gen_token a setup.py file.
 
 def verify_token(req: Request):
     """
@@ -44,10 +48,17 @@ def verify_token(req: Request):
             detail='Unauthorized'
         )
 
+@app.on_event("startup")
+async def startup_event():
+    """Setup database"""
+    logger.info('Starting application')
+    await Database().setup_database()
+    global ai 
+    ai = await AI()
 
 
 @app.get('/bug', status_code=200)
-async def k_most_similar_bugs(data: GetData, authorized: bool = Depends(verify_token)):
+async def k_most_similar_bugs(data: GetDataModel, authorized: bool = Depends(verify_token)):
     """
     GET method that fetches the k UPs that are most similar to the UP
     Returns
@@ -69,7 +80,7 @@ async def k_most_similar_bugs(data: GetData, authorized: bool = Depends(verify_t
 
 
 @app.post('/bug', status_code=200)
-async def insert_bugs(data: MainData, authorized: bool = Depends(verify_token)):
+async def insert_bugs(data: MainDataModel, authorized: bool = Depends(verify_token)):
     """
     Method for handling POST request on '/bug',
     used for inserting a UP to the AI and its database.
@@ -90,7 +101,7 @@ async def insert_bugs(data: MainData, authorized: bool = Depends(verify_token)):
 
     return JSONResponse(content={'Unauthorized'}, status_code=401)
 @app.patch('/bug', status_code= 200)
-async def update_bug(data: MainData, authorized: bool = Depends(verify_token)):
+async def update_bug(data: MainDataModel, authorized: bool = Depends(verify_token)):
     """
     PATCH method for http request on '/bug' for updating an existing UP in the AI.
     Returns
@@ -107,7 +118,7 @@ async def update_bug(data: MainData, authorized: bool = Depends(verify_token)):
     return JSONResponse(content={'Unauthorized'}, status_code=401)
 
 @app.delete('/bug', status_code= 200)
-async def delete_bug(data: DeleteData, authorized: bool = Depends(verify_token)):
+async def delete_bug(data: DeleteDataModel, authorized: bool = Depends(verify_token)):
     """
     Method for handling a delete request on /bug for removing an existing UP in the AI.
     Returns
@@ -125,7 +136,7 @@ async def delete_bug(data: DeleteData, authorized: bool = Depends(verify_token))
     return JSONResponse(content={'Unauthorized'}, status_code=401)
 
 @app.delete('/batch', status_code= 200)
-async def delete_batch(data: DeleteBatchData, authorized: bool = Depends(verify_token)):
+async def delete_batch(data: DeleteBatchDataModel, authorized: bool = Depends(verify_token)):
     """
     Method for handling delete request on /batch, used for deleting a batch of UPs
     Returns
@@ -143,7 +154,7 @@ async def delete_batch(data: DeleteBatchData, authorized: bool = Depends(verify_
     return JSONResponse(content={'Unauthorized'}, status_code=401)
 
 @app.post('/batch', status_code= 200)
-async def insert_batch(data: BatchData, authorized: bool = Depends(verify_token)):
+async def insert_batch(data: BatchDataModel, authorized: bool = Depends(verify_token)):
     """
     Method for handling a post request on '/batch'.
     Used for inserting multiple examples at once.
