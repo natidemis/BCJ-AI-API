@@ -128,9 +128,9 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
          "summary": "string",
          "description": "string",
          "structured_info": {
-                "date": "YYYY-MM-DDD",
-                "k"(optional): int
-         }
+                "date": "YYYY-MM-DDD"
+         },
+         "k"(optional): int
       }
       ``` 
     * Response: a list, "id" with all ids ordered from the closest to the farthest. "dist", a list with the distance values for each ID
