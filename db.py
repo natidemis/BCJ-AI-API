@@ -1,5 +1,6 @@
 # pylint: disable=W0703
 # pylint: disable=C0103
+# pylint: disable=W0622
 """
 @author natidemis
 June 2021
@@ -10,19 +11,65 @@ making query to the database
 
 
 import os
-import asyncio
 from typing import Union, List
+from enum import Enum
 from dotenv import load_dotenv
 import asyncpg
 from log import logger
-from helper import QueryString
+
+
 
 
 load_dotenv()
 
-#Uncomment this line to run on windows
+class QueryString(Enum):
+    """
+    Query strings for the database
+    """
+    INSERT = """
+    INSERT INTO Vectors(id,user_id,embeddings,batch_id)
+    VALUES($1,$2,$3,$4);"""
+    INSERT_USER = """
+    INSERT INTO Users(user_id) VALUES($1) RETURNING *;
+    """
+    FETCH = "SELECT id,embeddings,batch_id FROM Vectors WHERE user_id = $1;"
+    FETCH_USERS = "SELECT user_id from Users;"
+    DELETE = """
+    WITH deleted AS (
+        DELETE FROM Vectors 
+        WHERE id = $1 AND user_id = $2 RETURNING *
+        )
+    SELECT count(*) 
+    FROM deleted;"""
+    UPDATE_EMBS_W_BATCH = """
+    UPDATE Vectors
+    SET embeddings = $1,
+    batch_id = $2
+    WHERE id = $3 AND user_id = $4 RETURNING * ;
+    """
+    UPDATE_BATCH_NO_EMBS = """
+    UPDATE Vectors
+    SET batch_id = $1
+    WHERE id = $2 AND user_id = $3 RETURNING *;
+    """
+    UPDATE_NO_BATCH_W_EMBS = """
+    UPDATE Vectors
+    SET embeddings = $1
+    WHERE id = $2 AND user_id = $3 RETURNING *;
+    """
 
-#asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    DELETE_BATCH = """
+    WITH deleted AS (
+        DELETE FROM Vectors 
+        WHERE batch_id = $1 AND user_id = $2 RETURNING *
+        )
+    SELECT count(*) 
+    FROM deleted;"""
+
+    GET_BATCH_BY_ID = """
+    SELECT * FROM Vectors
+    WHERE batch_id = $1;
+    """
 
 class NotFoundError(Exception):
     """
@@ -62,32 +109,12 @@ class NoUpdatesError(Exception):
         return "{}: {}".format(self.message,self.args)
 
 
-
-class AsyncpgSQL():
-    """
-    Context manager for asyncpg
-    """
-    def __init__(self, url):
-        self._url = url
-        self._conn = None
-
-    async def __aenter__(self):
-        """
-        Connects the database
-        """
-        self._conn = await asyncpg.connect(self._url)
-        return self._conn
-
-    async def __aexit__(self, exc_type, exc, tb): #closing the connection
-        """
-        Closes the database connection
-        """
-        if self._conn:
-            await self._conn.close()
-
 class Database:
     """
     Class for handling database connection and queries
+
+    Class methods:
+    connect_pool
 
     Instance methods:
     make_table
@@ -104,7 +131,7 @@ class Database:
     Instance variables:
     database_url
     """
-    def __init__(self):
+    def __init__(self, pool):
         """
         Initialize Database
 
@@ -119,9 +146,16 @@ class Database:
         -------
         Instance of a Database object
         """
-        self.database_url = os.getenv('DATABASE_URL')
+        self.pool = pool
 
-
+    @classmethod
+    async def connect_pool(cls):
+        """
+        Creates a pool for the database. Database must be initalized using
+        this class method.
+        """
+        pool = await asyncpg.create_pool(os.getenv('DATABASE_URL'), command_timeout=60)
+        return cls(pool=pool)
 
     async def setup_database(self, reset: bool = False) -> bool:
         """
@@ -138,9 +172,8 @@ class Database:
         if reset:
             with open('sql/drop.sql','r') as sql_file:
                 query = sql_file.read()
-            async with AsyncpgSQL(self.database_url) as conn:
+            async with self.pool.acquire() as conn:
                 try:
-                    conn = await asyncpg.connect(self.database_url)
                     await conn.execute(query)
                     logger.info("Dropped table to avoid unnecessary errors.")
                 except Exception:
@@ -150,8 +183,7 @@ class Database:
             query = sql_file.read()
 
         try:
-            async with AsyncpgSQL(self.database_url) as conn:
-                conn = await asyncpg.connect(self.database_url)
+            async with self.pool.acquire() as conn:
                 await conn.execute(query)
                 logger.info("Checking and/or setting up database complete.")
             return True
@@ -187,7 +219,7 @@ class Database:
         None, raises DuplicateKeyError, NotFoundError on exception
         """
         try:
-            async with AsyncpgSQL(self.database_url) as conn:
+            async with self.pool.acquire() as conn:
                 await conn.execute(QueryString.INSERT.value,id,user_id,embeddings,batch_id)
         except asyncpg.exceptions.UniqueViolationError as e:
             logger.error("Duplicate key error: %s for user_id: %s and id: %s",e,user_id,id)
@@ -216,7 +248,7 @@ class Database:
         True if insertion is successful, false otherwise
         """
         try:
-            async with AsyncpgSQL(self.database_url) as conn:
+            async with self.pool.acquire() as conn:
                 await conn.execute(QueryString.INSERT_USER.value,user_id)
         except asyncpg.exceptions.UniqueViolationError as e:
             logger.error("Duplicate key error: %s", e)
@@ -243,7 +275,7 @@ class Database:
         None, raises NotFoundError, Duplicate Error on exception
         """
         try:
-            async with AsyncpgSQL(self.database_url) as conn:
+            async with self.pool.acquire() as conn:
                 await conn.executemany(QueryString.INSERT.value,data)
 
         except asyncpg.exceptions.ForeignKeyViolationError as e:
@@ -272,7 +304,7 @@ class Database:
         a list of dict, Raises NotFoundError is user has no rows to fetch.
         """
         try:
-            async with AsyncpgSQL(self.database_url) as conn:
+            async with self.pool.acquire() as conn:
                 rows = await conn.fetch(QueryString.FETCH.value,user_id)
                 if not rows:
                     raise NotFoundError("Nothing in the Database",rows)
@@ -310,7 +342,7 @@ class Database:
         None, raises NoUpdatesError if nothing is updated.
         """
         try:
-            async with AsyncpgSQL(self.database_url) as conn:
+            async with self.pool.acquire() as conn:
                 if batch_id is not None and embeddings is not None:
                     result = await conn.execute(
                         QueryString.UPDATE_EMBS_W_BATCH.value,
@@ -367,7 +399,7 @@ class Database:
         None, raises NoUpdatesError if no deletion occurs.
         """
 
-        async with AsyncpgSQL(self.database_url) as conn:
+        async with self.pool.acquire() as conn:
             result = await conn.fetch(QueryString.DELETE.value,id,user_id)
             if result[0]['count'] == 0:
                 raise NoUpdatesError('Nothing was changed in the database',(id,user_id))
@@ -391,7 +423,7 @@ class Database:
         None, raises NoUpdatesError if no deletes occur
         """
 
-        async with AsyncpgSQL(self.database_url) as conn:
+        async with self.pool.acquire() as conn:
             result = await conn.fetch(QueryString.DELETE_BATCH.value,batch_id,user_id)
             if result[0]['count'] == 0:
                 raise NoUpdatesError('Nothing was changed in the database',(batch_id,user_id))
@@ -412,15 +444,9 @@ class Database:
         """
 
 
-        async with AsyncpgSQL(self.database_url) as conn:
+        async with self.pool.acquire() as conn:
             rows = await conn.fetch(QueryString.FETCH_USERS.value)
             if not rows:
                 raise NotFoundError("Nothing in the Database")
             logger.info("Fetching all succeeded")
             return [row['user_id'] for row in rows]
-
-
-
-
-
-  
