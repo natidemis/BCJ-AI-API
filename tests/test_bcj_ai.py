@@ -10,6 +10,11 @@ July 2021
 Test module for testing functions in `bcj_ai.py`
 """
 
+############################################################
+# These tests don't work. Issues with pytest-asyncio      ##
+# https://github.com/pytest-dev/pytest-asyncio/issues/157 ##
+############################################################
+
 import sys
 import os
 import random
