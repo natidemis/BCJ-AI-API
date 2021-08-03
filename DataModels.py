@@ -40,7 +40,7 @@ class StructuredInfoMainModel(StructuredInfoBaseModel):
     'structured_info' validator for patch and post on '/bug'
     """
     id: int
-    batch_id: Optional[str] = None
+    batch_id: Optional[int] = None
 
 class StructuredInfoBatchModel(StructuredInfoBaseModel):
     """
