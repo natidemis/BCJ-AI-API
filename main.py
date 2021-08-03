@@ -12,7 +12,6 @@ API for AI web service
 
 import os
 from dotenv import load_dotenv
-import types
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.responses import JSONResponse
 from bcj_ai import BCJAIapi as AI
