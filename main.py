@@ -31,9 +31,7 @@ app = FastAPI()
 
 ai = None
 
-# TODO: Set Limit on summary and description #pylint: disable=W0511
-# TODO: take in command-line-argument to reset the database.
-# TODO: make fetch_vectors and gen_token a setup.py file.
+
 
 def verify_token(req: Request):
     """
