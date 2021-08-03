@@ -12,11 +12,12 @@ API for AI web service
 
 import os
 from dotenv import load_dotenv
+import types
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.responses import JSONResponse
 from bcj_ai import BCJAIapi as AI
 from helper import Message
-from DataModels import (BatchDataModel,
+from datamodels import (BatchDataModel,
                         GetDataModel,
                         MainDataModel,
                         DeleteDataModel,
@@ -52,9 +53,16 @@ def verify_token(req: Request):
 async def startup_event():
     """Setup database"""
     logger.info('Starting application')
-    await Database().setup_database()
+    reset = os.getenv('RESET','RESET=True not in env')
+    await Database().setup_database(reset=reset == 'True')
     global ai 
     ai = await AI()
+
+
+
+@app.on_event("shutdown")
+def shut_down():
+    logger.info("Server shutting down..")
 
 
 @app.get('/bug', status_code=200)
