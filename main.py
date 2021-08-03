@@ -16,7 +16,8 @@ from fastapi.responses import JSONResponse
 from bcj_ai import BCJAIapi as ai
 from helper import Message
 from DataModels import *
-
+from db import Database
+from log import logger
 
 load_dotenv()
 secret_token = os.getenv('SECRET_TOKEN')
@@ -24,7 +25,7 @@ app = FastAPI()
 
 
 ai = ai()
-
+Database().setup_database()
 
 # TODO: Set Limit on summary and description #pylint: disable=W0511
 # TODO: take in command-line-argument to reset the database.
@@ -44,7 +45,19 @@ def verify_token(req: Request):
             detail='Unauthorized'
         )
 
+@app.on_event("startup")
+def startup_event():
+    """Setup database"""
+    logger.info('Starting application')
+    reset = os.getenv('RESET','RESET=True not in env')
 
+
+
+
+
+@app.on_event("shutdown")
+def shut_down():
+    logger.info("Server shutting down..")
 
 @app.get('/bug', status_code=200)
 async def k_most_similar_bugs(data: GetData, authorized: bool = Depends(verify_token)):

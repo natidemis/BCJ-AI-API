@@ -13,10 +13,11 @@ import asyncio
 from typing import Union, List
 from dotenv import load_dotenv
 import asyncpg
+import nest_asyncio
 from log import logger
 from helper import QueryString
 
-
+nest_asyncio.apply()
 load_dotenv()
 
 #Uncomment this line to run on windows
@@ -89,7 +90,6 @@ class Database:
     Class for handling database connection and queries
 
     Class methods:
-    _make_table
     _insert
     _insert_user
     _insert_batch
@@ -134,18 +134,27 @@ class Database:
 
 
 
-    async def _make_table(self) -> bool:
+    async def _setup_database(self, reset: bool = False) -> bool:
         """
-        Class method to create the table
-
+        Instance method to create the table
         Arguments
         ---------
         None
-
         Returns
         -------
         True if table creation successful, false otherwise
         """
+        if reset:
+            with open('sql/drop.sql','r') as sql_file:
+                query = sql_file.read()
+            async with AsyncpgSQL(self.database_url) as conn:
+                try:
+                    conn = await asyncpg.connect(self.database_url)
+                    await conn.execute(query)
+                    logger.info("Dropped table to avoid unnecessary errors.")
+                except Exception:
+                    logger.info("Error dropping table")
+
         with open('sql/schema.sql','r') as sql_file:
             query = sql_file.read()
 
@@ -455,19 +464,7 @@ class Database:
         asyncio.run(self._drop_table())
 
 
-    def make_table(self) -> bool:
-        """
-        Instance method to create the table
-
-        Arguments
-        ---------
-        None
-
-        Returns
-        -------
-        True if table creation successful, false otherwise
-        """
-        return asyncio.run(self._make_table())
+    
 
     def insert(self,
                 id: int,
@@ -637,6 +634,7 @@ class Database:
         a list of ids, raises NotFoundError if no users exist in the database
         """
         #loop = asyncio.get_event_loop()
-        return asyncio.create_task(self._fetch_users())
+        return asyncio.run(self._fetch_users())
 
-  
+    def setup_database(self, reset = False) -> bool:
+        return asyncio.run(self._setup_database(reset=reset))
