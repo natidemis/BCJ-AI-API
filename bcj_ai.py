@@ -11,7 +11,7 @@ API module for Bug Consolidation for Jira (BCJ) AI model.
 Used to store bugs and classify them.
 """
 
-from enum import IntEnum
+from enum import IntEnum, Enum
 import os
 from threading import Lock
 from typing import Tuple, Union
@@ -22,20 +22,7 @@ from dotenv import load_dotenv
 from up_utils.word2vec import Word2Vec
 from up_utils.kdtree import KDTreeUP as KDTree
 from db import Database, NotFoundError,DuplicateKeyError, NoUpdatesError
-from helper import Message
 from log import logger
-
-class AsyncObject(object):
-    """
-    Inheriting this class makes it possible to define an async __init__.
-    """
-    async def __new__(cls, *args, **kwargs):
-        instance = super().__new__(cls)
-        await instance.__init__(*args, **kwargs)
-        return instance
-
-    async def __init__(self):
-        pass
 
 def authenticate_user(fn):
     """
@@ -86,14 +73,34 @@ def get_or_create_user(fn):
             try:
                 with self._lock:
                     await self._database.insert_user(user_id)
-                    self.users.add(user_id)
-                    await self._update_tree_for_user(user_id)
-                    logger.info('Inserted user: %s, new user set: %s',user_id,self.users)
+                self.users.add(user_id)
+                await self._update_tree_for_user(user_id)
+                logger.info('Inserted user: %s, new user set: %s',user_id,self.users)
             except (TypeError, DuplicateKeyError) as e:
                 logger.error('Inserting user: %s failed for err: %s',user_id, e)
                 raise ValueError from e
         return await fn(self, *args, **kwargs)
     return decorator
+
+class BCJMessage(Enum):
+    """
+    BCJMessages for response to http requests
+    """
+    UNPROCESSABLE_INPUT = 'Something is wrong with the inserted data.'
+    VALID_INPUT = 'Valid input, check status for result'
+    FAILURE = ('''Data not in proper format, read the requirement on github:
+    https://github.com/natidemis/BCJ-AI-API''')
+    UNFULFILLED_REQ = 'Either summary or description must have length > 0'
+    UNAUTHORIZED = 'Unauthorized, wrong token'
+    REMOVED = 'Successfully removed'
+    DUPLICATE_ID = "This Id already exists for the given user"
+    DUPLICATE_ID_BATCH = "One of the given bug Id's already exists for this user"
+    NO_EXAMPLE = 'There is no example with the the given ID for this user.'
+    INVALID_ID_OR_DATE = ("Either the id already exists or "
+                "the given date is not valid")
+    NO_USER = "User not available."
+    NO_UPDATES = "There were no updates to make."
+    NO_DELETION = "There was nothing to delete for the given (user_id, id) pair."
 
 
 class BCJStatus(IntEnum):
@@ -105,11 +112,14 @@ class BCJStatus(IntEnum):
     ERROR = 500
     BAD_REQUEST = 400
 
-class BCJAIapi(AsyncObject):
+class BCJAIapi:
     """
     API class for AI
 
-    Class variables:
+    Class methods:
+    initialize
+
+    Private variables:
         _lock: threading.Lock
             Semaphore for locking certain resources
         _database: db.Database
@@ -127,7 +137,7 @@ class BCJAIapi(AsyncObject):
         kdtree: up_utils.kdtree
             nearest neighbour look up
 
-    Class methods:
+    Private methods:
         _restructure_tree
         _update_tree_for_user
     Instance methods:
@@ -139,7 +149,7 @@ class BCJAIapi(AsyncObject):
         add_batch
     """
 
-    async def __init__(self):
+    def __init__(self, users: set, database: Database):
         """
         Initialize the AI model from disk; read embedding vectors from disk;
         get ready for classifying bugs and returning similar bug ids.
@@ -149,12 +159,9 @@ class BCJAIapi(AsyncObject):
         None
         """
         self._lock = Lock()
-        self._database = Database()
+        self._database = database
         self._model = tf.keras.models.load_model('Models', compile=False)
-        try:
-            self.users = set(await self._database.fetch_users())
-        except NotFoundError:
-            self.users = set()
+        self.users = users
         self.kdtree = None
         self.current_user = None
         load_dotenv()
@@ -169,7 +176,17 @@ class BCJAIapi(AsyncObject):
             commoncrawl_path=COMMONCRAWL_PATH,
             googlenews_path=GOOGLENEWS_PATH)
 
-
+    @classmethod
+    async def initalize(cls):
+        """
+        Initialize database and fetch all users in db.
+        """
+        database = await Database.connect_pool()
+        try:
+            users = set(await database.fetch_users())
+        except NotFoundError:
+            users = set()
+        return cls(users,database)
 
     def _restructure_tree(self,new_data: list) -> KDTree:
         """
@@ -256,7 +273,7 @@ class BCJAIapi(AsyncObject):
             vec= self._model.predict(np.array([self._w2v.get_sentence_matrix(data)]))
         except Exception:
             logger.error('Data is invalid.')
-            return BCJStatus.NOT_FOUND, Message.UNPROCESSABLE_INPUT
+            return BCJStatus.NOT_FOUND, BCJMessage.UNPROCESSABLE_INPUT
 
         with self. _lock:
             dists,ids = self.kdtree.query(vec, k=k)
@@ -273,7 +290,7 @@ class BCJAIapi(AsyncObject):
                 user_id: int,
                 structured_info: dict,
                 summary: str=None,
-                description: str=None) -> Tuple[BCJStatus, Message]:
+                description: str=None) -> Tuple[BCJStatus, BCJMessage]:
         """
         Add a bug with given summary, description and structured information.
         Here it is assumed that all the data
@@ -299,7 +316,7 @@ class BCJAIapi(AsyncObject):
 
         Returns
         -------
-        BCJStatus, Message
+        BCJStatus, BCJMessage
 
         """
         assert bool(description) or bool(summary)
@@ -311,7 +328,7 @@ class BCJAIapi(AsyncObject):
             embeddings= self._model.predict(np.array([self._w2v.get_sentence_matrix(data)]))
         except Exception:
             logger.error('Data is invalid.')
-            return BCJStatus.NOT_FOUND, Message.UNPROCESSABLE_INPUT
+            return BCJStatus.NOT_FOUND, BCJMessage.UNPROCESSABLE_INPUT
 
         with self._lock:
             try:
@@ -320,7 +337,7 @@ class BCJAIapi(AsyncObject):
                             embeddings=embeddings,
                             batch_id=batch_id)
             except DuplicateKeyError:
-                return BCJStatus.BAD_REQUEST, Message.DUPLICATE_ID
+                return BCJStatus.BAD_REQUEST, BCJMessage.DUPLICATE_ID
 
 
         with self._lock:
@@ -329,10 +346,10 @@ class BCJAIapi(AsyncObject):
             else:
                 self.kdtree.update(embeddings, structured_info['id'])
 
-        return BCJStatus.OK, Message.VALID_INPUT
+        return BCJStatus.OK, BCJMessage.VALID_INPUT
 
     @authenticate_user
-    async def remove_bug(self,user_id: int, id: int) -> Tuple[BCJStatus, Message]: #pylint: disable=redefined-builtin
+    async def remove_bug(self,user_id: int, id: int) -> Tuple[BCJStatus, BCJMessage]: #pylint: disable=redefined-builtin
         """
         Remove a bug with idx as its id.
 
@@ -345,23 +362,23 @@ class BCJAIapi(AsyncObject):
 
         Returns
         -------
-        BCJstatus, Message
+        BCJstatus, BCJMessage
         """
 
         with self._lock:
             try:
                 await self._database.delete(id=id,user_id=user_id)
             except NoUpdatesError:
-                return BCJStatus.NOT_FOUND, Message.VALID_INPUT
+                return BCJStatus.NOT_FOUND, BCJMessage.VALID_INPUT
         await self._update_tree_for_user(user_id)
-        return BCJStatus.OK, Message.VALID_INPUT
+        return BCJStatus.OK, BCJMessage.VALID_INPUT
 
     @authenticate_user
     async def update_bug(self,
                     user_id: int,
                     structured_info: dict,
                     summary: str=None,
-                    description: str=None) -> Tuple[BCJStatus, Message]:
+                    description: str=None) -> Tuple[BCJStatus, BCJMessage]:
         """
         Updates a bug with the parameters given. The id of the bug should be in structured_info.
 
@@ -383,7 +400,7 @@ class BCJAIapi(AsyncObject):
 
         Returns
         -------
-        BCJStatus, Message
+        BCJStatus, BCJMessage
         """
 
         #Gætum þurft að breyta ef 'DATE' þarf að fara í gervigreindina
@@ -393,16 +410,16 @@ class BCJAIapi(AsyncObject):
         #We can't vectorize the update without a summary or a description
         if not bool(summary) and not bool(description):
             if 'batch_id' not in structured_info:
-                return BCJStatus.NOT_FOUND, Message.NO_UPDATES
+                return BCJStatus.NOT_FOUND, BCJMessage.NO_UPDATES
             with self._lock:
                 try:
                     if 'batch_id' in structured_info:
                         await self._database.update(id=structured_info['id'],
                                         user_id=user_id,
                                         batch_id=batch_id)
-                        return BCJStatus.OK, Message.VALID_INPUT
+                        return BCJStatus.OK, BCJMessage.VALID_INPUT
                 except NoUpdatesError:
-                    return BCJStatus.NOT_FOUND, Message.NO_UPDATES
+                    return BCJStatus.NOT_FOUND, BCJMessage.NO_UPDATES
 
         #clean data and vectorize
         data = bleach.clean(description) if bool(description) \
@@ -411,7 +428,7 @@ class BCJAIapi(AsyncObject):
             embeddings= self._model.predict(np.array([self._w2v.get_sentence_matrix(data)]))
         except Exception:
             logger.error('Data is invalid.')
-            return BCJStatus.NOT_FOUND, Message.UNPROCESSABLE_INPUT
+            return BCJStatus.NOT_FOUND, BCJMessage.UNPROCESSABLE_INPUT
 
         with self._lock:
             try:
@@ -420,14 +437,14 @@ class BCJAIapi(AsyncObject):
                                 embeddings=embeddings,
                                 batch_id=batch_id)
             except(TypeError, NoUpdatesError):
-                return BCJStatus.NOT_FOUND, Message.NO_UPDATES
+                return BCJStatus.NOT_FOUND, BCJMessage.NO_UPDATES
 
         await self._update_tree_for_user(user_id)
 
-        return BCJStatus.OK, Message.VALID_INPUT
+        return BCJStatus.OK, BCJMessage.VALID_INPUT
 
     @authenticate_user
-    async def remove_batch(self,user_id: int, batch_id: int) -> Tuple[BCJStatus, Message]:
+    async def remove_batch(self,user_id: int, batch_id: int) -> Tuple[BCJStatus, BCJMessage]:
         """
         Removes a batch of bugs. The batch's id is idx.
 
@@ -440,20 +457,20 @@ class BCJAIapi(AsyncObject):
 
         Returns
         -------
-        BCJStatus, Message
+        BCJStatus, BCJMessage
         """
         with self._lock:
             try:
                 await self._database.delete_batch(batch_id,user_id)
             except NoUpdatesError:
-                return BCJStatus.ERROR, Message.NO_DELETION
+                return BCJStatus.ERROR, BCJMessage.NO_DELETION
 
         await self._update_tree_for_user(user_id)
 
-        return BCJStatus.OK, Message.VALID_INPUT
+        return BCJStatus.OK, BCJMessage.VALID_INPUT
 
     @get_or_create_user
-    async def add_batch(self,user_id: int, data: list) -> Tuple[BCJStatus, Message]:
+    async def add_batch(self,user_id: int, data: list) -> Tuple[BCJStatus, BCJMessage]:
         """
         Adds a batch to the database and updates the KD-Tree
 
@@ -476,7 +493,7 @@ class BCJAIapi(AsyncObject):
 
         Returns
         -------
-        BCJStatus, Message
+        BCJStatus, BCJMessage
         """
         #All batch_ids but be the same, as it is, a "batch"
         assert all(d['structured_info']['batch_id'] == data[0]['structured_info']['batch_id']
@@ -495,7 +512,7 @@ class BCJAIapi(AsyncObject):
             embeddings = self._model.predict(np.array(self._w2v.get_sentence_matrix(sentences)))
         except Exception:
             logger.error('Data is invalid.')
-            return BCJStatus.NOT_FOUND, Message.UNPROCESSABLE_INPUT
+            return BCJStatus.NOT_FOUND, BCJMessage.UNPROCESSABLE_INPUT
         batch_data = [(bug['structured_info']['id'],user_id,
                             embedding,bug['structured_info']['batch_id'])
                             for bug, embedding in zip(data, embeddings)]
@@ -503,7 +520,7 @@ class BCJAIapi(AsyncObject):
             try:
                 await self._database.insert_batch(batch_data)
             except DuplicateKeyError:
-                return BCJStatus.BAD_REQUEST, Message.DUPLICATE_ID_BATCH
+                return BCJStatus.BAD_REQUEST, BCJMessage.DUPLICATE_ID_BATCH
 
         await self._update_tree_for_user(user_id)
-        return BCJStatus.OK, Message.VALID_INPUT
+        return BCJStatus.OK, BCJMessage.VALID_INPUT
