@@ -15,9 +15,7 @@ from dotenv import load_dotenv
 import asyncpg
 from log import logger
 from helper import QueryString
-import nest_asyncio
 
-nest_asyncio.apply()
 
 load_dotenv()
 
@@ -638,7 +636,7 @@ class Database:
         -------
         a list of ids, raises NotFoundError if no users exist in the database
         """
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(self._fetch_users())
+        #loop = asyncio.get_event_loop()
+        return asyncio.create_task(self._fetch_users())
 
   
