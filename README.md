@@ -30,6 +30,8 @@ Artificial Intelligence API for usability problems.
 - Run `setup.py` to generate a secret token and install the google_news bin file.
     * The token appears in the enviroment file ``.env``
     * The token has to be in header as bearer token when making HTTP requests to the server
+- Resetting the database on startup
+  - To reset the database, simply add `Reset=True` in `.env` 
 - Start the app locally with `uvicorn main:app`
 ### Postgres
 * Install postgresql [here](https://www.google.com/search?q=install+postgresql&oq=install+postgresql&aqs=chrome.0.69i59j35i39j0j0i20i263j0l2j69i60l2.2572j0j7&sourceid=chrome&ie=UTF-8) along with [pgadmin4](https://www.pgadmin.org/download/) in order to manage the database interactively.
