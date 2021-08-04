@@ -27,10 +27,10 @@ Artificial Intelligence API for usability problems.
 - If the above step failed to properly install all packages, install pipenv by writing `pip install pipenv` into the terminal and then run `pipenv install` to install using the pipfile
    * Note that if both steps fail, it may be worth trying to remove the specified versions of some of the packages to install their latest versions.
     
-- Run `gentoken.py` to generate a secret token
-    * The token appears in a new file called ``.env``
+- Run `setup.py` to generate a secret token and install the google_news bin file.
+    * The token appears in the enviroment file ``.env``
     * The token has to be in header as bearer token when making HTTP requests to the server
-
+- Start the app locally with `uvicorn main:app`
 ### Postgres
 * Install postgresql [here](https://www.google.com/search?q=install+postgresql&oq=install+postgresql&aqs=chrome.0.69i59j35i39j0j0i20i263j0l2j69i60l2.2572j0j7&sourceid=chrome&ie=UTF-8) along with [pgadmin4](https://www.pgadmin.org/download/) in order to manage the database interactively.
 
@@ -128,9 +128,9 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
          "summary": "string",
          "description": "string",
          "structured_info": {
-                "date": "YYYY-MM-DDD",
-                "k"(optional): int
-         }
+                "date": "YYYY-MM-DDD"
+         },
+         "k"(optional): int
       }
       ``` 
     * Response: a list, "id" with all ids ordered from the closest to the farthest. "dist", a list with the distance values for each ID
