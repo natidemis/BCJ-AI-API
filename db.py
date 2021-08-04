@@ -235,7 +235,7 @@ class Database:
         except asyncpg.exceptions.ForeignKeyViolationError as e:
             logger.error('User_id does not exist in the Users database: %s,'
             'exception: %s',user_id,e)
-            raise NotFoundError('122 User not in database: %s' % e,(id,user_id)) from e
+            raise NotFoundError('User not in database: %s' % e,(id,user_id)) from e
         except asyncpg.exceptions.DataError as e:
             logger.error("Incorrect type inserted: %s",e)
         except asyncpg.exceptions.PostgresSyntaxError as e:
