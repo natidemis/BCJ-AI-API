@@ -20,11 +20,11 @@ import sys
 import os
 import random
 import pytest
-
+import numpy as np
 myPath = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, myPath + '/../')
 
-from db import NotFoundError, DuplicateKeyError
+from db import NotFoundError, DuplicateKeyError, Database
 
 
 ################
@@ -59,7 +59,19 @@ def duplicate_data(rng):
                 [rng.random(128) for _ in range(N)],
                 [random.choice([range(1,N),None]) for _ in range(N)])
 
+@pytest.fixture
+async def database():
+    """
+    Class to access and operate on the database.
+    Used in conjunction with 'ai'
+    """
+    db = await Database.connect_pool()
+    return db
 
+@pytest.fixture
+def rng():
+    """ Return default random generator """
+    return np.random.default_rng()
 
 ###################
 ### db.insert() ###
@@ -76,13 +88,13 @@ async def test_valid_insert(database, valid_data):
         - inserting random valid input
     """
     await database.setup_database(reset=True)
-    for _id,user_id,embeddings,batch_id in valid_data:
+    for id ,user_id,embeddings,batch_id in valid_data:
         await database.insert_user(user_id=user_id)
-        await database.insert(_id=_id,
+        await database.insert(id=id,
                         user_id=user_id,
                         embeddings=embeddings,
                         batch_id=batch_id)
-
+    await database.close_pool()
 
 
 async def test_invalid_insert_no_user(database, valid_data):
@@ -95,16 +107,16 @@ async def test_invalid_insert_no_user(database, valid_data):
 
     """
     await database.setup_database(reset=True)
-    for _id,user_id,embeddings,batch_id in valid_data:
+    for id,user_id,embeddings,batch_id in valid_data:
         try:
-            await database.insert(_id=_id,
+            await database.insert(id=id,
                         user_id=user_id,
                         embeddings=embeddings,
                         batch_id=batch_id)
             assert False
         except(NotFoundError, DuplicateKeyError):
             assert True
-
+    await database.close_pool()
 
 
 async def test_invalid_insert_duplicate_key(database, duplicate_data):
@@ -120,16 +132,16 @@ async def test_invalid_insert_duplicate_key(database, duplicate_data):
     await database.insert_user(1)
 
     await database.insert(1,1,[1,2])
-    for _id,user_id,embeddings,batch_id in duplicate_data:
+    for id,user_id,embeddings,batch_id in duplicate_data:
         try:
-            await database.insert(_id=_id,
+            await database.insert(id=id,
                         user_id=user_id,
                         embeddings=embeddings,
                         batch_id=batch_id)
             assert False
         except:
             assert True
-
+    await database.close_pool()
 
 ########################
 ### db.insert_user() ###
@@ -152,6 +164,7 @@ async def test_invalid_insert_user_duplicate_key(database):
             assert False
         except:
             assert True
+    await database.close_pool()
 
 async def test_invalid_insert_user_typeError(database):
     """
@@ -172,6 +185,7 @@ async def test_invalid_insert_user_typeError(database):
             assert False
         except:
             assert True
+    await database.close_pool()
 
 #########################
 ### db.insert_batch() ###
@@ -191,6 +205,7 @@ async def test_valid_insert_batch(database,valid_data):
         await database.insert_user(user_id)
         data.append((_id,user_id,embeddings,1))
     await database.insert_batch(data)
+    await database.close_pool()
 
 
 
@@ -213,6 +228,7 @@ async def test_fetch_all_empty(database):
         assert False
     except:
         assert True
+    await database.close_pool()
 
 async def test_fetch_all_w_data(database, valid_data):
     """
@@ -223,14 +239,14 @@ async def test_fetch_all_w_data(database, valid_data):
         - inserting random valid input
     """
     await database.setup_database(reset=True)
-    for _id,user_id,embeddings,batch_id in valid_data:
+    for id,user_id,embeddings,batch_id in valid_data:
         await database.insert_user(user_id=user_id)
-        await database.insert(_id=_id,
+        await database.insert(id=id,
                         user_id=user_id,
                         embeddings=embeddings,
                         batch_id=batch_id)
         assert isinstance(await database.fetch_all(user_id=user_id),list)
-
+    await database.close_pool()
 
 ###################
 ### db.update() ###
@@ -242,11 +258,13 @@ async def test_valid_all_updates(database, valid_data,rng):
     ------------
     Tests all combination of possible updates
     """
-    test_valid_insert(database,valid_data)
+    
+    await test_valid_insert(database,valid_data)
+    database = await Database.connect_pool()
     for embeddings in [rng.random(128),None]:
         for batch_id in [random.randint(0,100),None]:
             await database.update(0,0,embeddings,batch_id)
-
+    await database.close_pool()
 
 
 async def test_updates_no_user(database,valid_data):
@@ -264,6 +282,7 @@ async def test_updates_no_user(database,valid_data):
             assert False
         except:
             assert True
+    await database.close_pool()
 
 ####################
 ### db.delete() ###
@@ -278,7 +297,8 @@ async def test_delete_valid(database,valid_data):
     test_valid_insert(database,valid_data)
     N = 10
     for idx in range(N):
-        await database.delete(_id=idx,user_id=idx)
+        await database.delete(id=idx,user_id=idx)
+    await database.close_pool()
 
 async def test_delete_invalid(database,valid_data):
     """
@@ -295,23 +315,25 @@ async def test_delete_invalid(database,valid_data):
             assert False
         except:
             assert True
+    await database.close_pool()
 
 ####################
 ### db.delete() ###
 ###################
 
-async def test_delete_batch_valid(database,valid_data):
+async def test_delete_batch_valid(database, valid_data):
     """
     @db.delete_batch()
 
     Tests for deleting existing data
     """
-    test_valid_insert_batch(database,valid_data)
+    await test_valid_insert_batch(database,valid_data)
+    database = await Database.connect_pool()
     N = 10
     batch_id = 1
     for idx in range(N):
         await database.delete_batch(batch_id=batch_id,user_id=idx)
-
+    await database.close_pool()
 
 async def test_delete_batch_invalid(database,valid_data):
     """
@@ -328,6 +350,7 @@ async def test_delete_batch_invalid(database,valid_data):
             assert False
         except:
             assert True
+    await database.close_pool()
 
 ########################
 ### db.fetch_users() ###
@@ -344,6 +367,7 @@ async def test_fetch_users_empty(database):
         assert False
     except:
         assert True
+    await database.close_pool()
 
 async def test_fetch_users_not_empty(database):
     """
@@ -355,3 +379,4 @@ async def test_fetch_users_not_empty(database):
         await database.insert_user(i)
 
     assert isinstance(await database.fetch_users(),list)
+    await database.close_pool()

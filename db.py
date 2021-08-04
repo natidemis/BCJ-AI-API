@@ -117,7 +117,7 @@ class Database:
     connect_pool
 
     Instance methods:
-    make_table
+    setup_database
     insert
     insert_user
     insert_batch
@@ -126,12 +126,13 @@ class Database:
     delete
     delete_batch
     fetch_users
-    drop_table
+    close_pool
+    
 
     Instance variables:
-    database_url
+    pool
     """
-    def __init__(self, pool):
+    def __init__(self, pool: asyncpg.Pool):
         """
         Initialize Database
 
@@ -156,6 +157,13 @@ class Database:
         """
         pool = await asyncpg.create_pool(os.getenv('DATABASE_URL'), command_timeout=60)
         return cls(pool=pool)
+    
+    async def close_pool(self):
+        """
+        Close the pool connection
+        """
+        await self.pool.close()
+
 
     async def setup_database(self, reset: bool = False) -> bool:
         """
