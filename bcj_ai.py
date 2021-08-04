@@ -262,7 +262,7 @@ class BCJAIapi:
         data = bleach.clean(description) if bool(description) \
             else bleach.clean(summary)
         if self.kdtree is None:
-            return BCJStatus.NOT_FOUND, 'No examples available'
+            return BCJStatus.NOT_FOUND, {'details': 'No examples available'}
 
         N = len(self.kdtree.indices)
         k = min(k,N)
