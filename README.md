@@ -27,8 +27,8 @@ Artificial Intelligence API for usability problems.
 - If the above step failed to properly install all packages, install pipenv by writing `pip install pipenv` into the terminal and then run `pipenv install` to install using the pipfile
    * Note that if both steps fail, it may be worth trying to remove the specified versions of some of the packages to install their latest versions.
     
-- Run `gentoken.py` to generate a secret token
-    * The token appears in a new file called ``.env``
+- Run `setup.py` to generate a secret token and install the google_news bin file.
+    * The token appears in the enviroment file ``.env``
     * The token has to be in header as bearer token when making HTTP requests to the server
 
 ### Postgres
