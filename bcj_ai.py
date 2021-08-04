@@ -163,7 +163,6 @@ class BCJAIapi:
         self.users = users
         self.kdtree = None
         self.current_user = None
-        load_dotenv()
         OUTPUT_FILE = os.getenv('OUTPUT_FILE')
         DATASET = os.getenv('DATASET') # Dataset can either be googlenews or commoncrawl
         COMMONCRAWL_PATH = os.getenv('COMMONCRAWL_PATH')
