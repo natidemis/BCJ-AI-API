@@ -27,17 +27,13 @@ import pandas as pd
 myPath = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, myPath + '/../')
 
-from bcj_ai import BCJAIapi, BCJStatus
-from helper import Message
+from bcj_ai import BCJAIapi, BCJStatus, BCJMessage
+
 from db import Database, NotFoundError
 ################
 ### FIXTURES ###
 ################
-@pytest.fixture
-@pytest.mark.asyncio
-async def ai():
-    bcjai = await BCJAIapi()
-    return bcjai
+
 
 @pytest.fixture
 def database():
@@ -153,12 +149,17 @@ def N():
     return 30
 
 @pytest.fixture
-def database():
+async def database():
     """
     Class to access and operate on the database.
     Used in conjunction with 'ai'
     """
-    return Database()
+    db = await Database.connect_pool()
+    return db
+@pytest.fixture
+async def ai(database):
+    bcjai = await BCJAIapi.initalize(database)
+    return bcjai
 
 @pytest.fixture
 def invalid_batch_data(get_random_date):
@@ -219,6 +220,7 @@ async def test_add_bug_no_desc_and_summ_available(ai,database, no_desc_and_summ)
         except AssertionError:
             assert True
     await database.setup_database(reset=True)
+    await database.close_pool()
 
 @pytest.mark.asyncio
 async def test_add_bug_duplicate_key(ai,duplicate_key_data,database):
@@ -238,8 +240,9 @@ async def test_add_bug_duplicate_key(ai,duplicate_key_data,database):
                         summary="summary",#summ = None
                         description="description") #disc = None
         assert BCJStatus.BAD_REQUEST == status and \
-            Message.DUPLICATE_ID == message
+            BCJMessage.DUPLICATE_ID == message
     await database.setup_database(reset=True)
+    await database.close_pool()
 
 @pytest.mark.asyncio
 async def test_add_bug_valid_data(ai,valid_data,database):
@@ -259,10 +262,10 @@ async def test_add_bug_valid_data(ai,valid_data,database):
                                     summary=summ,#summ = None
                                     description=disc) #disc = None
         assert BCJStatus.OK == status and \
-            Message.VALID_INPUT == message
+            BCJMessage.VALID_INPUT == message
 
     await database.setup_database(reset=True)
-
+    await database.close_pool()
 
 ###############################
 ### ai.get_similar_bugs_k() ###
@@ -296,6 +299,7 @@ async def test_similar_bugs_k_no_desc_and_summ_available(ai,no_desc_and_summ,dat
             assert True
 
     await database.setup_database(reset=True)
+    await database.close_pool()
 
 @pytest.mark.asyncio
 async def test_similar_bugs_k_no_data(ai,database,N):
@@ -331,6 +335,7 @@ async def test_similar_bugs_k_no_data(ai,database,N):
 
 
     await database.setup_database(reset=True)
+    await database.close_pool()
 
 @pytest.mark.asyncio
 async def test_similar_bugs_k_valid_input_no_k(ai,valid_data,database):
@@ -338,8 +343,7 @@ async def test_similar_bugs_k_valid_input_no_k(ai,valid_data,database):
     @ai.add_bug()
     Tests for fetching 'k' most similar with the default value for k.
     """
-    database.drop_table()
-    database.make_table()
+    await database.setup_database(reset=True)
     ai.users = set()
     k = 5 #default value for k in get_similar_bugs_k
     num = 0 #number of bugs in the database
@@ -358,6 +362,7 @@ async def test_similar_bugs_k_valid_input_no_k(ai,valid_data,database):
         assert BCJStatus.OK == status and isinstance(res, dict) \
             and len(res['id']) == len(res['dist']) == min(k,num)
     await database.setup_database(reset=True)
+    await database.close_pool()
 
 @pytest.mark.asyncio
 async def test_similar_bugs_k_valid_input_w_k(ai,valid_data,database,N):
@@ -386,6 +391,8 @@ async def test_similar_bugs_k_valid_input_w_k(ai,valid_data,database,N):
         assert BCJStatus.OK == status and isinstance(res, dict) \
             and len(res['id']) == len(res['dist']) == min(k,num)
     await database.setup_database(reset=True)
+    await database.close_pool()
+
 
 ###############################
 ### ai.remove_bug() ###########
@@ -406,9 +413,10 @@ async def test_remove_bug_valid_delete(ai,database,N):
             description="description")
         status, message = await ai.remove_bug(id=i,user_id=1)
         assert BCJStatus.OK == status and \
-            Message.VALID_INPUT == message
+            BCJMessage.VALID_INPUT == message
 
     await database.setup_database(reset=True)
+    await database.close_pool()
 
 @pytest.mark.asyncio
 async def test_remove_bug_no_valid_id(ai,database,N):
@@ -426,9 +434,10 @@ async def test_remove_bug_no_valid_id(ai,database,N):
     for _ in range(N):
         status, message = await ai.remove_bug(id=random.randint(2,N),user_id=1)
         assert BCJStatus.NOT_FOUND == status and \
-            Message.VALID_INPUT == message
+            BCJMessage.VALID_INPUT == message
 
     await database.setup_database(reset=True)
+    await database.close_pool()
 
 ###############################
 ### ai.update_bug() ###########
@@ -448,9 +457,10 @@ async def test_update_bug_no_summ_and_desc_update_batch_id(ai,database):
 
     status, message = await ai.update_bug(user_id=1,structured_info={'id': 1,'batch_id': 1})
     assert BCJStatus.OK == status and \
-        Message.VALID_INPUT == message
+        BCJMessage.VALID_INPUT == message
 
     await database.setup_database(reset=True)
+    await database.close_pool()
 
 @pytest.mark.asyncio
 async def test_update_bug_no_summ_and_desc_update_batch_id_to_none(ai,database,N):
@@ -466,8 +476,9 @@ async def test_update_bug_no_summ_and_desc_update_batch_id_to_none(ai,database,N
                 summary="summary", description= "description")
         status, message = await ai.update_bug(user_id=i,structured_info={'id': 1, 'batch_id': None})
         assert status == BCJStatus.OK and message == \
-            Message.VALID_INPUT
+            BCJMessage.VALID_INPUT
     await database.setup_database(reset=True)
+    await database.close_pool()
 
 @pytest.mark.asyncio
 async def test_update_bug_no_summ_and_desc_update_nothing(ai,database,N):
@@ -483,8 +494,9 @@ async def test_update_bug_no_summ_and_desc_update_nothing(ai,database,N):
                 summary="summary", description= "description")
         status, message = await ai.update_bug(user_id=i,structured_info={'id': 1})
         assert status == BCJStatus.NOT_FOUND and message == \
-            Message.NO_UPDATES
+            BCJMessage.NO_UPDATES
     await database.setup_database(reset=True)
+    await database.close_pool()
 
 
 @pytest.mark.asyncio
@@ -504,8 +516,9 @@ async def test_update_bug_on_non_existing_data(ai,database,N):
                                         summary="summary",
                                         description= "description")
         assert status == BCJStatus.NOT_FOUND and message == \
-            Message.NO_UPDATES
+            BCJMessage.NO_UPDATES
     await database.setup_database(reset=True)
+    await database.close_pool()
 
 @pytest.mark.asyncio
 async def test_update_bug_on_valid_data(ai,database,N):
@@ -528,9 +541,9 @@ async def test_update_bug_on_valid_data(ai,database,N):
                                         structured_info={'id': 1},
                                         summary="new summary")
         assert status == BCJStatus.OK and message == \
-            Message.VALID_INPUT
+            BCJMessage.VALID_INPUT
     await database.setup_database(reset=True)
-
+    await database.close_pool()
 
 ###############################
 ### ai.add_batch() ############
@@ -552,7 +565,8 @@ async def test_add_batch_valid_data(ai,database, valid_batch_data):
     }
     status, message = await ai.add_batch(**data)
     assert status == BCJStatus.OK and \
-        message == Message.VALID_INPUT
+        message == BCJMessage.VALID_INPUT
+    await database.close_pool()
 
 @pytest.mark.asyncio
 async def test_add_batch_valid_data_batch_id_error(ai, database, invalid_batch_data):
@@ -574,6 +588,7 @@ async def test_add_batch_valid_data_batch_id_error(ai, database, invalid_batch_d
         assert False
     except AssertionError:
         assert True
+    await database.close_pool()
 
 
 @pytest.mark.asyncio
@@ -597,6 +612,7 @@ async def test_add_batch_valid_data_missing_text(ai, database, invalid_batch_dat
         assert False
     except AssertionError:
         assert True
+    await database.close_pool()
 
 @pytest.mark.asyncio
 async def test_add_batch_duplicate_key(ai, database, duplicate_id_batch_data):
@@ -617,7 +633,8 @@ async def test_add_batch_duplicate_key(ai, database, duplicate_id_batch_data):
 
     status, message = await ai.add_batch(**data)
     assert status == BCJStatus.BAD_REQUEST and \
-        message == Message.DUPLICATE_ID_BATCH
+        message == BCJMessage.DUPLICATE_ID_BATCH
+    await database.close_pool()
 
 ##################################
 ### ai.delete_batch() ############
@@ -643,8 +660,8 @@ async def test_remove_batch_no_updates(ai, database,valid_batch_data):
 
     status, message = await ai.remove_batch(user_id=user,batch_id=2)
     assert status == BCJStatus.ERROR and \
-        message == Message.NO_DELETION
-
+        message == BCJMessage.NO_DELETION
+    await database.close_pool()
 
 @pytest.mark.asyncio
 async def test_remove_batch_valid_remove(ai, database,valid_batch_data):
@@ -666,7 +683,8 @@ async def test_remove_batch_valid_remove(ai, database,valid_batch_data):
 
     status, message = await ai.remove_batch(user_id=user,batch_id=1)
     assert status == BCJStatus.OK and \
-        message == Message.VALID_INPUT
+        message == BCJMessage.VALID_INPUT
+    await database.close_pool()
 
 #############################################
 ### KDTree and Database cohesion ############
@@ -692,7 +710,7 @@ async def test_db_and_kdtree_equivalency_on_delete(ai,valid_batch_data,database,
     }
     #add a batch and assert that kdtree and database contains same data.
     await ai.add_batch(**data)
-    db_data = database.fetch_all(user)
+    db_data = await database.fetch_all(user)
     db_ids = [data['id'] for data in db_data]
     db_embeddings = []
     db_embeddings = [data['embeddings'] for data in db_data]
@@ -703,7 +721,7 @@ async def test_db_and_kdtree_equivalency_on_delete(ai,valid_batch_data,database,
     #delete values and assert that kdtree and database contain the same data
     for i in range(N):
         await ai.remove_bug(user_id=user, id=i)
-        db_data = database.fetch_all(user)
+        db_data = await database.fetch_all(user)
         kdtree_ids = ai.kdtree.local_indices.tolist()
         kdtree_embeddings = ai.kdtree.data.tolist()
         db_ids = [data['id'] for data in db_data]
@@ -717,6 +735,7 @@ async def test_db_and_kdtree_equivalency_on_delete(ai,valid_batch_data,database,
         assert False
     except NotFoundError:
         assert ai.kdtree is None
+    await database.close_pool()
 
 @pytest.mark.asyncio
 async def test_kdtree_and_db_equivalency_multiple_users(ai,database):
@@ -727,7 +746,6 @@ async def test_kdtree_and_db_equivalency_multiple_users(ai,database):
     await database.setup_database(reset=True)
     ai.users = set()
 
-    ##
     first_user = 1
     for _id in range(2):
         await ai.add_bug(user_id= first_user,
@@ -758,6 +776,7 @@ async def test_kdtree_and_db_equivalency_multiple_users(ai,database):
         db_embeddings.extend(data['embeddings'])
     assert kdtree_embeddings == db_embeddings and db_ids == kdtree_ids
     assert len(kdtree_ids) == 1 and len(kdtree_embeddings) == 1
+    await database.close_pool()
 
 
 @pytest.mark.asyncio
@@ -788,7 +807,7 @@ async def test_kdtree_and_db_equivalency_update_bug(ai,database):
                     description='new description'
         )
 
-    db_data = database.fetch_all(user)
+    db_data = await database.fetch_all(user)
     db_ids = [data['id'] for data in db_data]
     db_embeddings = []
     for data in db_data:
@@ -796,3 +815,4 @@ async def test_kdtree_and_db_equivalency_update_bug(ai,database):
     kdtree_ids = ai.kdtree.local_indices.tolist()
     kdtree_embeddings = ai.kdtree.data.tolist()
     assert kdtree_embeddings == db_embeddings and db_ids == kdtree_ids
+    await database.close_pool()

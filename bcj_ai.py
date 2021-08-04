@@ -42,7 +42,7 @@ def authenticate_user(fn):
         if user_id in self.users:
             if self.current_user != user_id:
                 await self._update_tree_for_user(user_id)
-            logger.info('User: %s in database: %s. Auth succeeded.',user_id,self.users)
+            logger.debug('User: %s in database: %s. Auth succeeded.',user_id,self.users)
         else:
             logger.error('User: %s not in database: %s, Auth failed',user_id,self.users)
             raise ValueError('User not available')
@@ -66,7 +66,6 @@ def get_or_create_user(fn):
     async def decorator(self, *args, **kwargs):
         user_id = kwargs.get('user_id')
         if user_id in self.users:
-            logger.info("user alread IN!")
             if self.current_user != user_id:
                 await self._update_tree_for_user(user_id)
         else:
@@ -169,7 +168,6 @@ class BCJAIapi:
         DATASET = os.getenv('DATASET') # Dataset can either be googlenews or commoncrawl
         COMMONCRAWL_PATH = os.getenv('COMMONCRAWL_PATH')
         GOOGLENEWS_PATH = os.getenv('GOOGLENEWS_PATH')
-        #WV_ITEM_LIMIT = os.getenv('WV_ITEM_LIMIT')
         self._w2v = Word2Vec(
             outputfile=OUTPUT_FILE,
             dataset=DATASET,
@@ -177,15 +175,15 @@ class BCJAIapi:
             googlenews_path=GOOGLENEWS_PATH)
 
     @classmethod
-    async def initalize(cls):
+    async def initalize(cls, database: Database):
         """
         Initialize database and fetch all users in db.
         """
-        database = await Database.connect_pool()
         try:
             users = set(await database.fetch_users())
         except NotFoundError:
             users = set()
+        logger.info('Initialized BCJAIapi with users: %s', users)
         return cls(users,database)
 
     def _restructure_tree(self,new_data: list) -> KDTree:
@@ -511,7 +509,7 @@ class BCJAIapi:
         try:
             embeddings = self._model.predict(np.array(self._w2v.get_sentence_matrix(sentences)))
         except Exception:
-            logger.error('Data is invalid.')
+            logger.error('Data is invalid: %s', sentences)
             return BCJStatus.NOT_FOUND, BCJMessage.UNPROCESSABLE_INPUT
         batch_data = [(bug['structured_info']['id'],user_id,
                             embedding,bug['structured_info']['batch_id'])

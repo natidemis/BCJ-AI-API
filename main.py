@@ -28,7 +28,7 @@ secret_token = os.getenv('SECRET_TOKEN')
 app = FastAPI()
 
 ai_manager = None #pylint: disable=invalid-name
-
+database = None #pylint: disable=invalid-name
 
 
 def verify_token(req: Request):
@@ -47,19 +47,27 @@ def verify_token(req: Request):
 
 @app.on_event("startup")
 async def startup_event():
-    """Setup database"""
+    """
+    Initiaize database and all relevant objects
+    """
     logger.info('Starting application')
     reset = os.getenv('RESET','RESET=True not in env')
+
+    global database #pylint: disable=global-statement,invalid-name
     database = await Database.connect_pool()
     await database.setup_database(reset=reset == 'True')
+
     global ai_manager #pylint: disable=global-statement,invalid-name
-    ai_manager = await AI.initalize()
+    ai_manager = await AI.initalize(database)
 
 
 
 @app.on_event("shutdown")
-def shut_down():
-    """Shut down info"""
+async def shut_down():
+    """
+    Close nessary variables
+    """
+    await database.close_pool()
     logger.info("Server shutting down..")
 
 

@@ -22,14 +22,6 @@ def N():
     """
     return 30
 
-@pytest.fixture
-def database():
-    """
-    Class to access and operate on the database.
-    Used in conjunction with 'ai'
-    """
-    return Database()
-
 
 @pytest.fixture
 def rng():
