@@ -15,8 +15,9 @@ fh.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 ch.setLevel(logging.ERROR)
 # create formatter and add it to the handlers
-formatter = logging.Formatter('%(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+formatter = logging.Formatter('%(levelname)-8s [%(filename)s:%(lineno)d:%(asctime)s] %(message)s',
                                  datefmt='%Y-%m-%d %H:%M:%S')
+
 ch.setFormatter(formatter)
 fh.setFormatter(formatter)
 # add the handlers to logger
