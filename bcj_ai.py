@@ -44,7 +44,6 @@ def authenticate_user(fn):
         if user_id in self.users:
             if self.current_user != user_id:
                 await self._update_tree_for_user(user_id)
-            logger.debug('User: %s in database: %s. Auth succeeded.',user_id,self.users)
         else:
             logger.error('User: %s not in database: %s, Auth failed',user_id,self.users)
             raise ValueError('User not available')
@@ -76,7 +75,6 @@ def get_or_create_user(fn):
                     await self._database.insert_user(user_id)
                 self.users.add(user_id)
                 await self._update_tree_for_user(user_id)
-                logger.info('Inserted user: %s, new user set: %s',user_id,self.users)
             except (TypeError, DuplicateKeyError) as e:
                 logger.error('Inserting user: %s failed for err: %s',user_id, e)
                 raise ValueError from e
@@ -288,6 +286,7 @@ class BCJAIapi:
         data = bleach.clean(description) if bool(description) \
             else bleach.clean(summary)
         if self.kdtree is None:
+            logger.info('KDTree is empty for user: %s', user_id)
             return BCJStatus.NOT_FOUND, {'details': 'No examples available'}
 
         N = len(self.kdtree.indices)
@@ -347,7 +346,7 @@ class BCJAIapi:
         try:
             embeddings= self._model.predict(np.array([self._w2v.get_sentence_matrix(data)]))
         except Exception:
-            logger.error('Data is invalid.')
+            logger.error('Data is invalid for %s',data)
             return BCJStatus.NOT_IMPLEMENTED, BCJMessage.UNPROCESSABLE_INPUT
 
         with self._lock:
@@ -446,7 +445,7 @@ class BCJAIapi:
         try:
             embeddings= self._model.predict(np.array([self._w2v.get_sentence_matrix(data)]))
         except Exception:
-            logger.error('Data is invalid.')
+            logger.error('Data is invalid for %s',data)
             return BCJStatus.NOT_IMPLEMENTED, BCJMessage.UNPROCESSABLE_INPUT
 
         with self._lock:

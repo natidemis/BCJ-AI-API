@@ -15,7 +15,7 @@ from typing import Union, List
 from enum import Enum
 from dotenv import load_dotenv
 import asyncpg
-from log import logger
+from Misc.log import logger
 
 
 
@@ -156,12 +156,14 @@ class Database:
         this class method.
         """
         pool = await asyncpg.create_pool(os.getenv('DATABASE_URL'), command_timeout=60)
+        logger.info('Constructed database with a pool connection, %s',pool)
         return cls(pool=pool)
     
     async def close_pool(self):
         """
         Close the pool connection
         """
+        logger.info('closing pool connection %s',self.pool)
         await self.pool.close()
 
 
@@ -184,7 +186,7 @@ class Database:
             async with self.pool.acquire() as conn:
                 try:
                     await conn.execute(query)
-                    logger.info("Dropped table to avoid unnecessary errors.")
+                    logger.info("Dropped tables.")
                 except Exception:
                     logger.info("Error dropping table")
 

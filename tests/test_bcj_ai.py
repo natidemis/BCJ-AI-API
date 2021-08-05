@@ -29,7 +29,7 @@ sys.path.insert(0, myPath + '/../')
 
 from bcj_ai import BCJAIapi, BCJStatus, BCJMessage
 
-from db import Database, NotFoundError
+from Misc.db import Database, NotFoundError
 ################
 ### FIXTURES ###
 ################
