@@ -167,15 +167,16 @@ class Database:
 
     async def setup_database(self, reset: bool = False) -> bool:
         """
-        Instance method to create the table
+        Instance method to setup the database tables
 
         Arguments
         ---------
-        None
+        reset: bool
+            Reset the database to null. Removes all values.
 
         Returns
         -------
-        True if table creation successful, false otherwise
+        True if setup is successful, false otherwise
         """
         if reset:
             with open('sql/drop.sql','r') as sql_file:
@@ -253,7 +254,7 @@ class Database:
 
         Returns
         -------
-        True if insertion is successful, false otherwise
+        None, raises DuplicateKeyError and TypeError on exception
         """
         try:
             async with self.pool.acquire() as conn:
@@ -280,7 +281,7 @@ class Database:
 
         Returns
         -------
-        None, raises NotFoundError, Duplicate Error on exception
+        None, raises NotFoundError, DuplicateKeyError on exception
         """
         try:
             async with self.pool.acquire() as conn:
@@ -310,6 +311,8 @@ class Database:
         Returns
         -------
         a list of dict, Raises NotFoundError is user has no rows to fetch.
+
+        raises NotFoundError if database is empty.
         """
         try:
             async with self.pool.acquire() as conn:
