@@ -15,13 +15,13 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.responses import JSONResponse
 from bcj_ai import BCJMessage, BCJAIapi as AI
-from datamodels import (BatchDataModel,
+from Misc.datamodels import (BatchDataModel,
                         GetDataModel,
                         MainDataModel,
                         DeleteDataModel,
                         DeleteBatchDataModel)
-from db import Database
-from log import logger
+from Misc.db import Database
+from Misc.log import logger
 
 load_dotenv()
 secret_token = os.getenv('SECRET_TOKEN')
