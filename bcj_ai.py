@@ -21,8 +21,8 @@ import bleach
 from dotenv import load_dotenv
 from up_utils.word2vec import Word2Vec
 from up_utils.kdtree import KDTreeUP as KDTree
-from db import Database, NotFoundError,DuplicateKeyError, NoUpdatesError
-from log import logger
+from Misc.db import Database, NotFoundError,DuplicateKeyError, NoUpdatesError
+from Misc.log import logger
 
 load_dotenv()
 
