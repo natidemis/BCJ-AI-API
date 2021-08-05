@@ -33,8 +33,7 @@ database = None #pylint: disable=invalid-name
 
 def verify_token(req: Request):
     """
-    Authentication method for the enviroment using this service
-    via SECRET_TOKEN
+    Authenticate request via SECRET_TOKEN
     """
     if 'authorization' in req.headers and \
         req.headers['authorization'].split(' ')[1] == secret_token:
@@ -48,14 +47,18 @@ def verify_token(req: Request):
 @app.on_event("startup")
 async def startup_event():
     """
-    Initiaize database and all relevant objects
+    Initialize database and all relevant objects
     """
-    logger.info('Starting application')
+    logger.info('Starting app..')
     reset = os.getenv('RESET','RESET=True not in env')
 
     global database #pylint: disable=global-statement,invalid-name
     database = await Database.connect_pool()
-    await database.setup_database(reset=reset == 'True')
+    setup = await database.setup_database(reset=reset == 'True')
+
+    #Only start up if database has been successfully setup
+    if not setup:
+        exit()
 
     global ai_manager #pylint: disable=global-statement,invalid-name
     ai_manager = await AI.initalize(database)
@@ -75,9 +78,18 @@ async def shut_down():
 async def k_most_similar_bugs(data: GetDataModel, authorized: bool = Depends(verify_token)):
     """
     GET method that fetches the k UPs that are most similar to the UP
+
+    Arguments
+    ---------
+    data - GetDataModel
+        pydantic.BaseModel object that validates the json
+        with the request.
+    
+    authorized - Depends
+        Validates authorized access via 'verify_token'
     Returns
     -------
-    ID's of the k most similar UPs if everything went well, else an error message
+    ID's and dists of the k most similar bugs if successful request, else an error message &
     Status code
     """
 
@@ -97,7 +109,17 @@ async def k_most_similar_bugs(data: GetDataModel, authorized: bool = Depends(ver
 async def insert_bugs(data: MainDataModel, authorized: bool = Depends(verify_token)):
     """
     Method for handling POST request on '/bug',
-    used for inserting a UP to the AI and its database.
+    Used for inserting a bug to the AI and its database.
+
+    Arguments
+    ---------
+    data - MainDataModel
+        pydantic.BaseModel object that validates the json
+        with the request.
+    
+    authorized - Depends
+        Validates authorized access via 'verify_token'
+
     Returns
     -------
     A message with a brief description explaining the result for the request and status code.
@@ -117,7 +139,16 @@ async def insert_bugs(data: MainDataModel, authorized: bool = Depends(verify_tok
 @app.patch('/bug', status_code= 200)
 async def update_bug(data: MainDataModel, authorized: bool = Depends(verify_token)):
     """
-    PATCH method for http request on '/bug' for updating an existing UP in the AI.
+    Method for patch http request on '/bug' for updating an existing bug in the AI.
+
+    Arguments
+    ---------
+    data - MainDataModel
+        pydantic.BaseModel object that validates the json
+        with the request.
+    
+    authorized - Depends
+        Validates authorized access via 'verify_token'
     Returns
     -------
     A message with a brief description explaining the result for the request and status code.
@@ -134,7 +165,17 @@ async def update_bug(data: MainDataModel, authorized: bool = Depends(verify_toke
 @app.delete('/bug', status_code= 200)
 async def delete_bug(data: DeleteDataModel, authorized: bool = Depends(verify_token)):
     """
-    Method for handling a delete request on /bug for removing an existing UP in the AI.
+    Method for handling a delete request on '/bug' for deleting an existing bug in the AI.
+
+    Arguments
+    ---------
+    data - GetDataModel
+        pydantic.BaseModel object that validates the json
+        with the request.
+    
+    authorized - Depends
+        Validates authorized access via 'verify_token'
+
     Returns
     -------
     A message with a brief description of the result for the request and status code.
@@ -152,7 +193,17 @@ async def delete_bug(data: DeleteDataModel, authorized: bool = Depends(verify_to
 @app.delete('/batch', status_code= 200)
 async def delete_batch(data: DeleteBatchDataModel, authorized: bool = Depends(verify_token)):
     """
-    Method for handling delete request on /batch, used for deleting a batch of UPs
+    Method for handling delete request on '/batch', used for deleting a batch of bugs
+
+    Arguments
+    ---------
+    data - DeleteBatchDataModel
+        pydantic.BaseModel object that validates the json
+        with the request.
+
+    authorized - Depends
+        Validates authorized access via 'verify_token'
+
     Returns
     -------
     Message with a brief explanation and status code
@@ -171,7 +222,17 @@ async def delete_batch(data: DeleteBatchDataModel, authorized: bool = Depends(ve
 async def insert_batch(data: BatchDataModel, authorized: bool = Depends(verify_token)):
     """
     Method for handling a post request on '/batch'.
-    Used for inserting multiple examples at once.
+    Used for inserting multiple bugs at once.
+
+    Arguments
+    ---------
+    data - BatchDataModel
+        pydantic.BaseModel object that validates the json
+        with the request.
+    
+    authorized - Depends
+        Validates authorized access via 'verify_token'
+
     Returns
     -------
     Message with brief explanation and status code
