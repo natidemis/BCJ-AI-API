@@ -93,15 +93,15 @@ async def k_most_similar_bugs(data: GetDataModel, authorized: bool = Depends(ver
     Status code
     """
 
-    if authorized:
-        try:
-            bugs = await ai_manager.get_similar_bugs_k(**data.dict())
-        except ValueError :
-            raise HTTPException(status_code=404, detail=BCJMessage.NO_USER.value)
-        except AssertionError:
-            raise HTTPException(status_code=400,detail=BCJMessage.UNFULFILLED_REQ.value)
-        return JSONResponse(content=bugs[1], status_code=bugs[0].value)
-    return JSONResponse(content={'Unauthorized'}, status_code=401)
+
+    try:
+        bugs = await ai_manager.get_similar_bugs_k(**data.dict())
+    except ValueError :
+        raise HTTPException(status_code=404, detail=BCJMessage.NO_USER.value)
+    except AssertionError:
+        raise HTTPException(status_code=400,detail=BCJMessage.UNFULFILLED_REQ.value)
+    return JSONResponse(content=bugs[1], status_code=bugs[0].value)
+
 
 
 
@@ -125,17 +125,14 @@ async def insert_bugs(data: MainDataModel, authorized: bool = Depends(verify_tok
     A message with a brief description explaining the result for the request and status code.
     """
 
-    if authorized:
-        try:
-            status, message = await ai_manager.add_bug(**data.dict())
-        except ValueError:
-            raise HTTPException(status_code=404, detail= BCJMessage.NO_USER.value)
-        except AssertionError:
-            raise HTTPException(status_code=404, detail= BCJMessage.UNFULFILLED_REQ.value)
+    try:
+        status, message = await ai_manager.add_bug(**data.dict())
+    except ValueError:
+        raise HTTPException(status_code=404, detail= BCJMessage.NO_USER.value)
+    except AssertionError:
+        raise HTTPException(status_code=404, detail= BCJMessage.UNFULFILLED_REQ.value)
+    return JSONResponse(content={'detail': message.value}, status_code=status.value)
 
-        return JSONResponse(content={'detail': message.value}, status_code=status.value)
-
-    return JSONResponse(content={'Unauthorized'}, status_code=401)
 @app.patch('/bug', status_code= 200)
 async def update_bug(data: MainDataModel, authorized: bool = Depends(verify_token)):
     """
@@ -153,14 +150,13 @@ async def update_bug(data: MainDataModel, authorized: bool = Depends(verify_toke
     -------
     A message with a brief description explaining the result for the request and status code.
     """
-    if authorized:
-        try:
-            status, message = await ai_manager.update_bug(**data.dict())
-        except ValueError:
-            raise HTTPException(status_code=404, detail= BCJMessage.NO_USER.value)
 
-        return JSONResponse(content={'detail': message.value}, status_code=status.value)
-    return JSONResponse(content={'Unauthorized'}, status_code=401)
+    try:
+        status, message = await ai_manager.update_bug(**data.dict())
+    except ValueError:
+        raise HTTPException(status_code=404, detail= BCJMessage.NO_USER.value)
+    return JSONResponse(content={'detail': message.value}, status_code=status.value)
+
 
 @app.delete('/bug', status_code= 200)
 async def delete_bug(data: DeleteDataModel, authorized: bool = Depends(verify_token)):
@@ -180,15 +176,12 @@ async def delete_bug(data: DeleteDataModel, authorized: bool = Depends(verify_to
     -------
     A message with a brief description of the result for the request and status code.
     """
-    if authorized:
-        try:
-            status, message = await ai_manager.remove_bug(**data.dict())
-        except ValueError:
-            raise HTTPException(status_code=404, detail= BCJMessage.NO_USER.value)
+    try:
+        status, message = await ai_manager.remove_bug(**data.dict())
+    except ValueError:
+        raise HTTPException(status_code=404, detail= BCJMessage.NO_USER.value)
+    return JSONResponse(content={'detail': message.value}, status_code=status.value)
 
-        return JSONResponse(content={'detail': message.value}, status_code=status.value)
-
-    return JSONResponse(content={'Unauthorized'}, status_code=401)
 
 @app.delete('/batch', status_code= 200)
 async def delete_batch(data: DeleteBatchDataModel, authorized: bool = Depends(verify_token)):
@@ -208,15 +201,13 @@ async def delete_batch(data: DeleteBatchDataModel, authorized: bool = Depends(ve
     -------
     Message with a brief explanation and status code
     """
-    if authorized:
-        try:
-            status, message = await ai_manager.remove_batch(**data.dict())
-        except ValueError:
-            raise HTTPException(status_code=404, detail= BCJMessage.NO_USER.value)
 
-        return JSONResponse(content={'detail': message.value}, status_code=status.value)
+    try:
+        status, message = await ai_manager.remove_batch(**data.dict())
+    except ValueError:
+        raise HTTPException(status_code=404, detail= BCJMessage.NO_USER.value)
+    return JSONResponse(content={'detail': message.value}, status_code=status.value)
 
-    return JSONResponse(content={'Unauthorized'}, status_code=401)
 
 @app.post('/batch', status_code= 200)
 async def insert_batch(data: BatchDataModel, authorized: bool = Depends(verify_token)):
@@ -238,16 +229,12 @@ async def insert_batch(data: BatchDataModel, authorized: bool = Depends(verify_t
     Message with brief explanation and status code
     """
 
-    if authorized:
-        try:
-            status, message = await ai_manager.add_batch(**data.dict())
-        except ValueError:
-            raise HTTPException(status_code=404, detail= BCJMessage.NO_USER.value)
-        except AssertionError:
-            raise HTTPException(status_code=400,
-                detail= ('Each example must contain same "batch_id" '
-                'and either summary or description must be a valid non-empty string'))
-
-        return JSONResponse(content={'detail': message.value}, status_code=status.value)
-
-    return JSONResponse(content={'Unauthorized'}, status_code=401)
+    try:
+        status, message = await ai_manager.add_batch(**data.dict())
+    except ValueError:
+        raise HTTPException(status_code=404, detail= BCJMessage.NO_USER.value)
+    except AssertionError:
+        raise HTTPException(status_code=400,
+            detail= ('Each example must contain same "batch_id" '
+            'and either summary or description must be a valid non-empty string'))
+    return JSONResponse(content={'detail': message.value}, status_code=status.value)

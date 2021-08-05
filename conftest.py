@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 import asyncio
-from db import Database
+from Misc.db import Database
 from bcj_ai import BCJAIapi
 
 
