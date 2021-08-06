@@ -195,7 +195,7 @@ import requests
 url = "<your-url>/bug"
 token = "my bearer token"
 json = {
-    "user_id": 1,
+    "user_id": "1",
     "summary": "summ",
     "description": "desc",
     "structured_info": {
@@ -218,7 +218,7 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
       *  Either `summary` or `description` must be included. Both preferably. `date` -string in  `YYYY-MM-DD` format.
       ```JSON
       {
-         "user_id": int,
+         "user_id": "string",
          "summary": "string",
          "description": "string",
          "structured_info": {
@@ -257,7 +257,7 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
          *  batch_id(optional, not required), an integer for the purposes of grouping a set of bugs together, most useful for deleting a group of bugs at once.
       ```JSON
       {
-        "user_id": int,
+        "user_id": "string",
         "summary": "string",
         "description": "string",
         "structured_info": {
@@ -281,7 +281,7 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
      * key-value pairs as discussed above.
      ```JSON
      {
-          "user_id": int,
+          "user_id": "string",
           "id": int
      }
      ```
@@ -298,6 +298,7 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
       * summary and description are optional, structured info, mainly id and date are required.
       ```JSON
       {
+        "user_id": "string",
         "summary"(optional): "string",
         "description"(optional): "string",
         "structured_info": {
@@ -325,7 +326,7 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
       * `^` implies that those values must be unique. In this case, all given ids must be unique for each data for a given particular user.
       ```JSON
       {
-        "user_id": int,
+        "user_id": "string",
         "data": [
             {
                 "summary": "string",
@@ -360,7 +361,7 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
   * `DELETE` delete n bugs(a batch)
       ```JSON
       {
-         "user_id": int
+         "user_id": "string,
          "batch_id": int
       }
       ```
