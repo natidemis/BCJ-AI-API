@@ -2,6 +2,30 @@
 Artificial Intelligence API for usability problems.
 
 ***
+## Project versions
+* Main branch (fastAPI)
+* flask-version branch (flask)
+
+
+The first version of the project used [`flask`](https://flask.palletsprojects.com/en/2.0.x/) as a web framework which made sense at first but with further investigation, it became clear that [`fastAPI`](https://fastapi.tiangolo.com/) satisfied our needs better. As we were deploying the flask app using `gunicorn`, some unwanted problems presented themselves, although solvable, it was a good enough reason to investigate `FastAPI`.
+
+### What the project needed to accomplish
+1. Needed to validate JSON data from client
+2. Needed to store data. Solved using `postgreSQL` through the [`asyncpg`](https://magicstack.github.io/asyncpg/current/) package due to its speed as shown [here](https://github.com/MagicStack/asyncpg).
+
+Task nr.1 was solved using [`schema`](https://pypi.org/project/schema/) json validator which made reading the code more difficult than necessary.
+Task nr.2 required [`asyncio`](https://docs.python.org/3/library/asyncio.html) to create coroutines for the asyncronous database tasks required by `asyncpg`
+
+### Why fastAPI?
+#### Fully asyncronous
+Making it fully asyncronous meant that a client could send multiple requests and receive responses in subsequent responses as opposed to a syncronous request where the response is returned to the same HTTP connection as the request.
+
+Another benefit was that relying on `asyncio` to create coroutines for `asyncpg` was no longer necessary. Using the async benefits of `FastAPI`, it was just a simple task of
+chaining a bunch of coroutines together and allowing `FastAPI` to handle it.
+
+#### Validates json data on request
+`FastAPI` was developed alongside [`pydantic`](https://pydantic-docs.helpmanual.io/) for validation purposes and using the `BaseModel` class from pydantic made for some easily readable code that can validate the clients json data on request.
+***
 ## Authors
 
 - Kristófer Ásgeirsson - `kra33`
@@ -417,30 +441,3 @@ else {
 }
 
 ```
-
-
-# Project versions
-* Main branch (fastAPI)
-* flask-version branch (flask)
-
-
-The first version of the project used [`flask`](https://flask.palletsprojects.com/en/2.0.x/) as a web framework which made sense at first but with further investigation, it became clear that [`fastAPI`](https://fastapi.tiangolo.com/) satisfied our needs better. As we were deploying the flask app using `gunicorn`, some unwanted problems presented themselves, although solvable, it was a good enough reason to investigate `FastAPI`.
-
-## What the project needed to accomplish
-1. Needed to validate JSON data from client
-2. Needed to store data. Solved using `postgreSQL` through the [`asyncpg`](https://magicstack.github.io/asyncpg/current/) package due to its speed as shown [here](https://github.com/MagicStack/asyncpg).
-
-Task nr.1 was solved using [`schema`](https://pypi.org/project/schema/) json validator which made reading the code more difficult than necessary.
-Task nr.2 required [`asyncio`](https://docs.python.org/3/library/asyncio.html) to create coroutines for the asyncronous database tasks required by `asyncpg`
-
-## Why fastAPI?
-### Fully asyncronous
-Making it fully asyncronous meant that a client could send multiple requests and receive responses in subsequent responses as opposed to a syncronous request where the response is returned to the same HTTP connection as the request.
-
-Another benefit was that relying on `asyncio` to create coroutines for `asyncpg` was no longer necessary. Using the async benefits of `FastAPI`, it was just a simple task of
-chaining a bunch of coroutines together and allowing `FastAPI` to handle it.
-
-## Validates json data on request
-`FastAPI` was developed alongside [`pydantic`](https://pydantic-docs.helpmanual.io/) for validation purposes and using the `BaseModel` class from pydantic made for some easily readable code that can validate the clients json data on request.
-
-
