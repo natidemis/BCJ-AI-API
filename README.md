@@ -430,7 +430,7 @@ The first version of the project used [`flask`](https://flask.palletsprojects.co
 1. Needed to validate JSON data from client
 2. Needed to store data. Solved using `postgreSQL` through the [`asyncpg`](https://magicstack.github.io/asyncpg/current/) package due to its speed as shown [here](https://github.com/MagicStack/asyncpg).
 
-Task nr.1 was solved using [`schema`](https://pypi.org/project/schema/) json validator which made for some rather unlikeable code.
+Task nr.1 was solved using [`schema`](https://pypi.org/project/schema/) json validator which made reading the code more difficult than necessary.
 Task nr.2 required [`asyncio`](https://docs.python.org/3/library/asyncio.html) to create coroutines for the asyncronous database tasks required by `asyncpg`
 
 ## Why fastAPI?
