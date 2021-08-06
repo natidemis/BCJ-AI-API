@@ -11,6 +11,7 @@ API for AI web service
 
 
 import os
+import sys
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.responses import JSONResponse
@@ -27,8 +28,8 @@ load_dotenv()
 secret_token = os.getenv('SECRET_TOKEN')
 app = FastAPI()
 
-ai_manager = None #pylint: disable=invalid-name
-database = None #pylint: disable=invalid-name
+ai_manager: AI #pylint: disable=invalid-name
+database: Database #pylint: disable=invalid-name
 
 
 def verify_token(req: Request):
@@ -58,7 +59,7 @@ async def startup_event():
 
     #Only start up if database has been successfully setup
     if not setup:
-        exit()
+        sys.exit()
 
     global ai_manager #pylint: disable=global-statement,invalid-name
     ai_manager = await AI.initalize(database)
@@ -84,7 +85,7 @@ async def k_most_similar_bugs(data: GetDataModel, authorized: bool = Depends(ver
     data - GetDataModel
         pydantic.BaseModel object that validates the json
         with the request.
-    
+
     authorized - Depends
         Validates authorized access via 'verify_token'
     Returns
@@ -116,7 +117,7 @@ async def insert_bugs(data: MainDataModel, authorized: bool = Depends(verify_tok
     data - MainDataModel
         pydantic.BaseModel object that validates the json
         with the request.
-    
+
     authorized - Depends
         Validates authorized access via 'verify_token'
 
@@ -143,7 +144,7 @@ async def update_bug(data: MainDataModel, authorized: bool = Depends(verify_toke
     data - MainDataModel
         pydantic.BaseModel object that validates the json
         with the request.
-    
+
     authorized - Depends
         Validates authorized access via 'verify_token'
     Returns
@@ -168,7 +169,7 @@ async def delete_bug(data: DeleteDataModel, authorized: bool = Depends(verify_to
     data - GetDataModel
         pydantic.BaseModel object that validates the json
         with the request.
-    
+
     authorized - Depends
         Validates authorized access via 'verify_token'
 
@@ -220,7 +221,7 @@ async def insert_batch(data: BatchDataModel, authorized: bool = Depends(verify_t
     data - BatchDataModel
         pydantic.BaseModel object that validates the json
         with the request.
-    
+
     authorized - Depends
         Validates authorized access via 'verify_token'
 
