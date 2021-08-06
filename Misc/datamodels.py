@@ -16,7 +16,7 @@ class StructuredInfoBaseModel(BaseModel, extra=Extra.forbid):
     date: str
 
     @validator('date', pre= True)
-    def parse_date(cls, value: str) -> None: #pylint: disable=E0213
+    def parse_date(cls, value: str) -> str: #pylint: disable=E0213
         """
         Verify that `date` is in YYYY-MM-DD format
 
@@ -37,14 +37,14 @@ class StructuredInfoBaseModel(BaseModel, extra=Extra.forbid):
 
 class StructuredInfoMainModel(StructuredInfoBaseModel):
     """
-    'structured_info' validator for patch and post on '/bug'
+    'structured_info' validator for 'patch' and 'post' on '/bug'
     """
     id: int
     batch_id: Optional[int] = None
 
 class StructuredInfoBatchModel(StructuredInfoBaseModel):
     """
-    'structured_info' validator for 'post' og '/batch'
+    'structured_info' validator for 'post' on '/batch'
     """
     id: int
     batch_id: int
@@ -73,7 +73,7 @@ class BaseDataModel(BaseModel,extra=Extra.forbid):
 
 class MainDataModel(BaseDataModel):
     """
-     Validator for patch and post on '/bug'
+     Validator for 'patch' and 'post' on '/bug'
     """
 
     structured_info: StructuredInfoMainModel
@@ -82,7 +82,7 @@ class MainDataModel(BaseDataModel):
 
 class GetDataModel(BaseDataModel):
     """
-    Validator for /get on '/bug'
+    Validator for 'get' on '/bug'
     """
     k: Optional[int] = 5
 
@@ -97,7 +97,7 @@ class GetDataModel(BaseDataModel):
 
 class ValidBatchModel(BaseModel):
     """
-    Validator list data on 'post' on '/batch'
+    Validates data for 'post' on '/batch'
     """
     summary: Optional[str] = None
     description: Optional[str] = None
