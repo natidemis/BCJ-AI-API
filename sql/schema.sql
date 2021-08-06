@@ -1,9 +1,9 @@
 CREATE TABLE IF NOT EXISTS Users(
-    user_id integer primary key
+    user_id varchar(128) primary key
 );
 CREATE TABLE IF NOT EXISTS Vectors(
     id integer not null,
-    user_id integer not null,
+    user_id varchar(128) not null,
     embeddings double precision[] not null,
     batch_id integer,
     primary key (id, user_id),

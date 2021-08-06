@@ -228,7 +228,7 @@ class BCJAIapi:
             self.kdtree = None
 
 
-    async def _update_tree_for_user(self, user_id: int) -> None:
+    async def _update_tree_for_user(self, user_id: str) -> None:
         """
         Update 'self.kdtree' approperiately for `user_id`
 
@@ -252,7 +252,7 @@ class BCJAIapi:
 
     @authenticate_user
     async def get_similar_bugs_k(self,#pylint: disable=too-many-arguments
-                            user_id: int,
+                            user_id: str,
                             summary: str = "",
                             description: str = "",
                             structured_info: str=None,
@@ -263,7 +263,7 @@ class BCJAIapi:
 
         Arguments
         ---------
-            user_id: int
+            user_id: str
                 Indentification number of the user: must exist in the database
             summary: str
                 A brief summary of the bug
@@ -311,7 +311,7 @@ class BCJAIapi:
 
     @get_or_create_user
     async def add_bug(self,
-                user_id: int,
+                user_id: str,
                 structured_info: dict,
                 summary: str="",
                 description: str="") -> Tuple[BCJStatus, BCJMessage]:
@@ -320,7 +320,7 @@ class BCJAIapi:
 
         Arguments
         ---------
-            user_id: int
+            user_id: str
                 Indentification number of the user: must exist in the database
             summary: str
                 A brief summary of the bug
@@ -369,13 +369,13 @@ class BCJAIapi:
         return BCJStatus.OK, BCJMessage.VALID_INPUT
 
     @authenticate_user
-    async def remove_bug(self,user_id: int, id: int) -> Tuple[BCJStatus, BCJMessage]: #pylint: disable=redefined-builtin
+    async def remove_bug(self,user_id: str, id: int) -> Tuple[BCJStatus, BCJMessage]: #pylint: disable=redefined-builtin
         """
         Remove a bug with 'id' for the given 'user_id'
 
         Arguments
         ---------
-            user_id: int
+            user_id: str
                 Indentification number of the user: must exist in the database
             id: int
                 Id for the bug
@@ -395,7 +395,7 @@ class BCJAIapi:
 
     @authenticate_user
     async def update_bug(self,
-                    user_id: int,
+                    user_id: str,
                     structured_info: dict,
                     summary: str="",
                     description: str="") -> Tuple[BCJStatus, BCJMessage]:
@@ -404,7 +404,7 @@ class BCJAIapi:
 
         Arguments
         ---------
-            user_id: int
+            user_id: str
                 Indentification number of the user: must exist in the database
             summary: str
                 A brief summary of the bug
@@ -463,13 +463,13 @@ class BCJAIapi:
         return BCJStatus.OK, BCJMessage.VALID_INPUT
 
     @authenticate_user
-    async def remove_batch(self,user_id: int, batch_id: int) -> Tuple[BCJStatus, BCJMessage]:
+    async def remove_batch(self,user_id: str, batch_id: int) -> Tuple[BCJStatus, BCJMessage]:
         """
         Removes a batch of bugs. The batch's id is idx.
 
         Arguments
         ---------
-            user_id: int
+            user_id: str
                 Indentification number of the user: must exist in the database
             batch_id: int
                 Identification number of the batch
@@ -489,13 +489,13 @@ class BCJAIapi:
         return BCJStatus.OK, BCJMessage.VALID_INPUT
 
     @get_or_create_user
-    async def add_batch(self,user_id: int, data: list) -> Tuple[BCJStatus, BCJMessage]:
+    async def add_batch(self,user_id: str, data: list) -> Tuple[BCJStatus, BCJMessage]:
         """
         Adds a batch to the database and updates the KD-Tree
 
         Arguments
         ---------
-            user_id: int
+            user_id: str
                 Indentification number of the user: must exist in the database
             data: list[dict]
                 summary: str

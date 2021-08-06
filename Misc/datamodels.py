@@ -55,7 +55,7 @@ class BaseDataModel(BaseModel,extra=Extra.forbid):
     """
         Base model for all validators
     """
-    user_id: int
+    user_id: str
     summary: Optional[str] = None
     description: Optional[str] = None
     structured_info: StructuredInfoBaseModel
@@ -109,19 +109,19 @@ class BatchDataModel(BaseModel):
     """
     Validator for 'post' on '/batch'
     """
-    user_id: int
+    user_id: str
     data: List[ValidBatchModel]
 
 class DeleteDataModel(BaseModel):
     """
     Validator for 'delete' on '/bug'
     """
-    user_id: int
+    user_id: str
     id: int
 
 class DeleteBatchDataModel(BaseModel):
     """
     Validator for 'delete' on '/batch'
     """
-    user_id: int
+    user_id: str
     batch_id: int
