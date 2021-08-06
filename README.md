@@ -2,6 +2,21 @@
 Artificial Intelligence API for usability problems.
 
 ***
+
+## Authors
+
+- Kristófer Ásgeirsson - `kra33`
+- Marcelo Felix Audibert - `Gitcelo`
+- Natanel Demissew Ketema - `natidemis`
+
+***
+
+## ToDo
+
+* Remove the drop table functionality
+* Send JSON error if id is already in table. As is we only send a 500 error with the message
+
+***
 ## Project versions
 * Main branch (fastAPI)
 * flask-version branch (flask)
@@ -26,21 +41,6 @@ chaining a bunch of coroutines together and allowing `FastAPI` to handle it.
 #### Validates json data on request
 `FastAPI` was developed alongside [`pydantic`](https://pydantic-docs.helpmanual.io/) for validation purposes and using the `BaseModel` class from pydantic made for some easily readable code that can validate the clients json data on request.
 ***
-## Authors
-
-- Kristófer Ásgeirsson - `kra33`
-- Marcelo Felix Audibert - `Gitcelo`
-- Natanel Demissew Ketema - `natidemis`
-
-***
-
-## ToDo
-
-* Remove the drop table functionality
-* Send JSON error if id is already in table. As is we only send a 500 error with the message
-
-***
-
 ## Setup - locally
 
 ### The API itself
