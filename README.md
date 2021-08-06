@@ -151,11 +151,10 @@ The **CommonCrawl** corpus can be used as an alternative. It can be found [here]
 
 ***
 
-## Run
+## NLTK
 
-Run the file run.py to start the server (e.g. by writing ``python run.py`` in terminal).
 
-The pacakge NLTK should install itself with stopwords if it isn't already installed. If it doesn't install itself, either run `stopwords.py` or write the following into a python console:
+The NLTK package should install itself with stopwords if it isn't already installed. If it doesn't install itself,write the following into a python console:
 
 ```
 >>> import nltk
