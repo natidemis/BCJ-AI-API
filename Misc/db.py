@@ -205,7 +205,7 @@ class Database:
 
     async def insert(self,
                         id: int,
-                        user_id: int,
+                        user_id: str,
                         embeddings: List[Union[int,float]],
                         batch_id: int= None) -> None:
         """
@@ -216,7 +216,7 @@ class Database:
         id: int
             Identification number for the embedded bug
 
-        user_id: int
+        user_id: str
             Indentification number of the user
 
         embeddings: Array of floats
@@ -245,13 +245,13 @@ class Database:
             logger.error("Missing argument exception: %s",e)
 
 
-    async def insert_user(self, user_id: int) -> None:
+    async def insert_user(self, user_id: str) -> None:
         """
         Instance method for inserting a user into the database
 
         Arguments
         ---------
-        user_id: int
+        user_id: str
             identification number for user.
 
         Returns
@@ -277,7 +277,7 @@ class Database:
         ---------
         data: List of tuples [(id, user_id, embeddings, batch_id)]
             id: int - Identification value for the bug.
-            user_id: int - Identification value for the user.
+            user_id: str - Identification value for the user.
             embeddings: List of floats - The embeddings for this bug
             batch_id: int | None - A batch number to associate this bug with other bugs.
 
@@ -300,14 +300,13 @@ class Database:
             raise DuplicateKeyError('Duplicate key error, %s' % e) from e
 
 
-
-    async def fetch_all(self, user_id: int) -> List[dict]:
+    async def fetch_all(self, user_id: str) -> List[dict]:
         """
         Instance method for fetching all rows for a user in the database
 
         Arguments
         ---------
-        user_id: int
+        user_id: str
             User identification number
 
         Returns
@@ -329,7 +328,7 @@ class Database:
 
     async def update(self,
                         id: int,
-                        user_id: int,
+                        user_id: str,
                         embeddings: List[Union[int,float]] = None,
                         batch_id: int=None) -> None:
         """
@@ -340,7 +339,7 @@ class Database:
         id: int
             Identification number for the embedded bug
 
-        user_id: int
+        user_id: str
             Indentification number of the user
 
         embeddings: Array of floats | None
@@ -393,7 +392,7 @@ class Database:
             logger.error("Incorrect type inserted: %s", e)
 
 
-    async def delete(self, id: int, user_id: int) -> None:
+    async def delete(self, id: int, user_id: str) -> None:
         """
         Instance method for removing a row from the database
 
@@ -402,7 +401,7 @@ class Database:
         id: int
             Id of the bug
 
-        user_id: int
+        user_id: str
             User identification number
 
         Returns
@@ -417,7 +416,7 @@ class Database:
 
 
 
-    async def delete_batch(self,batch_id: int,user_id: int) -> None:
+    async def delete_batch(self,batch_id: int,user_id: str) -> None:
         """
         Instance method for removing a batch of rows
 
@@ -426,7 +425,7 @@ class Database:
         batch_id: int
             Indentification number for a set of bugs
 
-        user_id: int
+        user_id: str
             User identification number assosicated with this batch
 
         Returns
