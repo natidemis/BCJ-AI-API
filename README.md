@@ -1,4 +1,4 @@
-# Artificial intelligence API for BCJ
+# Artificial intelligence API for [Bug-Consolidator-for-Jira](https://github.com/Hallinn/Bug-Consolidator-for-Jira)
 Artificial Intelligence API for usability problems.
 
 ***
