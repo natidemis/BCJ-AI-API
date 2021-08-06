@@ -8,7 +8,7 @@ import secrets
 import os.path
 import logging
 import gdown
-from log import logger
+from Misc.log import logger
 
 def main():
     GOOGLE_NEWS = 'GoogleNews-vectors-negative300.bin'
