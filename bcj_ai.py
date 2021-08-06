@@ -11,6 +11,7 @@ API module for Bug Consolidation for Jira (BCJ) AI model.
 Used to store bugs and classify them.
 """
 
+from __future__ import annotations
 from enum import IntEnum, Enum
 import os
 from threading import Lock
@@ -163,7 +164,7 @@ class BCJAIapi:
             A set of user_ids currently available
         database - db.Database
             a database object with a connection pool.
-        
+
         Returns
         -------
         BCJAIapi object.
@@ -185,7 +186,7 @@ class BCJAIapi:
             googlenews_path=GOOGLENEWS_PATH)
 
     @classmethod
-    async def initalize(cls, database: Database):
+    async def initalize(cls, database: Database) -> BCJAIapi:
         """
         Initialize a BCJAIapi object with a given database object.
         Initializes 'users' for all users currently available from the database.
@@ -194,7 +195,7 @@ class BCJAIapi:
         ---------
         database - db.Database:
             Database object with a connection pool
-        
+
         Returns
         -------
         BCJAIapi object initialized with all available users.
@@ -230,7 +231,7 @@ class BCJAIapi:
     async def _update_tree_for_user(self, user_id: int) -> None:
         """
         Update 'self.kdtree' approperiately for `user_id`
-        
+
         Arguments
         ---------
         user_id: int
@@ -252,8 +253,8 @@ class BCJAIapi:
     @authenticate_user
     async def get_similar_bugs_k(self,#pylint: disable=too-many-arguments
                             user_id: int,
-                            summary: str = None,
-                            description: str = None,
+                            summary: str = "",
+                            description: str = "",
                             structured_info: str=None,
                             k: int=5) -> Tuple[BCJStatus, Union[dict,str]]:
         """
@@ -312,8 +313,8 @@ class BCJAIapi:
     async def add_bug(self,
                 user_id: int,
                 structured_info: dict,
-                summary: str=None,
-                description: str=None) -> Tuple[BCJStatus, BCJMessage]:
+                summary: str="",
+                description: str="") -> Tuple[BCJStatus, BCJMessage]:
         """
         Add a bug with given summary, description and structured information.
 
@@ -396,8 +397,8 @@ class BCJAIapi:
     async def update_bug(self,
                     user_id: int,
                     structured_info: dict,
-                    summary: str=None,
-                    description: str=None) -> Tuple[BCJStatus, BCJMessage]:
+                    summary: str="",
+                    description: str="") -> Tuple[BCJStatus, BCJMessage]:
         """
         Updates a bug with the parameters given. The id of the bug should be in structured_info.
 
