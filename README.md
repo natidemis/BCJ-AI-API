@@ -145,6 +145,7 @@ upstream uvicorn {
 
 ## Corpus
 The project requires a corpus. We used the **Google News** corpus which can be found [here](https://github.com/mmihaltz/word2vec-GoogleNews-vectors). Once the file is downloaded, an archiving tool (we recommend winrar) should be used to extract the file into the `BCJ-AI-API` folder.
+- The **Google News** vectors can be dowmloaded by executing `setup.py`
 
 The **CommonCrawl** corpus can be used as an alternative. It can be found [here](https://nlp.stanford.edu/projects/glove/).
 
