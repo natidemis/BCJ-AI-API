@@ -187,10 +187,11 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
 ***
 
 ## Web service
+#### Information on how to use the webservice should also be available on '/docs' once the server is up and running.
 * `/bug`
-  * `GET` query the **k** most similar bugs
-      * given a value `k`, return the 'k' most similar from the database, dault is 5. 
-      *  Summary and description are required. date, string in the form `YYYY-MM-DD`.
+  * `GET` query the **k** most similar bugs for the given `user_id`
+      * given a value `k`, return the 'k' most similar from the database, default is 5. 
+      *  Either `summary` or `description` must be included. Both preferably. `date` -string in  `YYYY-MM-DD` format.
       ```JSON
       {
          "user_id": int,
@@ -202,7 +203,7 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
          "k"(optional): int
       }
       ``` 
-    * Response: a list, "id" with all ids ordered from the closest to the farthest. "dist", a list with the distance values for each ID
+    * Response: a list, "id" with all ids ordered from the most similar to least similar. "dist", a list with the distance values for each ID
         * Example:
         ```JSON
          {
@@ -224,7 +225,7 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
          ```
   * `POST` insert a bug 
     * Data requirement for request in JSON format:
-      * `user_id` must be an int, an indentification of a specific user, to access or initiate the given users database. 
+      * `user_id` must be an int, stores the given data for this `user_id`. May or may not exist in the database.
       * summary and description must be string values, either summary or description may be empty but not both.
       * Structured_info must be valid for insertion and must contain the following:
          *  id, an integer and unique in the database.
@@ -253,7 +254,7 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
          ```
 
   * `DELETE` delete a bug 
-     * valid id in the format: 
+     * key-value pairs as discussed above.
      ```JSON
      {
           "user_id": int,
@@ -293,10 +294,10 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
          ```
       
 * `/batch`
-  * `POST` insert k bugs 
-      * Most similar to the `post` on `/bug`
+  * `POST` insert n bugs 
+      * Batch insert similar to `post` on `/bug`
       * for each bug, the json oject passed must be in the same format as specified for `post` on `/bug`
-      * All k bugs must have the same `batch_id`, batch_id is a requirement. `**` implies they must be the same.
+      * All n bugs must have the same `batch_id`, batch_id is a requirement. `**` implies they must be the same.
       * `^` implies that those values must be unique. In this case, all given ids must be unique for each data for a given particular user.
       ```JSON
       {
@@ -332,7 +333,7 @@ response = requests.get(url, headers={'Authorization': 'Bearer {}'.format(token)
          }
          
          ```
-  * `DELETE` delete k bugs(a batch)
+  * `DELETE` delete n bugs(a batch)
       ```JSON
       {
          "user_id": int

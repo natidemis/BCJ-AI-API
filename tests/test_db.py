@@ -24,7 +24,7 @@ import numpy as np
 myPath = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, myPath + '/../')
 
-from db import NotFoundError, DuplicateKeyError, Database
+from Misc.db import NotFoundError, DuplicateKeyError, Database
 
 
 ################
