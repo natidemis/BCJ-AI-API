@@ -101,7 +101,7 @@ class BCJMessage(Enum):
     NO_USER = "User not available."
     NO_UPDATES = "There were no updates to make."
     NO_DELETION = "There was nothing to delete for the given (user_id, id) pair."
-
+    EMPTY_TREE = "No examples available"
 
 class BCJStatus(IntEnum):
     """
@@ -174,7 +174,7 @@ class BCJAIapi:
         self._model = tf.keras.models.load_model('Models', compile=False)
         self.users = users
         self.kdtree = None
-        self.current_user = None
+        self.current_user = int()
         OUTPUT_FILE = os.getenv('OUTPUT_FILE')
         DATASET = os.getenv('DATASET') # Dataset can either be googlenews or commoncrawl
         COMMONCRAWL_PATH = os.getenv('COMMONCRAWL_PATH')
@@ -288,7 +288,7 @@ class BCJAIapi:
             else bleach.clean(summary)
         if self.kdtree is None:
             logger.info('KDTree is empty for user: %s', user_id)
-            return BCJStatus.NOT_FOUND, {'details': 'No examples available'}
+            raise NotFoundError
 
         N = len(self.kdtree.indices)
         k = min(k,N)

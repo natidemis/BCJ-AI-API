@@ -11,7 +11,7 @@ making query to the database
 
 
 import os
-from typing import Union, List
+from typing import Union, List, Sequence
 from enum import Enum
 from dotenv import load_dotenv
 import asyncpg
@@ -269,7 +269,7 @@ class Database:
             raise TypeError('Incorrect type inserted' % e) from e
 
 
-    async def insert_batch(self,data: List[tuple]) -> None:
+    async def insert_batch(self,data: Sequence[tuple]) -> None:
         """
         Instance method for inserting a batch of data
 
@@ -301,7 +301,7 @@ class Database:
 
 
 
-    async def fetch_all(self, user_id: int) -> Union[list,None]:
+    async def fetch_all(self, user_id: int) -> List[dict]:
         """
         Instance method for fetching all rows for a user in the database
 
@@ -316,18 +316,16 @@ class Database:
 
         raises NotFoundError if database is empty.
         """
-        try:
-            async with self.pool.acquire() as conn:
-                rows = await conn.fetch(QueryString.FETCH.value,user_id)
-                if not rows:
-                    raise NotFoundError("Nothing in the Database",rows)
-            logger.info("Fetching all succeeded")
-            return [{'id': row['id'],
-                    'embeddings': row['embeddings'],
-                    'batch_id': row['batch_id']} for row in rows]
-        except asyncpg.exceptions.DataError as e:
-            logger.error("Incorrect type inserted: %s",e)
-            return None
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(QueryString.FETCH.value,user_id)
+            if not rows:
+                raise NotFoundError("Nothing in the Database",rows)
+        logger.info("Fetching all succeeded")
+        return [{'id': row['id'],
+                'embeddings': row['embeddings'],
+                'batch_id': row['batch_id']} for row in rows]
+
+            
 
     async def update(self,
                         id: int,
@@ -443,7 +441,7 @@ class Database:
 
 
 
-    async def fetch_users(self) -> Union[List[int],None]:
+    async def fetch_users(self) -> List[int]:
         """
         Instance method for fetching all users in the database
 
