@@ -11,11 +11,11 @@ making query to the database
 
 
 import os
-from typing import Union, List
+from typing import Union, List, Sequence
 from enum import Enum
 from dotenv import load_dotenv
 import asyncpg
-from log import logger
+from Misc.log import logger
 
 
 
@@ -156,26 +156,29 @@ class Database:
         this class method.
         """
         pool = await asyncpg.create_pool(os.getenv('DATABASE_URL'), command_timeout=60)
+        logger.info('Constructed database with a pool connection, %s',pool)
         return cls(pool=pool)
     
     async def close_pool(self):
         """
         Close the pool connection
         """
+        logger.info('closing pool connection %s',self.pool)
         await self.pool.close()
 
 
     async def setup_database(self, reset: bool = False) -> bool:
         """
-        Instance method to create the table
+        Instance method to setup the database tables
 
         Arguments
         ---------
-        None
+        reset: bool
+            Reset the database to null. Removes all values.
 
         Returns
         -------
-        True if table creation successful, false otherwise
+        True if setup is successful, false otherwise
         """
         if reset:
             with open('sql/drop.sql','r') as sql_file:
@@ -183,7 +186,7 @@ class Database:
             async with self.pool.acquire() as conn:
                 try:
                     await conn.execute(query)
-                    logger.info("Dropped table to avoid unnecessary errors.")
+                    logger.info("Dropped tables.")
                 except Exception:
                     logger.info("Error dropping table")
 
@@ -253,7 +256,7 @@ class Database:
 
         Returns
         -------
-        True if insertion is successful, false otherwise
+        None, raises DuplicateKeyError and TypeError on exception
         """
         try:
             async with self.pool.acquire() as conn:
@@ -266,7 +269,7 @@ class Database:
             raise TypeError('Incorrect type inserted' % e) from e
 
 
-    async def insert_batch(self,data: List[tuple]) -> None:
+    async def insert_batch(self,data: Sequence[tuple]) -> None:
         """
         Instance method for inserting a batch of data
 
@@ -280,7 +283,7 @@ class Database:
 
         Returns
         -------
-        None, raises NotFoundError, Duplicate Error on exception
+        None, raises NotFoundError, DuplicateKeyError on exception
         """
         try:
             async with self.pool.acquire() as conn:
@@ -297,8 +300,7 @@ class Database:
             raise DuplicateKeyError('Duplicate key error, %s' % e) from e
 
 
-
-    async def fetch_all(self, user_id: str) -> Union[list,None]:
+    async def fetch_all(self, user_id: str) -> List[dict]:
         """
         Instance method for fetching all rows for a user in the database
 
@@ -310,19 +312,19 @@ class Database:
         Returns
         -------
         a list of dict, Raises NotFoundError is user has no rows to fetch.
+
+        raises NotFoundError if database is empty.
         """
-        try:
-            async with self.pool.acquire() as conn:
-                rows = await conn.fetch(QueryString.FETCH.value,user_id)
-                if not rows:
-                    raise NotFoundError("Nothing in the Database",rows)
-            logger.info("Fetching all succeeded")
-            return [{'id': row['id'],
-                    'embeddings': row['embeddings'],
-                    'batch_id': row['batch_id']} for row in rows]
-        except asyncpg.exceptions.DataError as e:
-            logger.error("Incorrect type inserted: %s",e)
-            return None
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(QueryString.FETCH.value,user_id)
+            if not rows:
+                raise NotFoundError("Nothing in the Database",rows)
+        logger.info("Fetching all succeeded")
+        return [{'id': row['id'],
+                'embeddings': row['embeddings'],
+                'batch_id': row['batch_id']} for row in rows]
+
+            
 
     async def update(self,
                         id: int,
@@ -438,7 +440,7 @@ class Database:
 
 
 
-    async def fetch_users(self) -> Union[List[int],None]:
+    async def fetch_users(self) -> List[int]:
         """
         Instance method for fetching all users in the database
 
