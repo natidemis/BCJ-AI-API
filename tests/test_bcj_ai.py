@@ -325,13 +325,14 @@ async def test_similar_bugs_k_no_data(ai,database,N):
                                         'date': '2020-10-10'})
         except AssertionError:
             pass
-
-        status, message = await ai.get_similar_bugs_k(user_id=user_id,
+        try:
+            await ai.get_similar_bugs_k(user_id=user_id,
                                                 structured_info={'date': 'YYYY-MM-DD'},
                                                 summary="summary",
                                                 description="") #disc = None
-        assert BCJStatus.NOT_FOUND == status and \
-        message == 'No examples available'
+            assert False
+        except:
+            assert True
 
 
     await database.setup_database(reset=True)
@@ -434,7 +435,7 @@ async def test_remove_bug_no_valid_id(ai,database,N):
     for _ in range(N):
         status, message = await ai.remove_bug(id=random.randint(2,N),user_id=1)
         assert BCJStatus.NOT_FOUND == status and \
-            BCJMessage.VALID_INPUT == message
+            BCJMessage.NO_UPDATES == message
 
     await database.setup_database(reset=True)
     await database.close_pool()
@@ -493,7 +494,7 @@ async def test_update_bug_no_summ_and_desc_update_nothing(ai,database,N):
                 structured_info= {'id': 1,'batch_id': None},
                 summary="summary", description= "description")
         status, message = await ai.update_bug(user_id=i,structured_info={'id': 1})
-        assert status == BCJStatus.NOT_FOUND and message == \
+        assert status == BCJStatus.BAD_REQUEST and message == \
             BCJMessage.NO_UPDATES
     await database.setup_database(reset=True)
     await database.close_pool()
@@ -515,7 +516,7 @@ async def test_update_bug_on_non_existing_data(ai,database,N):
                                         structured_info={'id': 2},
                                         summary="summary",
                                         description= "description")
-        assert status == BCJStatus.NOT_FOUND and message == \
+        assert status == BCJStatus.BAD_REQUEST and message == \
             BCJMessage.NO_UPDATES
     await database.setup_database(reset=True)
     await database.close_pool()
@@ -632,7 +633,7 @@ async def test_add_batch_duplicate_key(ai, database, duplicate_id_batch_data):
     }
 
     status, message = await ai.add_batch(**data)
-    assert status == BCJStatus.BAD_REQUEST and \
+    assert status == BCJStatus.ERROR and \
         message == BCJMessage.DUPLICATE_ID_BATCH
     await database.close_pool()
 
@@ -659,7 +660,7 @@ async def test_remove_batch_no_updates(ai, database,valid_batch_data):
     await ai.add_batch(**data)
 
     status, message = await ai.remove_batch(user_id=user,batch_id=2)
-    assert status == BCJStatus.ERROR and \
+    assert status == BCJStatus.BAD_REQUEST and \
         message == BCJMessage.NO_DELETION
     await database.close_pool()
 

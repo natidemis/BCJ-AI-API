@@ -2,6 +2,7 @@
 # pylint: disable=E0611
 # pylint: disable=R0903
 # pylint: disable=W0707
+# pylint: disable=W0613
 """
 @authors: Gitcelo, natidemis
 May-June 2021
@@ -21,7 +22,7 @@ from Misc.datamodels import (BatchDataModel,
                         MainDataModel,
                         DeleteDataModel,
                         DeleteBatchDataModel)
-from Misc.db import Database
+from Misc.db import Database, NotFoundError
 from Misc.log import logger
 
 load_dotenv()
@@ -101,6 +102,8 @@ async def k_most_similar_bugs(data: GetDataModel, authorized: bool = Depends(ver
         raise HTTPException(status_code=404, detail=BCJMessage.NO_USER.value)
     except AssertionError:
         raise HTTPException(status_code=400,detail=BCJMessage.UNFULFILLED_REQ.value)
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail= BCJMessage.EMPTY_TREE.value)
     return JSONResponse(content=bugs[1], status_code=bugs[0].value)
 
 
