@@ -10,13 +10,6 @@ Artificial Intelligence API for usability problems.
 - Natanel Demissew Ketema - `natidemis`
 
 ***
-
-## ToDo
-
-* Remove the drop table functionality
-* Send JSON error if id is already in table. As is we only send a 500 error with the message
-
-***
 ## Project versions
 * Main branch (fastAPI)
 * flask-version branch (flask)
@@ -55,7 +48,7 @@ chaining a bunch of coroutines together and allowing `FastAPI` to handle it.
     * The token appears in the enviroment file ``.env``
     * The token has to be in header as bearer token when making HTTP requests to the server
 - Resetting the database on startup
-  - To reset the database, simply add `Reset=True` in `.env` 
+  - To reset the database, simply add `RESET=True` in `.env` 
 - Start the app locally with `uvicorn main:app`
 ### Postgres
 * Install postgresql [here](https://www.google.com/search?q=install+postgresql&oq=install+postgresql&aqs=chrome.0.69i59j35i39j0j0i20i263j0l2j69i60l2.2572j0j7&sourceid=chrome&ie=UTF-8) along with [pgadmin4](https://www.pgadmin.org/download/) in order to manage the database interactively.
