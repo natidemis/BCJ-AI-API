@@ -9,7 +9,7 @@ Contains the database class used for setting up for and
 making query to the database
 """
 
-
+from __future__ import annotations
 import os
 from typing import Union, List, Sequence
 from enum import Enum
@@ -150,7 +150,7 @@ class Database:
         self.pool = pool
 
     @classmethod
-    async def connect_pool(cls):
+    async def connect_pool(cls) -> Database:
         """
         Creates a pool for the database. Database must be initalized using
         this class method.
@@ -159,7 +159,7 @@ class Database:
         logger.info('Constructed database with a pool connection, %s',pool)
         return cls(pool=pool)
     
-    async def close_pool(self):
+    async def close_pool(self) -> None:
         """
         Close the pool connection
         """

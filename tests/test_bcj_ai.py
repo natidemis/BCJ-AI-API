@@ -49,7 +49,7 @@ def no_desc_and_summ(N):
     Random date without description and summary
     """
     return zip(
-        list(range(N)) ,
+        [str(i).zfill(1) for i in range(N)],
         [
             {
             "id": random.randint(1,100),
@@ -65,7 +65,7 @@ def duplicate_key_data(N):
     Data containing a duplicate key
     """
     return zip(
-        [1 for z in range(N)],
+        [str(i).zfill(1) for i in range(N)],
         [
             {
             "id": 1,
@@ -186,7 +186,7 @@ def valid_data(N):
     Valid date for 'user_id': 1
     """
     return zip(
-        [1 for z in range(N)],
+        [str(i).zfill(1) for i in range(N)],
         [
             {
             "id": z,
@@ -195,6 +195,10 @@ def valid_data(N):
         ["summary" for _ in range(N)],
         ["description" for _ in range(N)]
     )
+
+@pytest.fixture
+def user_id():
+    return "1"
 ####################
 ### ai.add_bug() ###
 ####################
@@ -223,7 +227,7 @@ async def test_add_bug_no_desc_and_summ_available(ai,database, no_desc_and_summ)
     await database.close_pool()
 
 @pytest.mark.asyncio
-async def test_add_bug_duplicate_key(ai,duplicate_key_data,database):
+async def test_add_bug_duplicate_key(ai,duplicate_key_data,database,user_id):
     """
     @ai.add_bug()
     Duplicate key testing.
@@ -231,10 +235,10 @@ async def test_add_bug_duplicate_key(ai,duplicate_key_data,database):
         - Adding in an already existing key.
     """
     await database.setup_database(reset=True)
-    ai.users = set([1])
-    await database.insert_user(1)
-    await database.insert(1,1,[1,1])
-    for user_id, structured_info, summ, disc in duplicate_key_data:
+    ai.users = set([user_id])
+    await database.insert_user(user_id)
+    await database.insert(id=1,user_id="1",embeddings=[1,1])
+    for _user_id, structured_info, summ, disc in duplicate_key_data:
         status, message = await ai.add_bug(user_id=user_id,
                         structured_info=structured_info,
                         summary="summary",#summ = None
@@ -310,23 +314,23 @@ async def test_similar_bugs_k_no_data(ai,database,N):
     """
     await database.setup_database(reset=True)
     ai.users = set()
-    for user_id in range(2,N):
+    for id in range(2,N):
         #add a bunch of data for user_id 1
-        await ai.add_bug(user_id=1,
-                    structured_info={'id': user_id,
+        await ai.add_bug(user_id="1",
+                    structured_info={'id': id,
                                     'date': '2020-10-10'},
                     summary="summary",
                     description="description")
         #Database is empty for this user_id
         try:
             #add user_id to the users database without inserting embeddings.
-            await ai.add_bug(user_id=user_id,
-                        structured_info={'id': user_id,
+            await ai.add_bug(user_id=str(id),
+                        structured_info={'id': id,
                                         'date': '2020-10-10'})
         except AssertionError:
             pass
         try:
-            await ai.get_similar_bugs_k(user_id=user_id,
+            await ai.get_similar_bugs_k(user_id=str(id),
                                                 structured_info={'date': 'YYYY-MM-DD'},
                                                 summary="summary",
                                                 description="") #disc = None
@@ -408,11 +412,11 @@ async def test_remove_bug_valid_delete(ai,database,N):
     await database.setup_database(reset=True)
     ai.users = set()
     for i in range(N):
-        await ai.add_bug(user_id=1,
+        await ai.add_bug(user_id="1",
             structured_info= {'id': i},
             summary="summary",
             description="description")
-        status, message = await ai.remove_bug(id=i,user_id=1)
+        status, message = await ai.remove_bug(id=i,user_id="1")
         assert BCJStatus.OK == status and \
             BCJMessage.VALID_INPUT == message
 
@@ -420,22 +424,22 @@ async def test_remove_bug_valid_delete(ai,database,N):
     await database.close_pool()
 
 @pytest.mark.asyncio
-async def test_remove_bug_no_valid_id(ai,database,N):
+async def test_remove_bug_no_valid_id(ai,database,N,user_id):
     """
     @ai.remove_bug()
     Tests for removing a non existent example from the database.
     """
     await database.setup_database(reset=True)
     ai.users = set()
-    await ai.add_bug(user_id=1,
+    await ai.add_bug(user_id=user_id,
             structured_info= {'id': 1},
             summary="summary",
             description="description")
 
     for _ in range(N):
-        status, message = await ai.remove_bug(id=random.randint(2,N),user_id=1)
+        status, message = await ai.remove_bug(id=random.randint(2,N),user_id=user_id)
         assert BCJStatus.NOT_FOUND == status and \
-            BCJMessage.NO_UPDATES == message
+            BCJMessage.NO_EXAMPLE == message
 
     await database.setup_database(reset=True)
     await database.close_pool()
@@ -445,18 +449,18 @@ async def test_remove_bug_no_valid_id(ai,database,N):
 ###############################
 
 @pytest.mark.asyncio
-async def test_update_bug_no_summ_and_desc_update_batch_id(ai,database):
+async def test_update_bug_no_summ_and_desc_update_batch_id(ai,database,user_id):
     """
     @ai.update_bug()
     Tests for updating batch_id alone.
     """
     await database.setup_database(reset=True)
     ai.users = set()
-    await ai.add_bug(user_id=1,
+    await ai.add_bug(user_id=user_id,
             structured_info= {'id': 1},
             summary="summary", description= "description")
 
-    status, message = await ai.update_bug(user_id=1,structured_info={'id': 1,'batch_id': 1})
+    status, message = await ai.update_bug(user_id=user_id,structured_info={'id': 1,'batch_id': 1})
     assert BCJStatus.OK == status and \
         BCJMessage.VALID_INPUT == message
 
@@ -464,7 +468,7 @@ async def test_update_bug_no_summ_and_desc_update_batch_id(ai,database):
     await database.close_pool()
 
 @pytest.mark.asyncio
-async def test_update_bug_no_summ_and_desc_update_batch_id_to_none(ai,database,N):
+async def test_update_bug_no_summ_and_desc_update_batch_id_to_none(ai,database,N,user_id):
     """
     @ai.update_bug()
     Tests for updating a batch_id to None(null) in the database
@@ -472,17 +476,17 @@ async def test_update_bug_no_summ_and_desc_update_batch_id_to_none(ai,database,N
     await database.setup_database(reset=True)
     ai.users = set()
     for i in range(N):
-        await ai.add_bug(user_id=i,
-                structured_info= {'id': 1},
+        await ai.add_bug(user_id=user_id,
+                structured_info= {'id': i},
                 summary="summary", description= "description")
-        status, message = await ai.update_bug(user_id=i,structured_info={'id': 1, 'batch_id': None})
+        status, message = await ai.update_bug(user_id=user_id,structured_info={'id': i, 'batch_id': None})
         assert status == BCJStatus.OK and message == \
             BCJMessage.VALID_INPUT
     await database.setup_database(reset=True)
     await database.close_pool()
 
 @pytest.mark.asyncio
-async def test_update_bug_no_summ_and_desc_update_nothing(ai,database,N):
+async def test_update_bug_no_summ_and_desc_update_nothing(ai,database,N,user_id):
     """
     @ai.update_bug()
     Testing updates without any updatable value.
@@ -490,10 +494,10 @@ async def test_update_bug_no_summ_and_desc_update_nothing(ai,database,N):
     await database.setup_database(reset=True)
     ai.users = set()
     for i in range(N):
-        await ai.add_bug(user_id=i,
-                structured_info= {'id': 1,'batch_id': None},
+        await ai.add_bug(user_id=user_id,
+                structured_info= {'id': i,'batch_id': None},
                 summary="summary", description= "description")
-        status, message = await ai.update_bug(user_id=i,structured_info={'id': 1})
+        status, message = await ai.update_bug(user_id=user_id,structured_info={'id': i})
         assert status == BCJStatus.BAD_REQUEST and message == \
             BCJMessage.NO_UPDATES
     await database.setup_database(reset=True)
@@ -501,7 +505,7 @@ async def test_update_bug_no_summ_and_desc_update_nothing(ai,database,N):
 
 
 @pytest.mark.asyncio
-async def test_update_bug_on_non_existing_data(ai,database,N):
+async def test_update_bug_on_non_existing_data(ai,database,N,user_id):
     """
     @ai.update_bug()
     Tests update on non existent example
@@ -509,11 +513,11 @@ async def test_update_bug_on_non_existing_data(ai,database,N):
     await database.setup_database(reset=True)
     ai.users = set()
     for i in range(N):
-        await ai.add_bug(user_id=i,
-                structured_info= {'id': 1,'batch_id': None},
+        await ai.add_bug(user_id=user_id,
+                structured_info= {'id': i,'batch_id': None},
                 summary="summary", description= "description")
-        status, message = await ai.update_bug(user_id=i,
-                                        structured_info={'id': 2},
+        status, message = await ai.update_bug(user_id=user_id,
+                                        structured_info={'id': i+1000},
                                         summary="summary",
                                         description= "description")
         assert status == BCJStatus.BAD_REQUEST and message == \
@@ -522,7 +526,7 @@ async def test_update_bug_on_non_existing_data(ai,database,N):
     await database.close_pool()
 
 @pytest.mark.asyncio
-async def test_update_bug_on_valid_data(ai,database,N):
+async def test_update_bug_on_valid_data(ai,database,N, user_id):
     """
     @ai.update_bug()
 
@@ -532,14 +536,14 @@ async def test_update_bug_on_valid_data(ai,database,N):
     ai.users = set()
     for i in range(N):
 
-        await ai.add_bug(user_id=i,
+        await ai.add_bug(user_id=user_id,
                 structured_info= {
-                    'id': 1,
+                    'id': i,
                     'batch_id': random.choice([None,random.randint(0,10)])},
                 summary="summary",
                 description= "description")
-        status, message = await ai.update_bug(user_id=i,
-                                        structured_info={'id': 1},
+        status, message = await ai.update_bug(user_id=user_id,
+                                        structured_info={'id': i},
                                         summary="new summary")
         assert status == BCJStatus.OK and message == \
             BCJMessage.VALID_INPUT
@@ -551,7 +555,7 @@ async def test_update_bug_on_valid_data(ai,database,N):
 ###############################
 
 @pytest.mark.asyncio
-async def test_add_batch_valid_data(ai,database, valid_batch_data):
+async def test_add_batch_valid_data(ai,database, valid_batch_data, user_id):
     """
     @ai.add_batch()
     Tests inserting valid chunk of batches.
@@ -559,7 +563,6 @@ async def test_add_batch_valid_data(ai,database, valid_batch_data):
     await database.setup_database(reset=True)
     ai.users = set()
 
-    user_id = 1
     data = {
         'user_id': user_id,
         'data': valid_batch_data
@@ -570,7 +573,7 @@ async def test_add_batch_valid_data(ai,database, valid_batch_data):
     await database.close_pool()
 
 @pytest.mark.asyncio
-async def test_add_batch_valid_data_batch_id_error(ai, database, invalid_batch_data):
+async def test_add_batch_valid_data_batch_id_error(ai, database, invalid_batch_data,user_id):
     """
     @ai.add_batch()
     Tests inserting invalid data.
@@ -579,7 +582,6 @@ async def test_add_batch_valid_data_batch_id_error(ai, database, invalid_batch_d
     await database.setup_database(reset=True)
     ai.users = set()
 
-    user_id = 1
     data = {
         'user_id': user_id,
         'data': invalid_batch_data
@@ -593,7 +595,7 @@ async def test_add_batch_valid_data_batch_id_error(ai, database, invalid_batch_d
 
 
 @pytest.mark.asyncio
-async def test_add_batch_valid_data_missing_text(ai, database, invalid_batch_data_missing_text):
+async def test_add_batch_valid_data_missing_text(ai, database, invalid_batch_data_missing_text,user_id):
     """
     @ai.add_batch()
     Tests inserting invalid data.
@@ -603,7 +605,7 @@ async def test_add_batch_valid_data_missing_text(ai, database, invalid_batch_dat
     await database.setup_database(reset=True)
     ai.users = set()
 
-    user_id = 1
+
     data = {
         'user_id': user_id,
         'data': invalid_batch_data_missing_text
@@ -616,7 +618,7 @@ async def test_add_batch_valid_data_missing_text(ai, database, invalid_batch_dat
     await database.close_pool()
 
 @pytest.mark.asyncio
-async def test_add_batch_duplicate_key(ai, database, duplicate_id_batch_data):
+async def test_add_batch_duplicate_key(ai, database, duplicate_id_batch_data, user_id):
     """
     @ai.add_batch()
     Tests inserting invalid data.
@@ -626,7 +628,6 @@ async def test_add_batch_duplicate_key(ai, database, duplicate_id_batch_data):
     await database.setup_database(reset=True)
     ai.users = set()
 
-    user_id = 1
     data = {
         'user_id': user_id,
         'data': duplicate_id_batch_data
@@ -642,7 +643,7 @@ async def test_add_batch_duplicate_key(ai, database, duplicate_id_batch_data):
 ##################################
 
 @pytest.mark.asyncio
-async def test_remove_batch_no_updates(ai, database,valid_batch_data):
+async def test_remove_batch_no_updates(ai, database,valid_batch_data,user_id):
     """
     @ai.remove_batch()
     Tests:
@@ -650,22 +651,21 @@ async def test_remove_batch_no_updates(ai, database,valid_batch_data):
     """
     await database.setup_database(reset=True)
     ai.users = set()
-    user = 1
 
     #valid_data has batch_id=1
     data = {
-        'user_id': 1,
+        'user_id': user_id,
         'data': valid_batch_data
     }
     await ai.add_batch(**data)
 
-    status, message = await ai.remove_batch(user_id=user,batch_id=2)
+    status, message = await ai.remove_batch(user_id=user_id,batch_id=2)
     assert status == BCJStatus.BAD_REQUEST and \
         message == BCJMessage.NO_DELETION
     await database.close_pool()
 
 @pytest.mark.asyncio
-async def test_remove_batch_valid_remove(ai, database,valid_batch_data):
+async def test_remove_batch_valid_remove(ai, database,valid_batch_data,user_id):
     """
     @ai.remove_batch()
     Tests:
@@ -673,16 +673,15 @@ async def test_remove_batch_valid_remove(ai, database,valid_batch_data):
     """
     await database.setup_database(reset=True)
     ai.users = set()
-    user = 1
 
     #valid_data has batch_id=1
     data = {
-        'user_id': 1,
+        'user_id': user_id,
         'data': valid_batch_data
     }
     await ai.add_batch(**data)
 
-    status, message = await ai.remove_batch(user_id=user,batch_id=1)
+    status, message = await ai.remove_batch(user_id=user_id,batch_id=1)
     assert status == BCJStatus.OK and \
         message == BCJMessage.VALID_INPUT
     await database.close_pool()
@@ -692,7 +691,7 @@ async def test_remove_batch_valid_remove(ai, database,valid_batch_data):
 #############################################
 
 @pytest.mark.asyncio
-async def test_db_and_kdtree_equivalency_on_delete(ai,valid_batch_data,database,N):
+async def test_db_and_kdtree_equivalency_on_delete(ai,valid_batch_data,database,N, user_id):
     """
     Tests for KDTree and database cohesion
 
@@ -704,14 +703,13 @@ async def test_db_and_kdtree_equivalency_on_delete(ai,valid_batch_data,database,
     """
     await database.setup_database(reset=True)
     ai.users = set()
-    user = 1
     data = {
-        'user_id': user,
+        'user_id': user_id,
         'data': valid_batch_data
     }
     #add a batch and assert that kdtree and database contains same data.
     await ai.add_batch(**data)
-    db_data = await database.fetch_all(user)
+    db_data = await database.fetch_all(user_id)
     db_ids = [data['id'] for data in db_data]
     db_embeddings = []
     db_embeddings = [data['embeddings'] for data in db_data]
@@ -721,8 +719,8 @@ async def test_db_and_kdtree_equivalency_on_delete(ai,valid_batch_data,database,
 
     #delete values and assert that kdtree and database contain the same data
     for i in range(N):
-        await ai.remove_bug(user_id=user, id=i)
-        db_data = await database.fetch_all(user)
+        await ai.remove_bug(user_id=user_id, id=i)
+        db_data = await database.fetch_all(user_id)
         kdtree_ids = ai.kdtree.local_indices.tolist()
         kdtree_embeddings = ai.kdtree.data.tolist()
         db_ids = [data['id'] for data in db_data]
@@ -730,9 +728,9 @@ async def test_db_and_kdtree_equivalency_on_delete(ai,valid_batch_data,database,
         assert kdtree_embeddings == db_embeddings and db_ids == kdtree_ids
 
     #remove everything this user has put in, the batch with batch_id = 1.
-    await ai.remove_batch(user_id= user,batch_id=1)
+    await ai.remove_batch(user_id= user_id,batch_id=1)
     try:
-        await database.fetch_all(user)
+        await database.fetch_all(user_id)
         assert False
     except NotFoundError:
         assert ai.kdtree is None
@@ -747,7 +745,7 @@ async def test_kdtree_and_db_equivalency_multiple_users(ai,database):
     await database.setup_database(reset=True)
     ai.users = set()
 
-    first_user = 1
+    first_user = "1"
     for _id in range(2):
         await ai.add_bug(user_id= first_user,
                     structured_info= {
@@ -756,7 +754,7 @@ async def test_kdtree_and_db_equivalency_multiple_users(ai,database):
                     summary='summary',
                     description='description'
         )
-    second_user = 2
+    second_user = "2"
     await ai.add_bug(user_id= second_user,
                     structured_info= {
                         'id': 1,
@@ -790,7 +788,7 @@ async def test_kdtree_and_db_equivalency_update_bug(ai,database):
     ai.users = set()
 
 
-    user = 1
+    user = "1"
 
     await ai.add_bug(user_id= user,
                 structured_info= {
