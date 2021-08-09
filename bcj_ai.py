@@ -138,9 +138,16 @@ class BCJAIapi:
         kdtree: up_utils.kdtree
             nearest neighbour look up
 
+    Class variables:
+        output_file
+        dataset
+        commoncrawl_path
+        googlenews_path
+
     Private methods:
         _restructure_tree
         _update_tree_for_user
+
     Instance methods:
         get_similar_bugs_k
         add_bug
@@ -149,6 +156,11 @@ class BCJAIapi:
         remove_batch
         add_batch
     """
+
+    output_file = os.getenv('OUTPUT_FILE')
+    dataset = os.getenv('DATASET') # Dataset can either be googlenews or commoncrawl
+    commoncrawl_path = os.getenv('COMMONCRAWL_PATH')
+    googlenews_path = os.getenv('GOOGLENEWS_PATH')    
 
     def __init__(self, users: set, database: Database):
         """
@@ -169,21 +181,19 @@ class BCJAIapi:
         -------
         BCJAIapi object.
         """
+
+
         self._lock = Lock()
         self._database = database
         self._model = tf.keras.models.load_model('Models', compile=False)
         self.users = users
         self.kdtree = None
         self.current_user = int()
-        OUTPUT_FILE = os.getenv('OUTPUT_FILE')
-        DATASET = os.getenv('DATASET') # Dataset can either be googlenews or commoncrawl
-        COMMONCRAWL_PATH = os.getenv('COMMONCRAWL_PATH')
-        GOOGLENEWS_PATH = os.getenv('GOOGLENEWS_PATH')
         self._w2v = Word2Vec(
-            outputfile=OUTPUT_FILE,
-            dataset=DATASET,
-            commoncrawl_path=COMMONCRAWL_PATH,
-            googlenews_path=GOOGLENEWS_PATH)
+            outputfile=BCJAIapi.output_file,
+            dataset=BCJAIapi.dataset,
+            commoncrawl_path=BCJAIapi.commoncrawl_path,
+            googlenews_path=BCJAIapi.googlenews_path)
 
     @classmethod
     async def initalize(cls, database: Database) -> BCJAIapi:
