@@ -43,7 +43,7 @@ def valid_data(rng):
     N = 10
 
     return zip(list(range(N)),
-                list(range(N)),
+                [str(i).zfill(1) for i in range(N)],
                 [rng.random(128) for _ in range(N)],
                 [random.choice([random.randint(0,10),None]) for _ in range(N)])
 
@@ -53,9 +53,9 @@ def duplicate_data(rng):
     Data containing multiple duplicate keys
     """
     N = 10
-    keys = [1 for i in range(1,N)]
+    keys = [str(1) for _ in range(1,N)]
     return zip(keys,
-                keys,
+                [1 for _ in range(1,N)],
                 [rng.random(128) for _ in range(N)],
                 [random.choice([range(1,N),None]) for _ in range(N)])
 
@@ -129,9 +129,9 @@ async def test_invalid_insert_duplicate_key(database, duplicate_data):
 
     """
     await database.setup_database(reset=True)
-    await database.insert_user(1)
+    await database.insert_user("1")
 
-    await database.insert(1,1,[1,2])
+    await database.insert(id=1,user_id="1",embeddings=[1,2])
     for id,user_id,embeddings,batch_id in duplicate_data:
         try:
             await database.insert(id=id,
@@ -157,8 +157,8 @@ async def test_invalid_insert_user_duplicate_key(database):
 
     """
     await database.setup_database(reset=True)
-    await database.insert_user(1)
-    for user_id in zip([1 for i in range(0,10)]):
+    await database.insert_user("")
+    for user_id in zip(["1" for _ in range(0,10)]):
         try:
             await database.insert_user(user_id=user_id)
             assert False
@@ -297,7 +297,7 @@ async def test_delete_valid(database,valid_data):
     test_valid_insert(database,valid_data)
     N = 10
     for idx in range(N):
-        await database.delete(id=idx,user_id=idx)
+        await database.delete(id=idx,user_id=str(idx))
     await database.close_pool()
 
 async def test_delete_invalid(database,valid_data):
@@ -332,7 +332,7 @@ async def test_delete_batch_valid(database, valid_data):
     N = 10
     batch_id = 1
     for idx in range(N):
-        await database.delete_batch(batch_id=batch_id,user_id=idx)
+        await database.delete_batch(batch_id=batch_id,user_id=str(idx))
     await database.close_pool()
 
 async def test_delete_batch_invalid(database,valid_data):
@@ -376,7 +376,7 @@ async def test_fetch_users_not_empty(database):
     """
     await database.setup_database(reset=True)
     for i in range(10):
-        await database.insert_user(i)
+        await database.insert_user(str(i))
 
     assert isinstance(await database.fetch_users(),list)
     await database.close_pool()

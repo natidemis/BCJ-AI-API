@@ -120,15 +120,6 @@ class BCJAIapi:
     Class methods:
     initialize
 
-    Private instance variables:
-        _lock: threading.Lock
-            Semaphore for locking certain resources
-        _database: db.Database
-            Connections to the database
-        _model: tf.keras.model
-            model for predicting word embeddings
-        _w2v: up_utils.Word2Vec
-            word embedder
 
     Instance variables:
         users:
@@ -137,16 +128,6 @@ class BCJAIapi:
             current user of the instance
         kdtree: up_utils.kdtree
             nearest neighbour look up
-
-    Class variables:
-        output_file
-        dataset
-        commoncrawl_path
-        googlenews_path
-
-    Private methods:
-        _restructure_tree
-        _update_tree_for_user
 
     Instance methods:
         get_similar_bugs_k
@@ -157,10 +138,13 @@ class BCJAIapi:
         add_batch
     """
 
-    output_file = os.getenv('OUTPUT_FILE')
-    dataset = os.getenv('DATASET') # Dataset can either be googlenews or commoncrawl
-    commoncrawl_path = os.getenv('COMMONCRAWL_PATH')
-    googlenews_path = os.getenv('GOOGLENEWS_PATH')    
+    _w2v = Word2Vec(
+            outputfile=os.getenv('OUTPUT_FILE'),
+            dataset=os.getenv('DATASET'), # Dataset can either be googlenews or commoncrawl,
+            commoncrawl_path=os.getenv('COMMONCRAWL_PATH'),
+            googlenews_path=os.getenv('GOOGLENEWS_PATH'))   
+
+    _model = tf.keras.models.load_model('Models', compile=False)
 
     def __init__(self, users: set, database: Database):
         """
@@ -182,18 +166,12 @@ class BCJAIapi:
         BCJAIapi object.
         """
 
-
         self._lock = Lock()
         self._database = database
-        self._model = tf.keras.models.load_model('Models', compile=False)
         self.users = users
         self.kdtree = None
         self.current_user = int()
-        self._w2v = Word2Vec(
-            outputfile=BCJAIapi.output_file,
-            dataset=BCJAIapi.dataset,
-            commoncrawl_path=BCJAIapi.commoncrawl_path,
-            googlenews_path=BCJAIapi.googlenews_path)
+
 
     @classmethod
     async def initalize(cls, database: Database) -> BCJAIapi:
@@ -304,7 +282,7 @@ class BCJAIapi:
         k = min(k,N)
 
         try:
-            vec= self._model.predict(np.array([self._w2v.get_sentence_matrix(data)]))
+            vec= BCJAIapi._model.predict(np.array([BCJAIapi._w2v.get_sentence_matrix(data)]))
         except Exception:
             logger.error('Could not predict/vectorize for %s', data)
             return BCJStatus.NOT_IMPLEMENTED, BCJMessage.UNPROCESSABLE_INPUT
@@ -355,7 +333,7 @@ class BCJAIapi:
             else bleach.clean(summary)
         batch_id = structured_info['batch_id'] if 'batch_id' in structured_info else None
         try:
-            embeddings= self._model.predict(np.array([self._w2v.get_sentence_matrix(data)]))
+            embeddings= BCJAIapi._model.predict(np.array([BCJAIapi._w2v.get_sentence_matrix(data)]))
         except Exception:
             logger.error('Data is invalid for %s',data)
             return BCJStatus.NOT_IMPLEMENTED, BCJMessage.UNPROCESSABLE_INPUT
@@ -454,7 +432,7 @@ class BCJAIapi:
         data = bleach.clean(description) if bool(description) \
             else bleach.clean(summary)
         try:
-            embeddings= self._model.predict(np.array([self._w2v.get_sentence_matrix(data)]))
+            embeddings= BCJAIapi._model.predict(np.array([BCJAIapi._w2v.get_sentence_matrix(data)]))
         except Exception:
             logger.error('Data is invalid for %s',data)
             return BCJStatus.NOT_IMPLEMENTED, BCJMessage.UNPROCESSABLE_INPUT
@@ -538,7 +516,7 @@ class BCJAIapi:
 
         #vectorize sentences and combine them with the approperiate id
         try:
-            embeddings = self._model.predict(np.array(self._w2v.get_sentence_matrix(sentences)))
+            embeddings = BCJAIapi._model.predict(np.array(BCJAIapi._w2v.get_sentence_matrix(sentences)))
         except Exception:
             logger.error('Data is invalid: %s', sentences)
             return BCJStatus.NOT_IMPLEMENTED, BCJMessage.UNPROCESSABLE_INPUT
