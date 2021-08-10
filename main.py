@@ -16,7 +16,7 @@ import sys
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.responses import JSONResponse
-from bcj_ai import BCJMessage, BCJAIapi as AI
+from bcj_ai import BCJMessage, BCJAIapi
 from Misc.datamodels import (BatchDataModel,
                         GetDataModel,
                         MainDataModel,
@@ -29,8 +29,8 @@ load_dotenv()
 secret_token = os.getenv('SECRET_TOKEN')
 app = FastAPI()
 
-ai_manager: AI #pylint: disable=invalid-name
-database: Database #pylint: disable=invalid-name
+AICONTROLLER: BCJAIapi #pylint: disable=invalid-name
+DATABASE: Database #pylint: disable=invalid-name
 
 
 def verify_token(req: Request):
@@ -54,16 +54,16 @@ async def startup_event():
     logger.info('Starting app..')
     reset = os.getenv('RESET','RESET=True not in env')
 
-    global database #pylint: disable=global-statement,invalid-name
-    database = await Database.connect_pool()
-    setup = await database.setup_database(reset=reset == 'True')
+    global DATABASE #pylint: disable=global-statement,invalid-name
+    DATABASE = await Database.connect_pool()
+    setup = await DATABASE.setup_database(reset=reset == 'True')
 
     #Only start up if database has been successfully setup
     if not setup:
         sys.exit()
 
-    global ai_manager #pylint: disable=global-statement,invalid-name
-    ai_manager = await AI.initalize(database)
+    global AICONTROLLER #pylint: disable=global-statement,invalid-name
+    AICONTROLLER = await BCJAIapi.initalize(DATABASE)
 
 
 
@@ -72,7 +72,7 @@ async def shut_down():
     """
     Close nessary variables
     """
-    await database.close_pool()
+    await DATABASE.close_pool()
     logger.info("Server shutting down..")
 
 
@@ -97,7 +97,7 @@ async def k_most_similar_bugs(data: GetDataModel, authorized: bool = Depends(ver
 
 
     try:
-        bugs = await ai_manager.get_similar_bugs_k(**data.dict())
+        bugs = await AICONTROLLER.get_similar_bugs_k(**data.dict())
     except ValueError :
         raise HTTPException(status_code=404, detail=BCJMessage.NO_USER.value)
     except AssertionError:
@@ -130,7 +130,7 @@ async def insert_bugs(data: MainDataModel, authorized: bool = Depends(verify_tok
     """
 
     try:
-        status, message = await ai_manager.add_bug(**data.dict())
+        status, message = await AICONTROLLER.add_bug(**data.dict())
     except ValueError:
         raise HTTPException(status_code=404, detail= BCJMessage.NO_USER.value)
     except AssertionError:
@@ -156,7 +156,7 @@ async def update_bug(data: MainDataModel, authorized: bool = Depends(verify_toke
     """
 
     try:
-        status, message = await ai_manager.update_bug(**data.dict())
+        status, message = await AICONTROLLER.update_bug(**data.dict())
     except ValueError:
         raise HTTPException(status_code=404, detail= BCJMessage.NO_USER.value)
     return JSONResponse(content={'detail': message.value}, status_code=status.value)
@@ -181,7 +181,7 @@ async def delete_bug(data: DeleteDataModel, authorized: bool = Depends(verify_to
     A message with a brief description of the result for the request and status code.
     """
     try:
-        status, message = await ai_manager.remove_bug(**data.dict())
+        status, message = await AICONTROLLER.remove_bug(**data.dict())
     except ValueError:
         raise HTTPException(status_code=404, detail= BCJMessage.NO_USER.value)
     return JSONResponse(content={'detail': message.value}, status_code=status.value)
@@ -207,7 +207,7 @@ async def delete_batch(data: DeleteBatchDataModel, authorized: bool = Depends(ve
     """
 
     try:
-        status, message = await ai_manager.remove_batch(**data.dict())
+        status, message = await AICONTROLLER.remove_batch(**data.dict())
     except ValueError:
         raise HTTPException(status_code=404, detail= BCJMessage.NO_USER.value)
     return JSONResponse(content={'detail': message.value}, status_code=status.value)
@@ -234,7 +234,7 @@ async def insert_batch(data: BatchDataModel, authorized: bool = Depends(verify_t
     """
 
     try:
-        status, message = await ai_manager.add_batch(**data.dict())
+        status, message = await AICONTROLLER.add_batch(**data.dict())
     except ValueError:
         raise HTTPException(status_code=404, detail= BCJMessage.NO_USER.value)
     except AssertionError:
