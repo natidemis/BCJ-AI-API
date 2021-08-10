@@ -18,6 +18,7 @@ from threading import Lock
 from typing import Tuple, Union
 from attr import dataclass
 import tensorflow as tf
+from typing import List
 import numpy as np
 import bleach
 from dotenv import load_dotenv
@@ -43,10 +44,7 @@ def authenticate_user(fn):
     """
     async def decorator(self, *args, **kwargs):
         user_id = kwargs.get('user_id')
-        if user_id in self.users:
-            if self.current_user != user_id:
-                await self._update_tree_for_user(user_id)
-        else:
+        if user_id not in self.users:
             logger.error('User: %s not in database: %s, Auth failed',user_id,self.users)
             raise ValueError('User not available')
         return await fn(self, *args, **kwargs)
@@ -68,10 +66,7 @@ def get_or_create_user(fn):
     """
     async def decorator(self, *args, **kwargs):
         user_id = kwargs.get('user_id')
-        if user_id in self.users:
-            if self.current_user != user_id:
-                await self._update_tree_for_user(user_id)
-        else:
+        if user_id not in self.users:
             try:
                 await self._database.insert_user(user_id)
                 #create an empty kdtree and a threading.Lock for user
@@ -131,13 +126,10 @@ class BCJAIapi:
 
 
     Instance variables:
-        users:
-            All users currently available in the database
-        current_user:
-            current user of the instance
-        kdtree: up_utils.kdtree
-            nearest neighbour look up
-
+        users: dict
+            All users currently available, key-value pairs -> {user_id: UserManager}
+        database: Database
+            connection pool to the database
     Instance methods:
         get_similar_bugs_k
         add_bug
@@ -155,7 +147,7 @@ class BCJAIapi:
 
     _model = tf.keras.models.load_model('Models', compile=False)
 
-    def __init__(self, users: set, database: Database):
+    def __init__(self, users: dict, database: Database):
         """
         Initialize the AI model from disk; read embedding vectors from disk;
         get ready for classifying bugs and returning similar bug ids.
@@ -165,8 +157,8 @@ class BCJAIapi:
 
         Arguments
         ---------
-        users - set:
-            A set of user_ids currently available
+        users - dict:
+            A dict of user_ids - UserManager key-value pairs
         database - db.Database
             a database object with a connection pool.
 
@@ -178,7 +170,6 @@ class BCJAIapi:
 
         self._database = database
         self.users = users
-        self.current_user = str()
 
 
     @classmethod
@@ -209,7 +200,7 @@ class BCJAIapi:
         return cls(users,database)
 
     @staticmethod
-    def _create_tree(new_data: list) -> KDTree:
+    def _create_tree(new_data: Union[None,List[dict]]) -> KDTree:
         """
         Private method for updating 'kdtree'.
 
@@ -244,7 +235,7 @@ class BCJAIapi:
         with self.users[user_id].lock:
             data = await self._database.fetch_all(user_id, err=False)
             self.users[user_id].kdtree = BCJAIapi._create_tree(data)
-            self.current_user = user_id
+
 
 
     @authenticate_user
@@ -253,7 +244,7 @@ class BCJAIapi:
                             summary: str = "",
                             description: str = "",
                             structured_info: str=None,
-                            k: int=5) -> Tuple[BCJStatus, Union[dict,str]]:
+                            k: int=5) -> Tuple[BCJStatus, Union[dict,BCJMessage]]:
         """
         Return the IDs and distances(percentage) of the k most similar bugs
         based on given summary, desription, and structured information.
