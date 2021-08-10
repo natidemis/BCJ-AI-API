@@ -127,7 +127,7 @@ class Database:
     delete_batch
     fetch_users
     close_pool
-    
+
 
     Instance variables:
     pool
@@ -158,7 +158,7 @@ class Database:
         pool = await asyncpg.create_pool(os.getenv('DATABASE_URL'), command_timeout=60)
         logger.info('Constructed database with a pool connection, %s',pool)
         return cls(pool=pool)
-    
+
     async def close_pool(self) -> None:
         """
         Close the pool connection
@@ -300,7 +300,7 @@ class Database:
             raise DuplicateKeyError('Duplicate key error, %s' % e) from e
 
 
-    async def fetch_all(self, user_id: str, err: bool = True) -> List[dict]:
+    async def fetch_all(self, user_id: str, err: bool = True) -> Union[None,List[dict]]:
         """
         Instance method for fetching all rows for a user in the database
 
@@ -326,7 +326,7 @@ class Database:
                 'embeddings': row['embeddings'],
                 'batch_id': row['batch_id']} for row in rows]
 
-            
+
 
     async def update(self,
                         id: int,
@@ -442,7 +442,7 @@ class Database:
 
 
 
-    async def fetch_users(self) -> List[int]:
+    async def fetch_users(self) -> List[str]:
         """
         Instance method for fetching all users in the database
 
