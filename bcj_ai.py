@@ -72,9 +72,8 @@ def get_or_create_user(fn):
                 await self._update_tree_for_user(user_id)
         else:
             try:
-                with self._lock:
-                    await self._database.insert_user(user_id)
-                self.users.add(user_id)
+                await self._database.insert_user(user_id)
+                self.users[user_id] = {'kdtree': None,'lock': Lock()} #create an empty kdtree and a threading.Lock for user
                 await self._update_tree_for_user(user_id)
             except (TypeError, DuplicateKeyError) as e:
                 logger.error('Inserting user: %s failed for err: %s',user_id, e)
@@ -166,11 +165,10 @@ class BCJAIapi:
         BCJAIapi object.
         """
 
-        self._lock = Lock()
+
         self._database = database
         self.users = users
-        self.kdtree = None
-        self.current_user = int()
+        self.current_user = str()
 
 
     @classmethod
@@ -188,15 +186,21 @@ class BCJAIapi:
         -------
         BCJAIapi object initialized with all available users.
         """
+        #create a dict of {user_id: (KDTree, threading.Lock)}
         try:
-            users = set(await database.fetch_users())
+            users = {user_id: 
+                    {
+                        'kdtree': BCJAIapi._create_tree(await database.fetch_all(user_id, err=False)),
+                        'lock': Lock()
+                    }
+                    for user_id in await database.fetch_users()}
         except NotFoundError:
-            users = set()
+            users = {}
         logger.info('Initialized BCJAIapi with users: %s', users)
         return cls(users,database)
 
     @staticmethod
-    def _restructure_tree(new_data: list) -> KDTree:
+    def _create_tree(new_data: list) -> KDTree:
         """
         Private method for updating 'kdtree'.
 
@@ -207,7 +211,7 @@ class BCJAIapi:
 
         Returns
         -------
-        None, constructs self.kdtree with a new KDTree object as necessary.
+        None, constructs self.users[user_id]['kdtree'] with a new KDTree object as necessary.
         """
         if new_data:
             embeddings = np.vstack([data['embeddings'] for data in new_data])
@@ -218,7 +222,7 @@ class BCJAIapi:
 
     async def _update_tree_for_user(self, user_id: str) -> None:
         """
-        Update 'self.kdtree' approperiately for `user_id`
+        Update 'self.users[user_id]['kdtree']' approperiately for `user_id`
 
         Arguments
         ---------
@@ -228,14 +232,10 @@ class BCJAIapi:
         -------
         None
         """
-        with self._lock:
-            try:
-                data = await self._database.fetch_all(user_id)
-                self.kdtree = BCJAIapi._restructure_tree(data)
-            except NotFoundError:
-                self.kdtree = None
-            finally:
-                self.current_user = user_id
+        with self.users[user_id]['lock']:
+            data = await self._database.fetch_all(user_id, err=False)
+            self.users[user_id]['kdtree'] = BCJAIapi._create_tree(data)
+            self.current_user = user_id
 
 
     @authenticate_user
@@ -274,11 +274,11 @@ class BCJAIapi:
         #prepare data for vectorization and insertion
         data = bleach.clean(description) if bool(description) \
             else bleach.clean(summary)
-        if self.kdtree is None:
+        if self.users[user_id]['kdtree'] is None:
             logger.info('KDTree is empty for user: %s', user_id)
             raise NotFoundError
 
-        N = len(self.kdtree.indices)
+        N = len(self.users[user_id]['kdtree'].indices)
         k = min(k,N)
 
         try:
@@ -288,7 +288,7 @@ class BCJAIapi:
             return BCJStatus.NOT_IMPLEMENTED, BCJMessage.UNPROCESSABLE_INPUT
 
         with self. _lock:
-            dists,ids = self.kdtree.query(vec, k=k)
+            dists,ids = self.users[user_id]['kdtree'].query(vec, k=k)
 
         response = {
             "id": ids.flatten().tolist(),
@@ -338,7 +338,7 @@ class BCJAIapi:
             logger.error('Data is invalid for %s',data)
             return BCJStatus.NOT_IMPLEMENTED, BCJMessage.UNPROCESSABLE_INPUT
 
-        with self._lock:
+        with self.users[user_id]['lock']:
             try:
                 await self._database.insert(id=structured_info['id'],
                             user_id=user_id,
@@ -348,11 +348,11 @@ class BCJAIapi:
                 return BCJStatus.BAD_REQUEST, BCJMessage.DUPLICATE_ID
 
 
-        with self._lock:
-            if self.kdtree is None:
-                self.kdtree = KDTree(data=embeddings, indices=[structured_info['id']])
+        with self.users[user_id]['lock']:
+            if self.users[user_id]['kdtree'] is None:
+                self.users[user_id]['kdtree'] = KDTree(data=embeddings, indices=[structured_info['id']])
             else:
-                self.kdtree.update(embeddings, structured_info['id'])
+                self.users[user_id]['kdtree'].update(embeddings, structured_info['id'])
 
         return BCJStatus.OK, BCJMessage.VALID_INPUT
 
@@ -373,7 +373,7 @@ class BCJAIapi:
         BCJstatus, BCJMessage
         """
 
-        with self._lock:
+        with self.users[user_id]['lock']:
             try:
                 await self._database.delete(id=id,user_id=user_id)
             except NoUpdatesError:
@@ -418,7 +418,7 @@ class BCJAIapi:
         if not bool(summary) and not bool(description):
             if 'batch_id' not in structured_info:
                 return BCJStatus.BAD_REQUEST, BCJMessage.NO_UPDATES
-            with self._lock:
+            with self.users[user_id]['lock']:
                 try:
                     if 'batch_id' in structured_info:
                         await self._database.update(id=structured_info['id'],
@@ -437,7 +437,7 @@ class BCJAIapi:
             logger.error('Data is invalid for %s',data)
             return BCJStatus.NOT_IMPLEMENTED, BCJMessage.UNPROCESSABLE_INPUT
 
-        with self._lock:
+        with self.users[user_id]['lock']:
             try:
                 await self._database.update(id=structured_info['id'],
                                 user_id=user_id,
@@ -466,7 +466,7 @@ class BCJAIapi:
         -------
         BCJStatus, BCJMessage
         """
-        with self._lock:
+        with self.users[user_id]['lock']:
             try:
                 await self._database.delete_batch(batch_id,user_id)
             except NoUpdatesError:
@@ -523,7 +523,7 @@ class BCJAIapi:
         batch_data = [(bug['structured_info']['id'],user_id,
                             embedding,bug['structured_info']['batch_id'])
                             for bug, embedding in zip(data, embeddings)]
-        with self._lock:
+        with self.users[user_id]['lock']:
             try:
                 await self._database.insert_batch(batch_data)
             except DuplicateKeyError:
