@@ -300,7 +300,7 @@ class Database:
             raise DuplicateKeyError('Duplicate key error, %s' % e) from e
 
 
-    async def fetch_all(self, user_id: str) -> List[dict]:
+    async def fetch_all(self, user_id: str, err: bool = True) -> List[dict]:
         """
         Instance method for fetching all rows for a user in the database
 
@@ -317,8 +317,10 @@ class Database:
         """
         async with self.pool.acquire() as conn:
             rows = await conn.fetch(QueryString.FETCH.value,user_id)
-            if not rows:
-                raise NotFoundError("Nothing in the Database",rows)
+        if err and not rows:
+            raise NotFoundError("Nothing in the Database",rows)
+        if not rows:
+            return None
         logger.info("Fetching all succeeded")
         return [{'id': row['id'],
                 'embeddings': row['embeddings'],
