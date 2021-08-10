@@ -15,7 +15,7 @@ Artificial Intelligence API for usability problems.
 * flask-version branch (flask)
 
 
-The first version of the project used [`flask`](https://flask.palletsprojects.com/en/2.0.x/) as a web framework which made sense at first but with further investigation, it became clear that [`fastAPI`](https://fastapi.tiangolo.com/) satisfied our needs better. As we were deploying the flask app using `gunicorn`, some unwanted problems presented themselves, although solvable, it was a good enough reason to investigate `FastAPI`.
+The first version of the project used [`flask`](https://flask.palletsprojects.com/en/2.0.x/) as a web framework which made sense at first but with further investigation, it became clear that [`fastAPI`](https://fastapi.tiangolo.com/) satisfied our needs better. As we were deploying the flask app using `gunicorn`, some unwanted problems presented themselves, although solvable, it was a good enough reason to look into `FastAPI`.
 
 ### What the project needed to accomplish
 1. Needed to validate JSON data from client
