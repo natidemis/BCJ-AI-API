@@ -195,7 +195,8 @@ class BCJAIapi:
         logger.info('Initialized BCJAIapi with users: %s', users)
         return cls(users,database)
 
-    def _restructure_tree(self,new_data: list) -> KDTree:
+    @staticmethod
+    def _restructure_tree(new_data: list) -> KDTree:
         """
         Private method for updating 'kdtree'.
 
@@ -211,9 +212,8 @@ class BCJAIapi:
         if new_data:
             embeddings = np.vstack([data['embeddings'] for data in new_data])
             ids = np.array([data['id'] for data in new_data])
-            self.kdtree=KDTree(data=embeddings, indices=ids)
-        else:
-            self.kdtree = None
+            return KDTree(data=embeddings, indices=ids)
+
 
 
     async def _update_tree_for_user(self, user_id: str) -> None:
@@ -231,7 +231,7 @@ class BCJAIapi:
         with self._lock:
             try:
                 data = await self._database.fetch_all(user_id)
-                self._restructure_tree(data)
+                self.kdtree = BCJAIapi._restructure_tree(data)
             except NotFoundError:
                 self.kdtree = None
             finally:
