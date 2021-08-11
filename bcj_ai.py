@@ -6,7 +6,7 @@
 """
 @authors: kra33, Gitcelo, natidemis
 May 2021
-Halló
+
 API module for Bug Consolidation for Jira (BCJ) AI model.
 Used to store bugs and classify them.
 """
