@@ -14,9 +14,9 @@ Used to store bugs and classify them.
 from __future__ import annotations
 from enum import IntEnum, Enum
 import os
-from threading import Lock
+import asyncio
 from typing import Tuple, Union
-from attr import dataclass
+from dataclasses import dataclass
 import tensorflow as tf
 from typing import List
 import numpy as np
@@ -113,9 +113,14 @@ class BCJStatus(IntEnum):
 class UserManager:
     """
     Stores the main variables that affect a user
+
+    kdtree: KDTree
+        KDTree with data specifically for this user
+    lock: asyncio.BoundedSemaphore
+        resource access management for this user
     """
     kdtree: KDTree
-    lock = Lock()
+    lock = asyncio.BoundedSemaphore(1)
 
 class BCJAIapi:
     """
@@ -232,7 +237,7 @@ class BCJAIapi:
         -------
         None
         """
-        with self.users[user_id].lock:
+        async with self.users[user_id].lock:
             data = await self._database.fetch_all(user_id, err=False)
             self.users[user_id].kdtree = BCJAIapi._create_tree(data)
 
@@ -287,7 +292,7 @@ class BCJAIapi:
             logger.error('Could not predict/vectorize for %s', data)
             return BCJStatus.NOT_IMPLEMENTED, BCJMessage.UNPROCESSABLE_INPUT
 
-        with self.users[user_id].lock:
+        async with self.users[user_id].lock:
             dists,ids = self.users[user_id].kdtree.query(vec, k=k)
 
         response = {
@@ -334,7 +339,7 @@ class BCJAIapi:
         batch_id = structured_info['batch_id'] if 'batch_id' in structured_info else None
         embeddings= BCJAIapi._model.predict(np.array([BCJAIapi._w2v.get_sentence_matrix(data)]))
 
-        with self.users[user_id].lock:
+        async with self.users[user_id].lock:
             try:
                 await self._database.insert(id=structured_info['id'],
                             user_id=user_id,
@@ -344,7 +349,7 @@ class BCJAIapi:
                 return BCJStatus.BAD_REQUEST, BCJMessage.DUPLICATE_ID
 
 
-        with self.users[user_id].lock:
+        async with self.users[user_id].lock:
             if self.users[user_id].kdtree is None:
                 self.users[user_id].kdtree = KDTree(data=embeddings,
                                                     indices=[structured_info['id']])
@@ -370,7 +375,7 @@ class BCJAIapi:
         BCJstatus, BCJMessage
         """
 
-        with self.users[user_id].lock:
+        async with self.users[user_id].lock:
             try:
                 await self._database.delete(id=id,user_id=user_id)
             except NoUpdatesError:
@@ -415,7 +420,7 @@ class BCJAIapi:
         if not bool(summary) and not bool(description):
             if 'batch_id' not in structured_info:
                 return BCJStatus.BAD_REQUEST, BCJMessage.NO_UPDATES
-            with self.users[user_id].lock:
+            async with self.users[user_id].lock:
                 try:
                     if 'batch_id' in structured_info:
                         await self._database.update(id=structured_info['id'],
@@ -430,7 +435,7 @@ class BCJAIapi:
             else bleach.clean(summary)
         embeddings= BCJAIapi._model.predict(np.array([BCJAIapi._w2v.get_sentence_matrix(data)]))
 
-        with self.users[user_id].lock:
+        async with self.users[user_id].lock:
             try:
                 await self._database.update(id=structured_info['id'],
                                 user_id=user_id,
@@ -459,7 +464,7 @@ class BCJAIapi:
         -------
         BCJStatus, BCJMessage
         """
-        with self.users[user_id].lock:
+        async with self.users[user_id].lock:
             try:
                 await self._database.delete_batch(batch_id,user_id)
             except NoUpdatesError:
@@ -512,7 +517,7 @@ class BCJAIapi:
         batch_data = [(bug['structured_info']['id'],user_id,
                             embedding,bug['structured_info']['batch_id'])
                             for bug, embedding in zip(data, embeddings)]
-        with self.users[user_id].lock:
+        async with self.users[user_id].lock:
             try:
                 await self._database.insert_batch(batch_data)
             except DuplicateKeyError:
