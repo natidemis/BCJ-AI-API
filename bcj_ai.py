@@ -41,7 +41,7 @@ def authenticate_user(fn):
     Decorator to be applied to a function.
     """
     async def decorator(self, *args, **kwargs):
-        await self._lock.acquire()
+        self._lock.acquire()
         user_id = kwargs.get('user_id')
         if user_id in self.users:
             if self.current_user != user_id:
