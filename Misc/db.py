@@ -294,7 +294,7 @@ class Database:
             raise NotFoundError('User not in database') from e
         except asyncpg.exceptions.DataError as e:
             logger.error("Incorrect type inserted: %s",e)
-            raise NotFoundError('Incorrect type input' % e) from e
+            raise NotFoundError('Incorrect type input: {}'.format(e)) from e
         except asyncpg.exceptions.UniqueViolationError as e:
             logger.error("Duplicate key error: %s",e)
             raise DuplicateKeyError('Duplicate key error, %s' % e) from e
