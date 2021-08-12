@@ -148,7 +148,7 @@ class BCJAIapi:
         Arguments
         ---------
         users - dict:
-            A dict of user_ids - UserManager key-value pairs
+            A dict of user_ids - dict('kdtree': KDTree, 'lock': asyncio.BoundedSempaphore)
         database - db.Database
             a database object with a connection pool.
 
