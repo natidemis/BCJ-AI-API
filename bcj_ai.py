@@ -290,8 +290,7 @@ class BCJAIapi:
                 logger.error('Could not predict/vectorize for %s', data)
                 return BCJStatus.NOT_IMPLEMENTED, BCJMessage.UNPROCESSABLE_INPUT
 
-            with self. _lock:
-                dists,ids = self.kdtree.query(vec, k=k)
+            dists,ids = self.kdtree.query(vec, k=k)
 
             response = {
                 "id": ids.flatten().tolist(),
