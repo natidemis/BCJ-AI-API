@@ -68,8 +68,7 @@ def get_or_create_user(fn):
             try:
                 await self._database.insert_user(user_id)
                 #create an empty kdtree and a threading.Lock for user
-                self.users[user_id] = {'lock': asyncio.BoundedSemaphore(1)}
-                await self._update_tree_for_user(user_id)
+                self.users[user_id] = {'kdtree': None,'lock': asyncio.BoundedSemaphore(1)}
             except (TypeError, DuplicateKeyError) as e:
                 logger.error('Inserting user: %s failed for err: %s',user_id, e)
                 raise ValueError from e
@@ -224,8 +223,8 @@ class BCJAIapi:
         -------
         None
         """
+        data = await self._database.fetch_all(user_id, err=False)
         async with self.users[user_id]['lock']:
-            data = await self._database.fetch_all(user_id, err=False)
             self.users[user_id]['kdtree'] = BCJAIapi._create_tree(data)
 
 
@@ -265,26 +264,26 @@ class BCJAIapi:
         #prepare data for vectorization and insertion
         data = bleach.clean(description) if bool(description) \
             else bleach.clean(summary)
-        if self.users[user_id]['kdtree'] is None:
-            logger.info('KDTree is empty for user: %s', user_id)
-            raise NotFoundError
-
-        N = len(self.users[user_id]['kdtree'].indices)
-        k = min(k,N)
-
-        try:
-            vec= BCJAIapi._model.predict(np.array([BCJAIapi._w2v.get_sentence_matrix(data)]))
-        except Exception:
-            logger.error('Could not predict/vectorize for %s', data)
-            return BCJStatus.NOT_IMPLEMENTED, BCJMessage.UNPROCESSABLE_INPUT
-
         async with self.users[user_id]['lock']:
+            if self.users[user_id]['kdtree'] is None:
+                logger.info('KDTree is empty for user: %s', user_id)
+                raise NotFoundError
+
+            N = len(self.users[user_id]['kdtree'].indices)
+            k = min(k,N)
+
+            try:
+                vec= BCJAIapi._model.predict(np.array([BCJAIapi._w2v.get_sentence_matrix(data)]))
+            except Exception:
+                logger.error('Could not predict/vectorize for %s', data)
+                return BCJStatus.NOT_IMPLEMENTED, BCJMessage.UNPROCESSABLE_INPUT
+
             dists,ids = self.users[user_id]['kdtree'].query(vec, k=k)
 
-        response = {
-            "id": ids.flatten().tolist(),
-            "dist": dists.flatten().tolist()
-        }
+            response = {
+                "id": ids.flatten().tolist(),
+                "dist": dists.flatten().tolist()
+            }
 
         return BCJStatus.OK, response
 
@@ -325,16 +324,13 @@ class BCJAIapi:
         batch_id = structured_info['batch_id'] if 'batch_id' in structured_info else None
         embeddings= BCJAIapi._model.predict(np.array([BCJAIapi._w2v.get_sentence_matrix(data)]))
 
-        async with self.users[user_id]['lock']:
-            try:
-                await self._database.insert(id=structured_info['id'],
-                            user_id=user_id,
-                            embeddings=embeddings,
-                            batch_id=batch_id)
-            except DuplicateKeyError:
-                return BCJStatus.BAD_REQUEST, BCJMessage.DUPLICATE_ID
-
-
+        try:
+            await self._database.insert(id=structured_info['id'],
+                        user_id=user_id,
+                        embeddings=embeddings,
+                        batch_id=batch_id)
+        except DuplicateKeyError:
+            return BCJStatus.BAD_REQUEST, BCJMessage.DUPLICATE_ID
         async with self.users[user_id]['lock']:
             if self.users[user_id]['kdtree'] is None:
                 self.users[user_id]['kdtree'] = KDTree(data=embeddings,
@@ -361,11 +357,10 @@ class BCJAIapi:
         BCJstatus, BCJMessage
         """
 
-        async with self.users[user_id]['lock']:
-            try:
-                await self._database.delete(id=id,user_id=user_id)
-            except NoUpdatesError:
-                return BCJStatus.NOT_FOUND, BCJMessage.NO_EXAMPLE
+        try:
+            await self._database.delete(id=id,user_id=user_id)
+        except NoUpdatesError:
+            return BCJStatus.NOT_FOUND, BCJMessage.NO_EXAMPLE
         await self._update_tree_for_user(user_id)
         return BCJStatus.OK, BCJMessage.VALID_INPUT
 
@@ -406,29 +401,27 @@ class BCJAIapi:
         if not bool(summary) and not bool(description):
             if 'batch_id' not in structured_info:
                 return BCJStatus.BAD_REQUEST, BCJMessage.NO_UPDATES
-            async with self.users[user_id]['lock']:
-                try:
-                    if 'batch_id' in structured_info:
-                        await self._database.update(id=structured_info['id'],
-                                        user_id=user_id,
-                                        batch_id=batch_id)
-                        return BCJStatus.OK, BCJMessage.VALID_INPUT
-                except NoUpdatesError:
-                    return BCJStatus.BAD_REQUEST, BCJMessage.NO_UPDATES
+            try:
+                if 'batch_id' in structured_info:
+                    await self._database.update(id=structured_info['id'],
+                                    user_id=user_id,
+                                    batch_id=batch_id)
+                    return BCJStatus.OK, BCJMessage.VALID_INPUT
+            except NoUpdatesError:
+                return BCJStatus.BAD_REQUEST, BCJMessage.NO_UPDATES
 
         #clean data and vectorize
         data = bleach.clean(description) if bool(description) \
             else bleach.clean(summary)
         embeddings= BCJAIapi._model.predict(np.array([BCJAIapi._w2v.get_sentence_matrix(data)]))
 
-        async with self.users[user_id]['lock']:
-            try:
-                await self._database.update(id=structured_info['id'],
-                                user_id=user_id,
-                                embeddings=embeddings,
-                                batch_id=batch_id)
-            except(TypeError, NoUpdatesError):
-                return BCJStatus.BAD_REQUEST, BCJMessage.NO_UPDATES
+        try:
+            await self._database.update(id=structured_info['id'],
+                            user_id=user_id,
+                            embeddings=embeddings,
+                            batch_id=batch_id)
+        except(TypeError, NoUpdatesError):
+            return BCJStatus.BAD_REQUEST, BCJMessage.NO_UPDATES
 
         await self._update_tree_for_user(user_id)
 
@@ -450,11 +443,11 @@ class BCJAIapi:
         -------
         BCJStatus, BCJMessage
         """
-        async with self.users[user_id]['lock']:
-            try:
-                await self._database.delete_batch(batch_id,user_id)
-            except NoUpdatesError:
-                return BCJStatus.BAD_REQUEST, BCJMessage.NO_DELETION
+
+        try:
+            await self._database.delete_batch(batch_id,user_id)
+        except NoUpdatesError:
+            return BCJStatus.BAD_REQUEST, BCJMessage.NO_DELETION
 
         await self._update_tree_for_user(user_id)
 
@@ -503,11 +496,11 @@ class BCJAIapi:
         batch_data = [(bug['structured_info']['id'],user_id,
                             embedding,bug['structured_info']['batch_id'])
                             for bug, embedding in zip(data, embeddings)]
-        async with self.users[user_id]['lock']:
-            try:
-                await self._database.insert_batch(batch_data)
-            except DuplicateKeyError:
-                return BCJStatus.ERROR, BCJMessage.DUPLICATE_ID_BATCH
+
+        try:
+            await self._database.insert_batch(batch_data)
+        except DuplicateKeyError:
+            return BCJStatus.ERROR, BCJMessage.DUPLICATE_ID_BATCH
 
         await self._update_tree_for_user(user_id)
         return BCJStatus.OK, BCJMessage.VALID_INPUT
