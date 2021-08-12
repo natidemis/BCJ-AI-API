@@ -2,10 +2,10 @@ CREATE TABLE IF NOT EXISTS Users(
     user_id varchar(128) primary key
 );
 CREATE TABLE IF NOT EXISTS Vectors(
-    id integer not null,
+    id bigint not null,
     user_id varchar(128) not null,
     embeddings double precision[] not null,
-    batch_id integer,
+    batch_id bigint,
     primary key (id, user_id),
     CONSTRAINT fk_user
         FOREIGN KEY (user_id)
