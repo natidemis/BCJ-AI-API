@@ -14,7 +14,7 @@ Used to store bugs and classify them.
 from __future__ import annotations
 from enum import IntEnum, Enum
 import os
-import asyncio
+import threading
 from typing import Tuple, Union
 import tensorflow as tf
 import numpy as np
@@ -169,7 +169,7 @@ class BCJAIapi:
         BCJAIapi object.
         """
 
-        self._lock = asyncio.BoundedSemaphore(1)
+        self._lock = threading.BoundedSemaphore(1)
         self._database = database
         self.users = users
         self.kdtree = None
