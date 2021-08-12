@@ -68,7 +68,6 @@ def get_or_create_user(fn):
     """
     async def decorator(self, *args, **kwargs):
         await self._lock.acquire()
-        print("accessed")
         user_id = kwargs.get('user_id')
         if user_id in self.users:
             if self.current_user != user_id:
