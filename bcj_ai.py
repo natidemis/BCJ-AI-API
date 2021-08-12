@@ -14,7 +14,7 @@ Used to store bugs and classify them.
 from __future__ import annotations
 from enum import IntEnum, Enum
 import os
-import threading
+import asyncio
 from typing import Tuple, Union
 import tensorflow as tf
 import numpy as np
@@ -41,7 +41,7 @@ def authenticate_user(fn):
     Decorator to be applied to a function.
     """
     async def decorator(self, *args, **kwargs):
-        self._lock.acquire()
+        await self._lock.acquire()
         user_id = kwargs.get('user_id')
         if user_id in self.users:
             if self.current_user != user_id:
@@ -169,7 +169,7 @@ class BCJAIapi:
         BCJAIapi object.
         """
 
-        self._lock = threading.BoundedSemaphore(1)
+        self._lock = asyncio.BoundedSemaphore(1)
         self._database = database
         self.users = users
         self.kdtree = None
