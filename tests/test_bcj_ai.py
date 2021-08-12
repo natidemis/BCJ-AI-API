@@ -22,12 +22,12 @@ import datetime
 import lorem
 import pytest
 import pandas as pd
-from threading import Lock
+import asyncio
 
 myPath = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, myPath + '/../')
 
-from bcj_ai import BCJAIapi, BCJStatus, BCJMessage, UserManager
+from bcj_ai import BCJAIapi, BCJStatus, BCJMessage
 
 from Misc.db import Database, NotFoundError
 ################
@@ -235,7 +235,7 @@ async def test_add_bug_duplicate_key(ai,duplicate_key_data,database,user_id):
         - Adding in an already existing key.
     """
     await database.setup_database(reset=True)
-    ai.users = {user_id: UserManager(None)}
+    ai.users = {user_id: {'kdtree': None,'lock': asyncio.BoundedSemaphore(1)} }
     await database.insert_user(user_id)
     await database.insert(id=1,user_id="1",embeddings=[1,1])
     for _user_id, structured_info, summ, disc in duplicate_key_data:
@@ -713,16 +713,16 @@ async def test_db_and_kdtree_equivalency_on_delete(ai,valid_batch_data,database,
     db_ids = [data['id'] for data in db_data]
     db_embeddings = []
     db_embeddings = [data['embeddings'] for data in db_data]
-    kdtree_ids = ai.users[user_id].kdtree.local_indices.tolist()
-    kdtree_embeddings = ai.users[user_id].kdtree.data.tolist()
+    kdtree_ids = ai.users[user_id]['kdtree'].local_indices.tolist()
+    kdtree_embeddings = ai.users[user_id]['kdtree'].data.tolist()
     assert kdtree_embeddings == db_embeddings and db_ids == kdtree_ids
 
     #delete values and assert that kdtree and database contain the same data
     for i in range(N):
         await ai.remove_bug(user_id=user_id, id=i)
         db_data = await database.fetch_all(user_id)
-        kdtree_ids = ai.users[user_id].kdtree.local_indices.tolist()
-        kdtree_embeddings = ai.users[user_id].kdtree.data.tolist()
+        kdtree_ids = ai.users[user_id]['kdtree'].local_indices.tolist()
+        kdtree_embeddings = ai.users[user_id]['kdtree'].data.tolist()
         db_ids = [data['id'] for data in db_data]
         db_embeddings = [data['embeddings'] for data in db_data]
         assert kdtree_embeddings == db_embeddings and db_ids == kdtree_ids
@@ -733,7 +733,7 @@ async def test_db_and_kdtree_equivalency_on_delete(ai,valid_batch_data,database,
         await database.fetch_all(user_id)
         assert False
     except NotFoundError:
-        assert ai.users[user_id].kdtree is None
+        assert ai.users[user_id]['kdtree'] is None
     await database.close_pool()
 
 
@@ -769,7 +769,7 @@ async def test_kdtree_and_db_equivalency_update_bug(ai,database,user_id):
     db_embeddings = []
     for data in db_data:
         db_embeddings.extend(data['embeddings'])
-    kdtree_ids = ai.users[user_id].kdtree.local_indices.tolist()
-    kdtree_embeddings = ai.users[user_id].kdtree.data.tolist()
+    kdtree_ids = ai.users[user_id]['kdtree'].local_indices.tolist()
+    kdtree_embeddings = ai.users[user_id]['kdtree'].data.tolist()
     assert kdtree_embeddings == db_embeddings and db_ids == kdtree_ids
     await database.close_pool()
