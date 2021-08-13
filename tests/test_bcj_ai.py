@@ -212,7 +212,7 @@ async def test_add_bug_no_desc_and_summ_available(ai,database, no_desc_and_summ)
     don't satisfy the 'bool' function.
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
 
     for user_id, structured_info, summ, disc in no_desc_and_summ:
         try:
@@ -235,7 +235,7 @@ async def test_add_bug_duplicate_key(ai,duplicate_key_data,database,user_id):
         - Adding in an already existing key.
     """
     await database.setup_database(reset=True)
-    ai.users = {user_id: {'kdtree': None,'lock': asyncio.BoundedSemaphore(1)} }
+    ai.user_manager = {user_id: {'kdtree': None,'lock': asyncio.BoundedSemaphore(1)} }
     await database.insert_user(user_id)
     await database.insert(id=1,user_id="1",embeddings=[1,1])
     for _user_id, structured_info, summ, disc in duplicate_key_data:
@@ -258,7 +258,7 @@ async def test_add_bug_valid_data(ai,valid_data,database):
         - Tests for valid insert into the database and KDTree
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
     for user_id, structured_info, summ, disc in valid_data:
 
         status, message = await ai.add_bug(user_id=user_id,
@@ -284,7 +284,7 @@ async def test_similar_bugs_k_no_desc_and_summ_available(ai,no_desc_and_summ,dat
     don't satisfy the 'bool' function.
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
     for user_id, structured_info, summ, disc in no_desc_and_summ:
         structured_info['id'] += 100
         try:
@@ -313,7 +313,7 @@ async def test_similar_bugs_k_no_data(ai,database,N):
     when no data is available for user.
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
     for id in range(2,N):
         #add a bunch of data for user_id 1
         await ai.add_bug(user_id="1",
@@ -349,7 +349,7 @@ async def test_similar_bugs_k_valid_input_no_k(ai,valid_data,database):
     Tests for fetching 'k' most similar with the default value for k.
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
     k = 5 #default value for k in get_similar_bugs_k
     num = 0 #number of bugs in the database
     for user_id, structured_info, summ, desc in valid_data:
@@ -377,7 +377,7 @@ async def test_similar_bugs_k_valid_input_w_k(ai,valid_data,database,N):
     with an arbitrary value of k
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
     k = random.randint(1,N) #default value for k in get_similar_bugs_k
     num = 0 #number of bugs in the database
     for user_id, structured_info, summ, desc in valid_data:
@@ -410,7 +410,7 @@ async def test_remove_bug_valid_delete(ai,database,N):
     Tests for removing an existing example from the database
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
     for i in range(N):
         await ai.add_bug(user_id="1",
             structured_info= {'id': i},
@@ -430,7 +430,7 @@ async def test_remove_bug_no_valid_id(ai,database,N,user_id):
     Tests for removing a non existent example from the database.
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
     await ai.add_bug(user_id=user_id,
             structured_info= {'id': 1},
             summary="summary",
@@ -455,7 +455,7 @@ async def test_update_bug_no_summ_and_desc_update_batch_id(ai,database,user_id):
     Tests for updating batch_id alone.
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
     await ai.add_bug(user_id=user_id,
             structured_info= {'id': 1},
             summary="summary", description= "description")
@@ -474,7 +474,7 @@ async def test_update_bug_no_summ_and_desc_update_batch_id_to_none(ai,database,N
     Tests for updating a batch_id to None(null) in the database
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
     for i in range(N):
         await ai.add_bug(user_id=user_id,
                 structured_info= {'id': i},
@@ -492,7 +492,7 @@ async def test_update_bug_no_summ_and_desc_update_nothing(ai,database,N,user_id)
     Testing updates without any updatable value.
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
     for i in range(N):
         await ai.add_bug(user_id=user_id,
                 structured_info= {'id': i,'batch_id': None},
@@ -511,7 +511,7 @@ async def test_update_bug_on_non_existing_data(ai,database,N,user_id):
     Tests update on non existent example
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
     for i in range(N):
         await ai.add_bug(user_id=user_id,
                 structured_info= {'id': i,'batch_id': None},
@@ -533,7 +533,7 @@ async def test_update_bug_on_valid_data(ai,database,N, user_id):
     Tests for valid update on an existing example
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
     for i in range(N):
 
         await ai.add_bug(user_id=user_id,
@@ -561,7 +561,7 @@ async def test_add_batch_valid_data(ai,database, valid_batch_data, user_id):
     Tests inserting valid chunk of batches.
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
 
     data = {
         'user_id': user_id,
@@ -580,7 +580,7 @@ async def test_add_batch_valid_data_batch_id_error(ai, database, invalid_batch_d
     Tests for assertion error, all batch_id must be the same
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
 
     data = {
         'user_id': user_id,
@@ -603,7 +603,7 @@ async def test_add_batch_valid_data_missing_text(ai, database, invalid_batch_dat
     must be a non-empty string.
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
 
 
     data = {
@@ -626,7 +626,7 @@ async def test_add_batch_duplicate_key(ai, database, duplicate_id_batch_data, us
     must be a non-empty string.
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
 
     data = {
         'user_id': user_id,
@@ -650,7 +650,7 @@ async def test_remove_batch_no_updates(ai, database,valid_batch_data,user_id):
         Removing a non-existing batch
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
 
     #valid_data has batch_id=1
     data = {
@@ -672,7 +672,7 @@ async def test_remove_batch_valid_remove(ai, database,valid_batch_data,user_id):
         removing an existing batch
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
 
     #valid_data has batch_id=1
     data = {
@@ -702,7 +702,7 @@ async def test_db_and_kdtree_equivalency_on_delete(ai,valid_batch_data,database,
         - empty database
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
     data = {
         'user_id': user_id,
         'data': valid_batch_data
@@ -713,16 +713,16 @@ async def test_db_and_kdtree_equivalency_on_delete(ai,valid_batch_data,database,
     db_ids = [data['id'] for data in db_data]
     db_embeddings = []
     db_embeddings = [data['embeddings'] for data in db_data]
-    kdtree_ids = ai.users[user_id]['kdtree'].local_indices.tolist()
-    kdtree_embeddings = ai.users[user_id]['kdtree'].data.tolist()
+    kdtree_ids = ai.user_manager[user_id]['kdtree'].local_indices.tolist()
+    kdtree_embeddings = ai.user_manager[user_id]['kdtree'].data.tolist()
     assert kdtree_embeddings == db_embeddings and db_ids == kdtree_ids
 
     #delete values and assert that kdtree and database contain the same data
     for i in range(N):
         await ai.remove_bug(user_id=user_id, id=i)
         db_data = await database.fetch_all(user_id)
-        kdtree_ids = ai.users[user_id]['kdtree'].local_indices.tolist()
-        kdtree_embeddings = ai.users[user_id]['kdtree'].data.tolist()
+        kdtree_ids = ai.user_manager[user_id]['kdtree'].local_indices.tolist()
+        kdtree_embeddings = ai.user_manager[user_id]['kdtree'].data.tolist()
         db_ids = [data['id'] for data in db_data]
         db_embeddings = [data['embeddings'] for data in db_data]
         assert kdtree_embeddings == db_embeddings and db_ids == kdtree_ids
@@ -733,7 +733,7 @@ async def test_db_and_kdtree_equivalency_on_delete(ai,valid_batch_data,database,
         await database.fetch_all(user_id)
         assert False
     except NotFoundError:
-        assert ai.users[user_id]['kdtree'] is None
+        assert ai.user_manager[user_id]['kdtree'] is None
     await database.close_pool()
 
 
@@ -744,7 +744,7 @@ async def test_kdtree_and_db_equivalency_update_bug(ai,database,user_id):
     Test fetching the correct data for a user.
     """
     await database.setup_database(reset=True)
-    ai.users = dict()
+    ai.user_manager = dict()
 
 
 
@@ -769,7 +769,7 @@ async def test_kdtree_and_db_equivalency_update_bug(ai,database,user_id):
     db_embeddings = []
     for data in db_data:
         db_embeddings.extend(data['embeddings'])
-    kdtree_ids = ai.users[user_id]['kdtree'].local_indices.tolist()
-    kdtree_embeddings = ai.users[user_id]['kdtree'].data.tolist()
+    kdtree_ids = ai.user_manager[user_id]['kdtree'].local_indices.tolist()
+    kdtree_embeddings = ai.user_manager[user_id]['kdtree'].data.tolist()
     assert kdtree_embeddings == db_embeddings and db_ids == kdtree_ids
     await database.close_pool()

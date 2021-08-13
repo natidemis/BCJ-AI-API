@@ -6,7 +6,6 @@
 """
 @authors: Gitcelo, natidemis
 May-June 2021
-
 API for AI web service
 """
 
@@ -80,13 +79,11 @@ async def shut_down():
 async def k_most_similar_bugs(data: GetDataModel, authorized: bool = Depends(verify_token)):
     """
     GET method that fetches the k UPs that are most similar to the UP
-
     Arguments
     ---------
     data - GetDataModel
         pydantic.BaseModel object that validates the json
         with the request.
-
     authorized - Depends
         Validates authorized access via 'verify_token'
     Returns
@@ -114,16 +111,13 @@ async def insert_bugs(data: MainDataModel, authorized: bool = Depends(verify_tok
     """
     Method for handling POST request on '/bug',
     Used for inserting a bug to the AI and its database.
-
     Arguments
     ---------
     data - MainDataModel
         pydantic.BaseModel object that validates the json
         with the request.
-
     authorized - Depends
         Validates authorized access via 'verify_token'
-
     Returns
     -------
     A message with a brief description explaining the result for the request and status code.
@@ -141,13 +135,11 @@ async def insert_bugs(data: MainDataModel, authorized: bool = Depends(verify_tok
 async def update_bug(data: MainDataModel, authorized: bool = Depends(verify_token)):
     """
     Method for patch http request on '/bug' for updating an existing bug in the AI.
-
     Arguments
     ---------
     data - MainDataModel
         pydantic.BaseModel object that validates the json
         with the request.
-
     authorized - Depends
         Validates authorized access via 'verify_token'
     Returns
@@ -166,16 +158,13 @@ async def update_bug(data: MainDataModel, authorized: bool = Depends(verify_toke
 async def delete_bug(data: DeleteDataModel, authorized: bool = Depends(verify_token)):
     """
     Method for handling a delete request on '/bug' for deleting an existing bug in the AI.
-
     Arguments
     ---------
     data - GetDataModel
         pydantic.BaseModel object that validates the json
         with the request.
-
     authorized - Depends
         Validates authorized access via 'verify_token'
-
     Returns
     -------
     A message with a brief description of the result for the request and status code.
@@ -191,16 +180,13 @@ async def delete_bug(data: DeleteDataModel, authorized: bool = Depends(verify_to
 async def delete_batch(data: DeleteBatchDataModel, authorized: bool = Depends(verify_token)):
     """
     Method for handling delete request on '/batch', used for deleting a batch of bugs
-
     Arguments
     ---------
     data - DeleteBatchDataModel
         pydantic.BaseModel object that validates the json
         with the request.
-
     authorized - Depends
         Validates authorized access via 'verify_token'
-
     Returns
     -------
     Message with a brief explanation and status code
@@ -218,16 +204,13 @@ async def insert_batch(data: BatchDataModel, authorized: bool = Depends(verify_t
     """
     Method for handling a post request on '/batch'.
     Used for inserting multiple bugs at once.
-
     Arguments
     ---------
     data - BatchDataModel
         pydantic.BaseModel object that validates the json
         with the request.
-
     authorized - Depends
         Validates authorized access via 'verify_token'
-
     Returns
     -------
     Message with brief explanation and status code
