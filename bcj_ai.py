@@ -30,7 +30,7 @@ load_dotenv()
 def authenticate_user(fn):
     """
     Decorator function for validating the given user_id.
-    If the user exists, fetch data for that 'user'.
+    raises `ValueError` if user is not available.
 
     Arguments
     ---------
@@ -38,37 +38,36 @@ def authenticate_user(fn):
 
     Returns
     -------
-    Decorator to be applied to a function.
+    Wrapper to be applied to a function.
     """
-    async def decorator(self, *args, **kwargs):
+    async def wrapper(self, *args, **kwargs):
         user_id = kwargs.get('user_id')
-        if user_id not in self.users:
-            logger.error('User: %s not in database: %s, Auth failed',user_id,self.users)
+        if user_id not in self.user_manager:
+            logger.error('User: %s not in database: %s, Auth failed',user_id,self.user_manager)
             raise ValueError('User not available')
         return await fn(self, *args, **kwargs)
-    return decorator
+    return wrapper
 
 def get_or_create_user(fn):
     """
     Decorator function for validating the given user_id.
-    If the user exists, fetch data for that 'user'.
-    Otherwise, create a new user for the given user_id
-    Returns
+    Creates the user if the user doesn't exist.
 
     Arguments
     --------
     None
 
+    Returns
     -------
-    Decorator to be applied to a function.
+    Wrapper to be applied to a function.
     """
     async def decorator(self, *args, **kwargs):
         user_id = kwargs.get('user_id')
-        if user_id not in self.users:
+        if user_id not in self.user_manager:
             try:
                 await self._database.insert_user(user_id)
-                #create an empty kdtree and a threading.Lock for user
-                self.users[user_id] = {'kdtree': None,'lock': asyncio.BoundedSemaphore(1)}
+                #create an empty kdtree and asyncio.BoundedSemaphore for user
+                self.user_manager[user_id] = {'kdtree': None,'lock': asyncio.BoundedSemaphore(1)}
             except (TypeError, DuplicateKeyError) as e:
                 logger.error('Inserting user: %s failed for err: %s',user_id, e)
                 raise ValueError from e
@@ -114,10 +113,9 @@ class BCJAIapi:
     Class methods:
     initialize
 
-
     Instance variables:
-        users: dict
-            All users currently available, key-value pairs -> {user_id: UserManager}
+        user_manager: dict
+            All user_manager currently available, key-value pairs -> {user_id: UserManager}
         database: Database
             connection pool to the database
     Instance methods:
@@ -129,44 +127,45 @@ class BCJAIapi:
         add_batch
     """
 
+    #Initalize up_utils.word2vec.Word2Vec
     _w2v = Word2Vec(
             outputfile=os.getenv('OUTPUT_FILE'),
             dataset=os.getenv('DATASET'), # Dataset can either be googlenews or commoncrawl,
             commoncrawl_path=os.getenv('COMMONCRAWL_PATH'),
             googlenews_path=os.getenv('GOOGLENEWS_PATH'))
 
+    #load Model from disk
     _model = tf.keras.models.load_model('Models', compile=False)
 
-    def __init__(self, users: dict, database: Database):
+    def __init__(self, user_manager: dict, database: Database):
         """
-        Initialize the AI model from disk; read embedding vectors from disk;
-        get ready for classifying bugs and returning similar bug ids.
+        Initialize user_manager and database.
 
         Requirements:
-            Initialized using the classmethod 'initialize'.
+            Initialize asyncronously using the classmethod 'initialize'.
 
         Arguments
         ---------
-        users - dict:
+        user_manager - dict:
             A dict of user_ids - dict('kdtree': KDTree, 'lock': asyncio.BoundedSempaphore)
         database - db.Database
-            a database object with a connection pool.
+            a Database object with a connection pool.
 
         Returns
         -------
-        BCJAIapi object.
+        BCJAIapi object
         """
 
 
         self._database = database
-        self.users = users
+        self.user_manager = user_manager
 
 
     @classmethod
     async def initalize(cls, database: Database) -> BCJAIapi:
         """
         Initialize a BCJAIapi object with a given database object.
-        Initializes 'users' for all users currently available from the database.
+        Initializes 'user_manager' for all users currently available from the database.
 
         Arguments
         ---------
@@ -175,25 +174,26 @@ class BCJAIapi:
 
         Returns
         -------
-        BCJAIapi object initialized with all available users.
+        BCJAIapi object initialized with all available user_manager.
         """
-        #create a dict of {user_id: UserManager} for each user
+
         try:
-            users = {user_id: {
+            #make a semaphore and a KDTree per user
+            user_manager = {user_id: {
                         'kdtree': BCJAIapi._create_tree(
                             await database.fetch_all(user_id, err=False)),
                         'lock': asyncio.BoundedSemaphore(1)
                     }
-                    for user_id in await database.fetch_users()}
-        except NotFoundError:
-            users = {}
-        logger.info('Initialized BCJAIapi with users: %s', users)
-        return cls(users,database)
+                    for user_id in await database.fetch_user_manager()}
+        except NotFoundError: #No users available
+            user_manager = {}
+        logger.info('Initialized BCJAIapi with user_manager: %s', user_manager)
+        return cls(user_manager,database)
 
     @staticmethod
     def _create_tree(new_data: Union[None,List[dict]]) -> KDTree:
         """
-        Private method for updating 'kdtree'.
+        Private static method for creating 'kdtree' with `new_data`
 
         Arguments
         ---------
@@ -213,7 +213,7 @@ class BCJAIapi:
 
     async def _update_tree_for_user(self, user_id: str) -> None:
         """
-        Update 'self.users[user_id]['kdtree']' approperiately for `user_id`
+        Update 'self.user_manager[user_id]['kdtree']' approperiately for `user_id`
 
         Arguments
         ---------
@@ -224,8 +224,8 @@ class BCJAIapi:
         None
         """
         data = await self._database.fetch_all(user_id, err=False)
-        async with self.users[user_id]['lock']:
-            self.users[user_id]['kdtree'] = BCJAIapi._create_tree(data)
+        async with self.user_manager[user_id]['lock']: #Prevent threads from rewriting the kdtree
+            self.user_manager[user_id]['kdtree'] = BCJAIapi._create_tree(data)
 
 
     @authenticate_user
@@ -236,8 +236,8 @@ class BCJAIapi:
                             structured_info: str=None,
                             k: int=5) -> Tuple[BCJStatus, Union[dict,BCJMessage]]:
         """
-        Return the IDs and distances(percentage) of the k most similar bugs
-        based on given summary, desription, and structured information.
+        Return the IDs and distance values of the k most similar bugs
+        based on the given summary, description, and structured information.
 
         Arguments
         ---------
@@ -264,21 +264,22 @@ class BCJAIapi:
         #prepare data for vectorization and insertion
         data = bleach.clean(description) if bool(description) \
             else bleach.clean(summary)
-        async with self.users[user_id]['lock']:
-            if self.users[user_id]['kdtree'] is None:
+        async with self.user_manager[user_id]['lock']:
+            if self.user_manager[user_id]['kdtree'] is None:
                 logger.info('KDTree is empty for user: %s', user_id)
                 raise NotFoundError
 
-            N = len(self.users[user_id]['kdtree'].indices)
+            N = len(self.user_manager[user_id]['kdtree'].indices)
             k = min(k,N)
 
             try:
+                #use 'structured_info' when model supports it
                 vec= BCJAIapi._model.predict(np.array([BCJAIapi._w2v.get_sentence_matrix(data)]))
             except Exception:
                 logger.error('Could not predict/vectorize for %s', data)
                 return BCJStatus.NOT_IMPLEMENTED, BCJMessage.UNPROCESSABLE_INPUT
 
-            dists,ids = self.users[user_id]['kdtree'].query(vec, k=k)
+            dists,ids = self.user_manager[user_id]['kdtree'].query(vec, k=k)
 
             response = {
                 "id": ids.flatten().tolist(),
@@ -331,12 +332,13 @@ class BCJAIapi:
                         batch_id=batch_id)
         except DuplicateKeyError:
             return BCJStatus.BAD_REQUEST, BCJMessage.DUPLICATE_ID
-        async with self.users[user_id]['lock']:
-            if self.users[user_id]['kdtree'] is None:
-                self.users[user_id]['kdtree'] = KDTree(data=embeddings,
+
+        async with self.user_manager[user_id]['lock']: #prevent race conditions
+            if self.user_manager[user_id]['kdtree'] is None:
+                self.user_manager[user_id]['kdtree'] = KDTree(data=embeddings,
                                                     indices=[structured_info['id']])
             else:
-                self.users[user_id]['kdtree'].update(embeddings, structured_info['id'])
+                self.user_manager[user_id]['kdtree'].update(embeddings, structured_info['id'])
 
         return BCJStatus.OK, BCJMessage.VALID_INPUT
 
@@ -371,7 +373,7 @@ class BCJAIapi:
                     summary: str="",
                     description: str="") -> Tuple[BCJStatus, BCJMessage]:
         """
-        Updates a bug with the parameters given. The id of the bug should be in structured_info.
+        Updates a bug with the parameters given.
 
         Arguments
         ---------
