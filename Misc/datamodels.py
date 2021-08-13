@@ -3,7 +3,7 @@ from typing import Optional, List
 from pydantic import BaseModel, validator, Extra
 
 """
-@authors: Gitcelo, natidemis
+@authors: natidemis
 May-June 2021
 
 Datastructures for input requests
