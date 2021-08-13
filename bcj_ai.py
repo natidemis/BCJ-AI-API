@@ -267,7 +267,7 @@ class BCJAIapi:
         async with self.user_manager[user_id]['lock']:
             if self.user_manager[user_id]['kdtree'] is None:
                 logger.info('KDTree is empty for user: %s', user_id)
-                raise NotFoundError
+                raise NotFoundError(f"{user_id} has no available data")
 
             N = len(self.user_manager[user_id]['kdtree'].indices)
             k = min(k,N)
