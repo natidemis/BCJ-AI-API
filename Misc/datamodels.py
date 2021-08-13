@@ -5,7 +5,6 @@ from pydantic import BaseModel, validator, Extra
 """
 @authors: natidemis
 May-June 2021
-
 Datastructures for input requests
 """
 
@@ -19,12 +18,10 @@ class StructuredInfoBaseModel(BaseModel, extra=Extra.forbid):
     def parse_date(cls, value: str) -> str: #pylint: disable=E0213
         """
         Verify that `date` is in YYYY-MM-DD format
-
         Arguments
         ---------
             date: str
                 date string to be validated.
-
         Returns
         -------
         'v', raises ValueError if 'date' is invalid
