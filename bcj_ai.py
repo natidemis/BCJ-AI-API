@@ -184,7 +184,7 @@ class BCJAIapi:
                             await database.fetch_all(user_id, err=False)),
                         'lock': asyncio.BoundedSemaphore(1)
                     }
-                    for user_id in await database.fetch_user_manager()}
+                    for user_id in await database.fetch_users()}
         except NotFoundError: #No users available
             user_manager = {}
         logger.info('Initialized BCJAIapi with user_manager: %s', user_manager)
