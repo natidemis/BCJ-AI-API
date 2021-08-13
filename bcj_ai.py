@@ -6,7 +6,6 @@
 """
 @authors: kra33, Gitcelo, natidemis
 May 2021
-
 API module for Bug Consolidation for Jira (BCJ) AI model.
 Used to store bugs and classify them.
 """
@@ -31,11 +30,9 @@ def authenticate_user(fn):
     """
     Decorator function for validating the given user_id.
     raises `ValueError` if user is not available.
-
     Arguments
     ---------
     None
-
     Returns
     -------
     Wrapper to be applied to a function.
@@ -52,11 +49,9 @@ def get_or_create_user(fn):
     """
     Decorator function for validating the given user_id.
     Creates the user if the user doesn't exist.
-
     Arguments
     --------
     None
-
     Returns
     -------
     Wrapper to be applied to a function.
@@ -109,10 +104,8 @@ class BCJStatus(IntEnum):
 class BCJAIapi:
     """
     API class for AI
-
     Class methods:
     initialize
-
     Instance variables:
         user_manager: dict
             All user_manager currently available, key-value pairs -> {user_id: UserManager}
@@ -140,17 +133,14 @@ class BCJAIapi:
     def __init__(self, user_manager: dict, database: Database):
         """
         Initialize user_manager and database.
-
         Requirements:
             Initialize asyncronously using the classmethod 'initialize'.
-
         Arguments
         ---------
         user_manager - dict:
             A dict of user_ids - dict('kdtree': KDTree, 'lock': asyncio.BoundedSempaphore)
         database - db.Database
             a Database object with a connection pool.
-
         Returns
         -------
         BCJAIapi object
@@ -166,12 +156,10 @@ class BCJAIapi:
         """
         Initialize a BCJAIapi object with a given database object.
         Initializes 'user_manager' for all users currently available from the database.
-
         Arguments
         ---------
         database - db.Database:
             Database object with a connection pool
-
         Returns
         -------
         BCJAIapi object initialized with all available user_manager.
@@ -194,12 +182,10 @@ class BCJAIapi:
     def _create_tree(new_data: Union[None,List[dict]]) -> KDTree:
         """
         Private static method for creating 'kdtree' with `new_data`
-
         Arguments
         ---------
             new_data: list[dict]
                 data containing a list of embeddings and IDs
-
         Returns
         -------
         KDTree
@@ -214,11 +200,9 @@ class BCJAIapi:
     async def _update_tree_for_user(self, user_id: str) -> None:
         """
         Update 'self.user_manager[user_id]['kdtree']' approperiately for `user_id`
-
         Arguments
         ---------
         user_id: int
-
         Returns
         -------
         None
@@ -238,7 +222,6 @@ class BCJAIapi:
         """
         Return the IDs and distance values of the k most similar bugs
         based on the given summary, description, and structured information.
-
         Arguments
         ---------
             user_id: str
@@ -250,10 +233,8 @@ class BCJAIapi:
             structured info: dict {'id': int, 'date': str, 'batch_id': int | None}
                 'date': str
                     A string representation of a date for the bug
-
             'k': int
                 The number of similar bugs to fetch
-
         Returns
         -------
         BCJStatus, dict containing Id's and distances of the 'k' most similar
@@ -296,7 +277,6 @@ class BCJAIapi:
                 description: str="") -> Tuple[BCJStatus, BCJMessage]:
         """
         Add a bug with given summary, description and structured information.
-
         Arguments
         ---------
             user_id: str
@@ -312,11 +292,9 @@ class BCJAIapi:
                     A string representation of a date for the bug
                 'batch_id: int | None
                     the Id which this bug belongs to, None other if no such Id exists
-
         Returns
         -------
         BCJStatus, BCJMessage
-
         """
         assert bool(description) or bool(summary)
         # Sanitize and prepare the data for vectorization and insertion
@@ -346,14 +324,12 @@ class BCJAIapi:
     async def remove_bug(self,user_id: str, id: int) -> Tuple[BCJStatus, BCJMessage]: #pylint: disable=redefined-builtin
         """
         Remove a bug with 'id' for the given 'user_id'
-
         Arguments
         ---------
             user_id: str
                 Indentification number of the user: must exist in the database
             id: int
                 Id for the bug
-
         Returns
         -------
         BCJstatus, BCJMessage
@@ -374,7 +350,6 @@ class BCJAIapi:
                     description: str="") -> Tuple[BCJStatus, BCJMessage]:
         """
         Updates a bug with the parameters given.
-
         Arguments
         ---------
             user_id: str
@@ -390,7 +365,6 @@ class BCJAIapi:
                     A string representation of a date for the bug
                 'batch_id: int | None
                     the Id which this bug belongs to, None other if no such Id exists
-
         Returns
         -------
         BCJStatus, BCJMessage
@@ -433,14 +407,12 @@ class BCJAIapi:
     async def remove_batch(self,user_id: str, batch_id: int) -> Tuple[BCJStatus, BCJMessage]:
         """
         Removes a batch of bugs. The batch's id is idx.
-
         Arguments
         ---------
             user_id: str
                 Indentification number of the user: must exist in the database
             batch_id: int
                 Identification number of the batch
-
         Returns
         -------
         BCJStatus, BCJMessage
@@ -459,7 +431,6 @@ class BCJAIapi:
     async def add_batch(self,user_id: str, data: list) -> Tuple[BCJStatus, BCJMessage]:
         """
         Adds a batch to the database and updates the KD-Tree
-
         Arguments
         ---------
             user_id: str
@@ -476,7 +447,6 @@ class BCJAIapi:
                         A string representation of a date for the bug
                     'batch_id: int | None
                         the Id which this bug belongs to, None other if no such Id exists
-
         Returns
         -------
         BCJStatus, BCJMessage
