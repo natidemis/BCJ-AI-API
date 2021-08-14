@@ -11,10 +11,9 @@ April 2021
 Test module for testing database methods
 """
 
-############################################################
-# These tests don't work. Issues with pytest-asyncio      ##
-# https://github.com/pytest-dev/pytest-asyncio/issues/157 ##
-############################################################
+#########################################################################
+#  Not containerized testing and should thus only be run in development #
+#########################################################################
 
 import sys
 import os
