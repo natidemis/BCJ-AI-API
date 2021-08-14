@@ -4,7 +4,6 @@
 """
 @author natidemis
 June 2021
-
 Contains the database class used for setting up for and
 making query to the database
 """
@@ -112,10 +111,8 @@ class NoUpdatesError(Exception):
 class Database:
     """
     Class for handling database connection and queries
-
     Class methods:
     connect_pool
-
     Instance methods:
     setup_database
     insert
@@ -127,22 +124,17 @@ class Database:
     delete_batch
     fetch_users
     close_pool
-    
-
     Instance variables:
     pool
     """
     def __init__(self, pool: asyncpg.Pool):
         """
         Initialize Database
-
         Requirements:
             - DATABASE_URL variable in '.env' file.
-
         Arguments
         ---------
         None
-
         Returns
         -------
         Instance of a Database object
@@ -158,7 +150,7 @@ class Database:
         pool = await asyncpg.create_pool(os.getenv('DATABASE_URL'), command_timeout=60)
         logger.info('Constructed database with a pool connection, %s',pool)
         return cls(pool=pool)
-    
+
     async def close_pool(self) -> None:
         """
         Close the pool connection
@@ -170,12 +162,10 @@ class Database:
     async def setup_database(self, reset: bool = False) -> bool:
         """
         Instance method to setup the database tables
-
         Arguments
         ---------
         reset: bool
             Reset the database to null. Removes all values.
-
         Returns
         -------
         True if setup is successful, false otherwise
@@ -210,21 +200,16 @@ class Database:
                         batch_id: int= None) -> None:
         """
         Instance method for inserting into the database
-
         Arguments
         ---------
         id: int
             Identification number for the embedded bug
-
         user_id: str
             Indentification number of the user
-
         embeddings: Array of floats
             The embeddings of the bug
-
         Batch_id: int, None
             Batch ID to associate bug with a batch of bugs
-
         Returns
         -------
         None, raises DuplicateKeyError, NotFoundError on exception
@@ -248,12 +233,10 @@ class Database:
     async def insert_user(self, user_id: str) -> None:
         """
         Instance method for inserting a user into the database
-
         Arguments
         ---------
         user_id: str
             identification number for user.
-
         Returns
         -------
         None, raises DuplicateKeyError and TypeError on exception
@@ -272,7 +255,6 @@ class Database:
     async def insert_batch(self,data: Sequence[tuple]) -> None:
         """
         Instance method for inserting a batch of data
-
         Arguments
         ---------
         data: List of tuples [(id, user_id, embeddings, batch_id)]
@@ -280,7 +262,6 @@ class Database:
             user_id: str - Identification value for the user.
             embeddings: List of floats - The embeddings for this bug
             batch_id: int | None - A batch number to associate this bug with other bugs.
-
         Returns
         -------
         None, raises NotFoundError, DuplicateKeyError on exception
@@ -294,37 +275,36 @@ class Database:
             raise NotFoundError('User not in database') from e
         except asyncpg.exceptions.DataError as e:
             logger.error("Incorrect type inserted: %s",e)
-            raise NotFoundError('Incorrect type input' % e) from e
+            raise NotFoundError('Incorrect type input: {}'.format(e)) from e
         except asyncpg.exceptions.UniqueViolationError as e:
             logger.error("Duplicate key error: %s",e)
             raise DuplicateKeyError('Duplicate key error, %s' % e) from e
 
 
-    async def fetch_all(self, user_id: str) -> List[dict]:
+    async def fetch_all(self, user_id: str, err: bool = True) -> Union[None,List[dict]]:
         """
         Instance method for fetching all rows for a user in the database
-
         Arguments
         ---------
         user_id: str
             User identification number
-
         Returns
         -------
         a list of dict, Raises NotFoundError is user has no rows to fetch.
-
         raises NotFoundError if database is empty.
         """
         async with self.pool.acquire() as conn:
             rows = await conn.fetch(QueryString.FETCH.value,user_id)
-            if not rows:
-                raise NotFoundError("Nothing in the Database",rows)
+        if err and not rows:
+            raise NotFoundError("Nothing in the Database",rows)
+        if not rows:
+            return None
         logger.info("Fetching all succeeded")
         return [{'id': row['id'],
                 'embeddings': row['embeddings'],
                 'batch_id': row['batch_id']} for row in rows]
 
-            
+
 
     async def update(self,
                         id: int,
@@ -333,21 +313,16 @@ class Database:
                         batch_id: int=None) -> None:
         """
         Instance method for updating a bug for a user.
-
         Arguments
         ---------
         id: int
             Identification number for the embedded bug
-
         user_id: str
             Indentification number of the user
-
         embeddings: Array of floats | None
             The embeddings of the bug
-
         Batch_id: int | None
             Batch ID to associate bug with a batch of bugs
-
         Returns
         None, raises NoUpdatesError if nothing is updated.
         """
@@ -395,15 +370,12 @@ class Database:
     async def delete(self, id: int, user_id: str) -> None:
         """
         Instance method for removing a row from the database
-
         Arguments
         ---------
         id: int
             Id of the bug
-
         user_id: str
             User identification number
-
         Returns
         -------
         None, raises NoUpdatesError if no deletion occurs.
@@ -419,15 +391,12 @@ class Database:
     async def delete_batch(self,batch_id: int,user_id: str) -> None:
         """
         Instance method for removing a batch of rows
-
         Arguments
         ---------
         batch_id: int
             Indentification number for a set of bugs
-
         user_id: str
             User identification number assosicated with this batch
-
         Returns
         -------
         None, raises NoUpdatesError if no deletes occur
@@ -440,14 +409,12 @@ class Database:
 
 
 
-    async def fetch_users(self) -> List[int]:
+    async def fetch_users(self) -> List[str]:
         """
         Instance method for fetching all users in the database
-
         Arguments
         ---------
         None
-
         Returns
         -------
         a list of ids, raises NotFoundError if no users exist in the database
