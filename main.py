@@ -75,7 +75,7 @@ async def shut_down():
     logger.info("Server shutting down..")
 
 
-@app.get('/bug', status_code=200)
+@app.post('/getbug', status_code=200)
 async def k_most_similar_bugs(data: GetDataModel, authorized: bool = Depends(verify_token)):
     """
     GET method that fetches the k UPs that are most similar to the UP
